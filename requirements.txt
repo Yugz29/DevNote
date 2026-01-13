@@ -1,0 +1,19 @@
+# Backend core
+Django==4.2.27
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
+
+# Environment variables
+django-environ==0.11.2
+
+# CORS
+django-cors-headers==4.3.1
+
+# Testing
+pytest==7.4.3
+pytest-django==4.7.0
+
+# Code quality
+black==23.12.1
+isort==5.13.2
+flake8==7.0.0
