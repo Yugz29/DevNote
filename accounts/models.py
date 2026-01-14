@@ -17,9 +17,19 @@ class User(AbstractUser):
     - is_active, is_staff, is_superuser (flags d'autorisation)
     - date_joined (timestamp de création)
     """
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Account creation date"
+        )
     
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Date of last modification"
+        )
+
     class Meta:
-        db_table = 'devnote_users'  # Nom de la table en BDD
+        db_table = 'devnote_users'
         verbose_name = 'User'
         verbose_name_plural = 'Users'
     
