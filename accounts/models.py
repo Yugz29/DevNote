@@ -1,13 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from uuid6 import uuid7
 
 class User(AbstractUser):
     """
     Modèle User personnalisé pour DevNote.
     
-    Hérite de AbstractUser (inclut username, email, password, etc.).
-    Ajouter des champs custom plus tard (avatar, bio, etc.).
+    Hérite de AbstractUser (inclut username, email, password, etc.)
+    Ajouter des champs custom plus tard (avatar, bio, etc.)
+    Utilisation de UUIDv7 comme PK pour une meilleure performance en indexation
     
     Pour l'instant, on garde les champs par défaut de Django :
     - username (unique, requis)
@@ -17,6 +18,12 @@ class User(AbstractUser):
     - is_active, is_staff, is_superuser (flags d'autorisation)
     - date_joined (timestamp de création)
     """
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid7,
+        editable=False,
+        help_text="Unique identifier UUIDv7"
+    )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
