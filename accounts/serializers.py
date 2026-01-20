@@ -33,7 +33,6 @@ class RegisterSerializer(serializers.ModelSerializer):
     - Automatic password hashing before saving
     """
 
-    # Additional field for password confirmation
     password = serializers.CharField(
         write_only=True,
         required=True,
