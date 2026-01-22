@@ -18,19 +18,19 @@ class ProjectModelTest(TestCase):
     def test_create_project(self):
         """Test creating a project"""
         project = Project.objects.create(
-            name='Test Project',
+            title='Test Project',
             description='A project for testing purposes.',
             user=self.user
         )
 
-        self.assertEqual(project.name, 'Test Project')
+        self.assertEqual(project.title, 'Test Project')
         self.assertEqual(project.user, self.user)
         self.assertIsNotNone(project.created_at)
 
     def test_timestamps_auto_generated(self):
         """Test that created_at and updated_at are auto-generated"""
         project = Project.objects.create(
-            name='Timestamp Test Project',
+            title='Timestamp Test Project',
             user=self.user
         )
 

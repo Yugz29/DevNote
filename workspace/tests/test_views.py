@@ -19,7 +19,7 @@ class ProjectViewTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         self.project = Project.objects.create(
-            name='Test Project',
+            title='Test Project',
             description='A project for testing',
             user=self.user
         )
@@ -45,7 +45,7 @@ class ProjectViewTest(APITestCase):
         self.assertEqual(len(projects), 1)
 
         # Content of the project
-        self.assertEqual(projects[0]['name'], self.project.name)
+        self.assertEqual(projects[0]['title'], self.project.title)
         self.assertEqual(projects[0]['description'], self.project.description)
 
         # Check UUID is present
@@ -62,7 +62,7 @@ class ProjectViewTest(APITestCase):
     def test_create_project(self):
         """Test creating a new project"""
         data = {
-            'name': 'New Project',
+            'title': 'New Project',
             'description': 'A new test project'
         }
         response = self.client.post('/api/projects/', data)
@@ -72,7 +72,7 @@ class ProjectViewTest(APITestCase):
 
         # Verify the project was created
         self.assertEqual(Project.objects.count(), 2)
-        new_project = Project.objects.get(name='New Project')
+        new_project = Project.objects.get(title='New Project')
         self.assertEqual(new_project.description, 'A new test project')
         self.assertEqual(new_project.user, self.user)
 
@@ -80,7 +80,7 @@ class ProjectViewTest(APITestCase):
         """Test creating a project when unauthenticated"""
         self.client.force_authenticate(user=None)
         data = {
-            'name': 'Unauthorized Project',
+            'title': 'Unauthorized Project',
             'description': 'Should not be created'
         }
         response = self.client.post('/api/projects/', data)
@@ -96,13 +96,13 @@ class ProjectViewTest(APITestCase):
         response = self.client.get(f'/api/projects/{self.project.id}/')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], self.project.name)
+        self.assertEqual(response.data['title'], self.project.title)
         self.assertEqual(response.data['description'], self.project.description)
 
     def test_update_project(self):
         """Test updating a project"""
         data = {
-            'name': 'Updated Project',
+            'title': 'Updated Project',
             'description': 'Updated description'
         }
         response = self.client.put(f'/api/projects/{self.project.id}/', data)
@@ -111,7 +111,7 @@ class ProjectViewTest(APITestCase):
 
         # Verify the project was updated
         self.project.refresh_from_db()
-        self.assertEqual(self.project.name, 'Updated Project')
+        self.assertEqual(self.project.title, 'Updated Project')
         self.assertEqual(self.project.description, 'Updated description')
 
     def test_delete_project(self):
@@ -132,7 +132,7 @@ class ProjectViewTest(APITestCase):
             password='OtherPass123!'
         )
         other_project = Project.objects.create(
-            name='Other Project',
+            title='Other Project',
             description='A project for the other user',
             user=other_user
         )
@@ -149,4 +149,4 @@ class ProjectViewTest(APITestCase):
             projects = response.data
 
         self.assertEqual(len(projects), 1)
-        self.assertEqual(projects[0]['name'], self.project.name)
+        self.assertEqual(projects[0]['title'], self.project.title)
