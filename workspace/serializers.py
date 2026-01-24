@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project
+from .models import Project, Note
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,7 +14,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'user', 'created_at', 'updated_at']
 
-    def validate_name(self, value):
+    def validate_title(self, value):
         """Validate and clean the project title"""
         value = value.strip()
         if not value:
@@ -39,3 +39,40 @@ class ProjectSerializer(serializers.ModelSerializer):
                 )
             
         return data
+
+
+class NoteSerializer(serializers.ModelSerializer):
+    project_id = serializers.UUIDField(read_only=True, source='project.id')
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(),
+        write_only=True,
+        required=False # Optionnal (as provided by nested route or body)
+    )
+
+    class Meta:
+        model = Note
+        fields = [
+            'id',
+            'title',
+            'content',
+            'project',
+            'project_id',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'project_id', 'created_at', 'updated_at']
+
+    def validate_title(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Note title cannot be empty.")
+        return value
+        
+    def validate_project(self, value):
+        """Ensure the note's project belongs to the user"""
+        user = self.context['request'].user
+        if value.user != user:
+            raise serializers.ValidationError(
+                "You do not have permission for this project."
+            )
+        return value
