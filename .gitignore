@@ -37,4 +37,5 @@ htmlcov/
 # Deployment
 *.pyc
 *.pyo
-scripts/devnote-postman-collection.json
+scripts/devnote-notes-postman-collection.json
+scripts/devnote-auth-projects-postman-collection.json
