@@ -178,3 +178,10 @@ CORS_ALLOW_CREDENTIALS = True
 # CUSTOM USER MODEL
 # ============================================
 AUTH_USER_MODEL = 'accounts.User'
+
+# ============================================
+# AUTHENTICATION BACKENDS
+# ============================================
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
