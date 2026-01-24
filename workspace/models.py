@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from uuid6 import uuid7
+from django.core.exceptions import ValidationError
 
 class Project(models.Model):
     """
@@ -14,14 +15,15 @@ class Project(models.Model):
         help_text="Unique identifier UUIDv7"
     )
 
-    name = models.CharField(
+    title = models.CharField(
         max_length=255,
         help_text="Name of the project"
     )
 
     description = models.TextField(
         blank=True,
-        default=""
+        default="",
+        help_text="Description of the project"
     )
 
     user = models.ForeignKey(
@@ -48,4 +50,61 @@ class Project(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return self.name
+        return self.title
+
+
+class Note(models.Model):
+    """
+    Note model represents a note linked to a project.
+    """
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid7,
+        editable=False,
+        help_text="Unique identifier UUIDv7"
+    )
+
+    title = models.CharField(
+        max_length=255,
+        help_text="Title of the note"
+    )
+
+    content = models.TextField(
+        blank=True,
+        default="",
+        help_text="Content of the note"
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='notes',
+        help_text="Note associated to project"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Note creation date"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Date of last modification"
+    )
+
+    class Meta:
+        db_table = 'devnote_notes'
+        verbose_name = 'Note'
+        verbose_name_plural = 'Notes'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        """Ensure the note title is not empty."""
+        super().clean()
+        if self.title:
+            self.title = self.title.strip()
+        if not self.title:
+            raise ValidationError({'title': 'Note title cannot be empty.'})
