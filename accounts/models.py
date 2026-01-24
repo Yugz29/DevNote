@@ -10,19 +10,45 @@ class User(AbstractUser):
     Ajouter des champs custom plus tard (avatar, bio, etc.)
     Utilisation de UUIDv7 comme PK pour une meilleure performance en indexation
     
-    Pour l'instant, on garde les champs par défaut de Django :
-    - username (unique, requis)
-    - email (optionnel par défaut, mais on le rendra requis dans le serializer)
+    Modification par rapport au mode par défaut de Django :
+    - username facultatif (peut être null)
+    - email obligatoire et unique
     - password (hashé automatiquement par Django)
-    - first_name, last_name (optionnels)
-    - is_active, is_staff, is_superuser (flags d'autorisation)
-    - date_joined (timestamp de création)
+    - first_name obligatoire
+    - last_name obligatoire
+    UUIDv7 comme PK pour une meilleure performance en indexation
     """
     id = models.UUIDField(
         primary_key=True,
         default=uuid7,
         editable=False,
         help_text="Unique identifier UUIDv7"
+    )
+
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        blank=True,
+        null=True,
+        help_text='Username (optional)'
+    )
+
+    email = models.EmailField(
+        unique=True,
+        blank=False,
+        help_text='User email address (unique, required)'
+    )
+
+    first_name = models.CharField(
+        max_length=150,
+        blank=False,
+        help_text='User first name (required)'
+    )
+
+    last_name = models.CharField(
+        max_length=150,
+        blank=False,
+        help_text='User last name (required)'
     )
 
     created_at = models.DateTimeField(
@@ -34,6 +60,9 @@ class User(AbstractUser):
         auto_now=True,
         help_text="Date of last modification"
         )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     class Meta:
         db_table = 'devnote_users'
