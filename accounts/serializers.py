@@ -2,11 +2,69 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
-from rest_framework.exceptions import AuthenticationFailed
-
+from rest_framework.exceptions import ValidationError
 import uuid
 
 User = get_user_model()
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    """
+    Serializer for user registration.
+    
+    Handles user creation with email, password, first_name, last_name.
+    Username is optional and auto-generated if not provided.
+    """
+
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={'input_type': 'password'},
+        validators=[validate_password],
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={'input_type': 'password'},
+        label="Confirm Password"
+    )
+
+    class Meta:
+        model = User
+        fields = ['email', 'username', 'first_name', 'last_name', 'password', 'password2']
+        extra_kwargs = {
+            'email': {'required': True},
+            'first_name': {'required': True},
+            'last_name': {'required': True},
+            'username': {'required': False}
+        }
+
+    def validate(self, attrs):
+        """Validate that passwords match"""
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
+        return attrs
+    
+    def create(self, validated_data):
+        """
+        Creates a new user with a hashed password.
+    
+        The UserManager automatically handles username generation
+        if not provided.
+
+        Args:
+            validated_data (dict): Validated data
+
+        Returns:
+            User: Instance of the created user
+        """
+        validated_data.pop('password2')
+
+        user = User.objects.create_user(**validated_data)
+
+        return user
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,85 +84,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-
-class RegisterSerializer(serializers.ModelSerializer):
-    """
-    Serialiser for registering a new user.
-    
-    Features:
-    - Password validation (length, complexity)
-    - Password confirmation (password == password2)
-    - Automatic password hashing before saving
-    - Email-based authentication (username optional)
-    - First name and last name required
-    """
-
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        validators=[validate_password],
-    )
-    password2 = serializers.CharField(
-        write_only=True,
-        required=True,
-        label="Confirm Password"
-    )
-
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'password', 'password2']
-        extra_kwargs = {
-            'email': {'required': True},
-            'first_name': {'required': True},
-            'last_name': {'required': True},
-            'username': {'required': False}
-        }
-
-    def validate(self, attrs):
-        """
-        Custom validation: checks that password == password2
-        
-        Args:
-            attrs (dict): Data validated by DRF
-        
-        Returns:
-            dict: Validated data
-        
-        Raises:
-            ValidationError: If the passwords do not match
-        """
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError(
-                {"password": "Password fields didn't match."}
-            )
-        return attrs
-    
-    def create(self, validated_data):
-        """
-        Creates a new user with a hashed password.
-        
-        Args:
-            validated_data (dict): Validated data
-        
-        Returns:
-            User: Instance of the created user
-        """
-        validated_data.pop('password2')
-
-        # Generate a random username if none exists
-        username = validated_data.get('username')
-        if not username:
-            username = f'user_{uuid.uuid4().hex[:10]}'
-
-        user = User.objects.create_user(
-            username=username,
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            password=validated_data['password']
-        )
-
-        return user
 
 class LoginSerializer(serializers.Serializer):
     """Serializer for user authentication.
@@ -139,15 +118,15 @@ class LoginSerializer(serializers.Serializer):
         password = data.get('password')
 
         if not email or not password:
-            raise AuthenticationFailed('Email and password are required')
+            raise ValidationError('Email and password are required')
         
         user = authenticate(username=email, password=password)
 
         if user is None:
-            raise AuthenticationFailed('Invalid credentials')
+            raise ValidationError('Invalid credentials')
         
         if not user.is_active:
-            raise AuthenticationFailed('User account is disabled')
+            raise ValidationError('User account is disabled')
         
         data['user']= user
         return data
