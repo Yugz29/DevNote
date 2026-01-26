@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Note, Snippet
+from .models import Project, Note, Snippet, TODO
 
 class ProjectSerializer(serializers.ModelSerializer):
     """Serializer for Project model"""
@@ -86,7 +86,7 @@ class SnippetSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(),
         write_only=True,
-        required=True
+        required=False
     )
 
     class Meta:
@@ -148,3 +148,34 @@ class SnippetSerializer(serializers.ModelSerializer):
                 })
         
         return data
+
+
+class TODOSerializer(serializers.ModelSerializer):
+    """Serializer for Todo objects"""
+    project_id = serializers.UUIDField(read_only=True, source='project.id')
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(),
+        write_only=True,
+        required=False
+    )
+
+    class Meta:
+        model = TODO
+        fields = [
+            'id',
+            'title',
+            'description',
+            'status',
+            'priority',
+            'project',
+            'project_id',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'project_id', 'created_at', 'update_at']
+
+    def validate_title(self, value):
+        """Title cannot be empty or whitespace only"""
+        if not value or not value.strip():
+            raise serializers.ValidationError('Title cannot be empty or whitespace only')
+        return value.strip()
