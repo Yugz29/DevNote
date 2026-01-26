@@ -108,3 +108,26 @@ class Note(models.Model):
             self.title = self.title.strip()
         if not self.title:
             raise ValidationError({'title': 'Note title cannot be empty.'})
+
+
+class Snippet(models.Model):
+    """Snippet model represents a snippet linked to a project"""
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    language = models.CharField(max_length=50, default='text')
+    description = models.TextField(blank=True, default='')
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='snippets'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'devnote_snippets'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.title} ({self.language})'
