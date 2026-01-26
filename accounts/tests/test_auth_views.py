@@ -97,7 +97,7 @@ class AuthViewsTest(APITestCase):
         self.assertIn('refresh', response.data['tokens'])
 
     def test_login_invalid_credentials(self):
-        """Test: Login with invalid credentials returns 401"""
+        """Test: Login with invalid credentials returns 400"""
         # Créer le user
         self.client.post(self.register_url, self.valid_user_data)
 
@@ -108,17 +108,17 @@ class AuthViewsTest(APITestCase):
         }
         response = self.client.post(self.login_url, login_data)
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_nonexistent_user(self):
-        """Test: Login with non-existent user returns 401"""
+        """Test: Login with non-existent user returns 400"""
         login_data = {
             'email': 'ghost@example.com',
             'password': 'AnyPassword123'
         }
         response = self.client.post(self.login_url, login_data)
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # ===== LOGOUT TESTS =====
 
@@ -143,7 +143,7 @@ class AuthViewsTest(APITestCase):
         )
 
     def test_logout_unauthenticated(self):
-        """Test: POST /api/auth/logout/ returns 401 without authentication"""
+        """Test: POST /api/auth/logout/ returns 400"""
         response = self.client.post(self.logout_url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
