@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import Project, Note
+from .models import Project, Note, Snippet
 
 class ProjectSerializer(serializers.ModelSerializer):
+    """Serializer for Project model"""
     class Meta:
         model = Project
         fields = [
@@ -42,6 +43,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
+    """Serializer for Note model"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(),
@@ -76,3 +78,73 @@ class NoteSerializer(serializers.ModelSerializer):
                 "You do not have permission for this project."
             )
         return value
+
+
+class SnippetSerializer(serializers.ModelSerializer):
+    """Serializer for Snippet model"""
+    project_id = serializers.UUIDField(read_only=True, source='project.id')
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(),
+        write_only=True,
+        required=True
+    )
+
+    class Meta:
+        model = Snippet
+        fields = [
+            'id',
+            'title',
+            'content',
+            'language',
+            'description',
+            'project',
+            'project_id',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'project_id', 'created_at', 'updated_at']
+
+    def validate_title(self, value):
+        """Title cannot be empty or whitespace only"""
+        if not value or not value.strip():
+            raise serializers.ValidationError('Title cannot be empty or whitespace only')
+        return value.strip()
+    
+    def validate_content(self, value):
+        """Content cannot be empty"""
+        if not value or not value.strip():
+            raise serializers.ValidationError('Content cannot be empty')
+        return value.strip()
+    
+    def validate_language(self, value):
+        """
+        Validate and normalize language field
+        Todo : Add auto_detection from content
+        """
+        if not value or not value.strip():
+            return 'text'
+        return value.strip().lower()
+    
+    def validate(self, data):
+        """
+        Validate snippet uniqueness within project
+        - Title must be unique per project (case-insensitive)
+        """
+        title = data.get('title')
+        project = data.get('project')
+        
+        if title and project:
+            queryset = Snippet.objects.filter(
+                project=project,
+                title__iexact=title
+            )
+            
+            if self.instance:
+                queryset = queryset.exclude(pk=self.instance.pk)
+            
+            if queryset.exists():
+                raise serializers.ValidationError({
+                    'title': 'A snippet with this title already exists in this project.'
+                })
+        
+        return data

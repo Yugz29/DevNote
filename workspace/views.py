@@ -1,8 +1,10 @@
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from .models import Project, Note
-from .serializers import ProjectSerializer, NoteSerializer
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Project, Note, Snippet
+from .serializers import ProjectSerializer, NoteSerializer, SnippetSerializer
 
 
 class IsOwner(permissions.BasePermission):
@@ -62,9 +64,7 @@ class NoteViewSet(viewsets.ModelViewSet):
         """Assign project from URL and verify ownership"""
         project_pk = self.kwargs.get('project_pk')
 
-        if project_pk:
-            # Nested route: porject from URL
-            
+        if project_pk:            
             try:
                 project = Project.objects.get(
                     id=project_pk,
@@ -76,3 +76,47 @@ class NoteViewSet(viewsets.ModelViewSet):
             serializer.save(project=project)
         else:
             serializer.save()
+
+
+class SnippetViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Snippet CRUD operations
+    - Nested under /api/projects/{id}/snippets/
+    - User isolation via project ownership
+    """
+    serializer_class = SnippetSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        """Returns only the snippet of the logged_in user"""
+        project_pk = self.kwargs.get('project_pk')
+        queryset = Snippet.objects.filter(project__user=self.request.user)
+
+        if project_pk:
+            queryset = queryset.filter(project__id=project_pk)
+        return queryset.select_related('project', 'project__user')
+    
+    def create(self, request, *args, **kwargs):
+        """Handle both nested and flat routes"""
+        data = request.data.copy()
+        
+        # Route nested : inject project_pk
+        project_pk = self.kwargs.get('project_pk')
+        if project_pk:
+            try:
+                Project.objects.get(id=project_pk, user=request.user)
+            except Project.DoesNotExist:
+                raise PermissionDenied('Project not found or access denied.')
+            
+            data['project'] = project_pk
+        
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_201_CREATED, 
+            headers=headers
+        )
