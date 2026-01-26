@@ -131,3 +131,55 @@ class Snippet(models.Model):
 
     def __str__(self):
         return f'{self.title} ({self.language})'
+
+
+class TODO(models.Model):
+    """
+    Represents a task/Todo item linked to a project.
+    Tracks status (pending/in_progress/done) and priority (low/medium/high)
+    """
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('done', 'Done'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
+    title = models.CharField(max_length=255, help_text='Title of the TODO')
+    description = models.TextField(blank=True, default='', help_text='Optional description')
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        help_text='Current status of the TODO'
+    )
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='medium',
+        help_text='Priority level'
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='todos',
+        help_text='Associated project'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'devnote_todos'
+        ordering = ['-created_at']
+        verbose_name = 'TODO'
+        verbose_name_plural = 'TODOs'
+
+    def __str__(self):
+        return f'{self.title} ({self.get_status_display()})'
