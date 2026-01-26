@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Project, Note, Snippet
-from .serializers import ProjectSerializer, NoteSerializer, SnippetSerializer
+from .models import Project, Note, Snippet, TODO
+from .serializers import ProjectSerializer, NoteSerializer, SnippetSerializer, TODOSerializer
 
 
 class IsOwner(permissions.BasePermission):
@@ -96,27 +96,53 @@ class SnippetViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(project__id=project_pk)
         return queryset.select_related('project', 'project__user')
     
-    def create(self, request, *args, **kwargs):
-        """Handle both nested and flat routes"""
-        data = request.data.copy()
-        
-        # Route nested : inject project_pk
+    def perform_create(self, serializer):
+        """Inject project from URL for nested routes"""
         project_pk = self.kwargs.get('project_pk')
+        
+        if project_pk:            
+            try:
+                project = Project.objects.get(
+                    id=project_pk,
+                    user=self.request.user
+                )
+            except Project.DoesNotExist:
+                raise PermissionDenied("Project not found or access denied.")
+            serializer.save(project=project)
+        else:
+            serializer.save()
+
+
+class TODOViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Todo CRUD operations
+    - Nested under /api/projects/{id}/todos/
+    - User isolation via project ownership
+    """
+    serializer_class = TODOSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        """Return only the Todo of the logged user"""
+        project_pk = self.kwargs.get('project_pk')
+        queryset = TODO.objects.filter(project__user=self.request.user)
+
+        if project_pk:
+            queryset = queryset.filter(project__id=project_pk)
+        return queryset.select_related('project', 'project__user')
+    
+    def perform_create(self, serializer):
+        """Inject project from URL for nested routes"""
+        project_pk = self.kwargs.get('project_pk')
+
         if project_pk:
             try:
-                Project.objects.get(id=project_pk, user=request.user)
+                project = Project.objects.get(
+                    id=project_pk,
+                    user=self.request.user
+                )
             except Project.DoesNotExist:
-                raise PermissionDenied('Project not found or access denied.')
-            
-            data['project'] = project_pk
-        
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, 
-            status=status.HTTP_201_CREATED, 
-            headers=headers
-        )
+                raise PermissionDenied('Project not found or access denied')
+            serializer.save(project=project)
+        else:
+            serializer.save()
