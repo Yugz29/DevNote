@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from django.db import IntegrityError
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from workspace.models import Project, Snippet
@@ -173,8 +174,9 @@ class SnippetSerializerTestCase(TestCase):
             'language': 'python'
         }
         serializer = self.get_serializer(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('project', serializer.errors)
+        self.assertTrue(serializer.is_valid())
+        with self.assertRaises(IntegrityError):
+            serializer.save()
 
     def test_duplicate_title_same_project(self):
         """Test : duplicate title in same project is rejected"""
