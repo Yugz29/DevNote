@@ -127,8 +127,20 @@ class TODOViewSet(viewsets.ModelViewSet):
         project_pk = self.kwargs.get('project_pk')
         queryset = TODO.objects.filter(project__user=self.request.user)
 
+        # Filter by project (nested routes)
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
+
+        # Filter by status (query_param)
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+    
+        # Filter by priority (query_param)
+        priority_param = self.request.query_params.get('priority')
+        if priority_param:
+            queryset = queryset.filter(priority=priority_param)
+        
         return queryset.select_related('project', 'project__user')
     
     def perform_create(self, serializer):
