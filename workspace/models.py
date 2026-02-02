@@ -85,7 +85,7 @@ class Note(models.Model):
     content = models.TextField(
         blank=True,
         default="",
-         validators=[MaxLengthValidator(100000)],
+        validators=[MaxLengthValidator(100000)],
         help_text="Content of the note"
     )
 
@@ -114,14 +114,6 @@ class Note(models.Model):
 
     def __str__(self):
         return self.title
-
-    def clean(self):
-        """Ensure the note title is not empty."""
-        super().clean()
-        if self.title:
-            self.title = self.title.strip()
-        if not self.title:
-            raise ValidationError({'title': 'Note title cannot be empty.'})
 
 
 class Snippet(models.Model):
