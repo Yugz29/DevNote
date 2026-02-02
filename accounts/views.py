@@ -6,6 +6,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
+import logging
+
+logger = logging.getLogger('accounts')
 
 
 # ============================================
@@ -38,6 +43,7 @@ class RegisterView(generics.CreateAPIView):
 # ============================================
 # ENDPOINT : Login
 # ============================================
+@method_decorator(ratelimit(key='ip', rate='5/m', method='POST'), name='post')
 class LoginView(APIView):
     """
     POST /api/auth/login/
@@ -47,9 +53,14 @@ class LoginView(APIView):
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        
+        if not serializer.is_valid():
+            logger.warning(f"Failed login attempt from IP {request.META.get('REMOTE_ADDR')}: {serializer.errors}")
+            serializer.is_valid(raise_exception=True)
 
         user = serializer.validated_data['user']
+
+        logger.ingo(f"User '{user.username}' logged in successfully")
 
         refresh = RefreshToken.for_user(user)
 

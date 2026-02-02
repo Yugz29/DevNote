@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
@@ -7,6 +8,9 @@ from rest_framework import status
 from django.db.models import Q
 from .models import Project, Note, Snippet, TODO
 from .serializers import ProjectSerializer, NoteSerializer, SnippetSerializer, TODOSerializer
+import logging
+
+logger = logging.getLogger('workspace')
 
 
 class IsOwner(permissions.BasePermission):
@@ -46,7 +50,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Automatically associate the project with the logged-in user"""
-        serializer.save(user=self.request.user)
+        project = serializer.save(user=self.request.user)
+        logger.info(f"Project '{project.title}' (ID: {project.id}) created by user {self.request.user.username}")
+
 
 class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
@@ -65,17 +71,22 @@ class NoteViewSet(viewsets.ModelViewSet):
         """Assign project from URL and verify ownership"""
         project_pk = self.kwargs.get('project_pk')
 
-        if project_pk:            
-            try:
-                project = Project.objects.get(
-                    id=project_pk,
-                    user=self.request.user
-                )
-            except Project.DoesNotExist:
-                raise PermissionDenied("Project not found or access denied.")
-            serializer.save(project=project)
-        else:
-            serializer.save()
+        if not project_pk:
+            logger.error(f'Note Creation attempted without project_pk by user {self.request.user.username}')
+            raise ValidationError({
+                'project': 'Project ID is required in URL'
+            })
+        try:
+            project = Project.objects.get(
+                id=project_pk,
+                user=self.request.user
+            )
+        except Project.DoesNotExist:
+            logger.warning(f'User {self.request.user.username} tried to access non-existent project {project_pk}')
+            raise PermissionDenied("Project not found or access denied.")
+        
+        note = serializer.save(project=project)
+        logger.info(f"Note '{note.title}' (ID: {note.id}) created in project {project.id} by user {self.request.user.username}")
 
 
 class SnippetViewSet(viewsets.ModelViewSet):
