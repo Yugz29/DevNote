@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from uuid6 import uuid7
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxLengthValidator
+
 
 class Project(models.Model):
     """
@@ -23,6 +25,7 @@ class Project(models.Model):
     description = models.TextField(
         blank=True,
         default="",
+        validators=[MaxLengthValidator(5000)],
         help_text="Description of the project"
     )
 
@@ -49,6 +52,16 @@ class Project(models.Model):
         verbose_name_plural = 'Projects'
         ordering = ['-created_at']
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'title'],
+                name='unique_project_per_user'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+        ]
+
     def __str__(self):
         return self.title
 
@@ -72,6 +85,7 @@ class Note(models.Model):
     content = models.TextField(
         blank=True,
         default="",
+         validators=[MaxLengthValidator(100000)],
         help_text="Content of the note"
     )
 
