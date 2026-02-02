@@ -27,3 +27,4 @@ tomli==2.4.0
 typing_extensions==4.15.0
 uuid6==2025.0.1
 drf-nested-routers==0.94.1
+django-ratelimit==4.1.0
