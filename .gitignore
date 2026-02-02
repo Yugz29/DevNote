@@ -40,3 +40,7 @@ htmlcov/
 scripts/devnote-notes-postman-collection.json
 scripts/devnote-auth-projects-postman-collection.json
 scripts/DevNote_Complete.postman_collection.json
+
+# Logs
+logs/
+*.log
