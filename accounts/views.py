@@ -60,7 +60,7 @@ class LoginView(APIView):
 
         user = serializer.validated_data['user']
 
-        logger.ingo(f"User '{user.username}' logged in successfully")
+        logger.info(f"User '{user.username}' logged in successfully")
 
         refresh = RefreshToken.for_user(user)
 
