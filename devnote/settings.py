@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     
     # Local apps
@@ -140,6 +141,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Config to serve frontend
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'frontend'),
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -165,6 +171,12 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
+
+    # Config cookies
+    'AUTH_COOKIE': 'access_token',
+    'AUTH_COOKIE_REFRESH': 'refresh_token',
+    'AUTH_COOKIE_HTTP_ONLY': False, # Dev mode (permute to True in prod)
+    "AUTH_COOKIE_SAMESITE": 'Lax',
 }
 
 # CORS Settings
