@@ -1,7 +1,6 @@
-from django.forms import ValidationError
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -13,36 +12,9 @@ import logging
 logger = logging.getLogger('workspace')
 
 
-class IsOwner(permissions.BasePermission):
-    """
-    Custom permission: verifies that the logged-in user
-    is the owner of the object.
-
-    Supported models:
-    - Project: checks obj.user
-    - Note, Snippet, Todo: checks obj.project.user
-    """
-
-    def has_object_permission(self, request, view, obj):
-        """Check if the logged-in user is the owner of the object."""
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        # Case 1: Direct ownerchip (Project)
-        if hasattr(obj, 'user'):
-            return obj.user == request.user
-        
-        # Case 2: Ownership via project (Note, Snippet, Todo)
-        if hasattr(obj, 'project'):
-            return obj.project.user == request.user
-        
-        # Case 3: Unknown object type
-        return False
-
-
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Returns only the projects of the logged-in user"""
@@ -56,7 +28,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 class NoteViewSet(viewsets.ModelViewSet):
     serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Returns only the notes of the logged-in user"""
@@ -65,28 +37,22 @@ class NoteViewSet(viewsets.ModelViewSet):
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
-        return queryset.select_related('project', 'project__user')
+        
+        return queryset.select_related('project')
     
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
         project_pk = self.kwargs.get('project_pk')
-
-        if not project_pk:
-            logger.error(f'Note Creation attempted without project_pk by user {self.request.user.username}')
-            raise ValidationError({
-                'project': 'Project ID is required in URL'
-            })
+        
         try:
             project = Project.objects.get(
                 id=project_pk,
                 user=self.request.user
             )
         except Project.DoesNotExist:
-            logger.warning(f'User {self.request.user.username} tried to access non-existent project {project_pk}')
             raise PermissionDenied("Project not found or access denied.")
         
-        note = serializer.save(project=project)
-        logger.info(f"Note '{note.title}' (ID: {note.id}) created in project {project.id} by user {self.request.user.username}")
+        serializer.save(project=project)
 
 
 class SnippetViewSet(viewsets.ModelViewSet):
@@ -96,7 +62,7 @@ class SnippetViewSet(viewsets.ModelViewSet):
     - User isolation via project ownership
     """
     serializer_class = SnippetSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Returns only the snippet of the logged_in user"""
@@ -105,24 +71,23 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
-        return queryset.select_related('project', 'project__user')
+        return queryset.select_related('project')
     
     def perform_create(self, serializer):
-        """Inject project from URL for nested routes"""
+        """Inject project from URL and verify ownership"""
         project_pk = self.kwargs.get('project_pk')
-        
-        if project_pk:            
-            try:
-                project = Project.objects.get(
-                    id=project_pk,
-                    user=self.request.user
-                )
-            except Project.DoesNotExist:
-                raise PermissionDenied("Project not found or access denied.")
-            serializer.save(project=project)
-        else:
-            serializer.save()
 
+        try:
+            project = Project.objects.get(
+                id=project_pk,
+                user=self.request.user
+            )
+        except Project.DoesNotExist:
+            logger.warning(f'User {self.request.user.username} tried to access non-existent project {project_pk}')
+            raise PermissionDenied("Project not found or access denied.")
+
+        snippet = serializer.save(project=project)
+        logger.info(f"Snippet '{snippet.title}' (ID: {snippet.id}) created in project {project.id} by user {self.request.user.username}")
 
 class TODOViewSet(viewsets.ModelViewSet):
     """
@@ -131,7 +96,7 @@ class TODOViewSet(viewsets.ModelViewSet):
     - User isolation via project ownership
     """
     serializer_class = TODOSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Return only the Todo of the logged user"""
@@ -152,23 +117,25 @@ class TODOViewSet(viewsets.ModelViewSet):
         if priority_param:
             queryset = queryset.filter(priority=priority_param)
         
-        return queryset.select_related('project', 'project__user')
+        return queryset.select_related('project')
     
     def perform_create(self, serializer):
         """Inject project from URL for nested routes"""
         project_pk = self.kwargs.get('project_pk')
 
-        if project_pk:
-            try:
-                project = Project.objects.get(
-                    id=project_pk,
-                    user=self.request.user
-                )
-            except Project.DoesNotExist:
-                raise PermissionDenied('Project not found or access denied')
-            serializer.save(project=project)
-        else:
-            serializer.save()
+        try:
+            project = Project.objects.get(
+                id=project_pk,
+                user=self.request.user
+            )
+        except Project.DoesNotExist:
+            logger.warning(f'User {self.request.user.username} tried to access non-existent project {project_pk}')
+            raise PermissionDenied("Project not found or access denied.")
+
+        todo = serializer.save(project=project)
+        logger.info(f"TODO '{todo.title}' (ID: {todo.id}) created in project {project.id} by user {self.request.user.username}")
+
+
 
 class SearchView(APIView):
     """
@@ -204,21 +171,21 @@ class SearchView(APIView):
         if not search_type or search_type =='notes':
             notes = Note.objects.filter(project__user=user).filter(
                 Q(title__icontains=query) | Q(content__icontains=query)
-            )
+            ).select_related('project')
             results['notes'] = NoteSerializer(notes, many=True).data
 
         # Search in Snippets
         if not search_type or search_type == 'snippets':
             snippets = Snippet.objects.filter(project__user=user).filter(
                 Q(title__icontains=query) | Q(content__icontains=query)
-            )
+            ).select_related('project')
             results['snippets'] = SnippetSerializer(snippets, many=True).data
 
         # Search in TODOs
         if not search_type or search_type == 'todos':
             todos = TODO.objects.filter(project__user=user).filter(
                 Q(title__icontains=query) | Q(description__icontains=query)
-            )
+            ).select_related('project')
             results['todos'] = TODOSerializer(todos, many=True).data
 
         return Response(results, status=status.HTTP_200_OK)
