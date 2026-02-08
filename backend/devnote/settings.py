@@ -141,11 +141,6 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-# Config to serve frontend
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'frontend'),
-]
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -154,7 +149,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'accounts.authentication.CookieJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -175,8 +170,10 @@ SIMPLE_JWT = {
     # Config cookies
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',
-    'AUTH_COOKIE_HTTP_ONLY': False, # Dev mode (permute to True in prod)
+    'AUTH_COOKIE_SECURE': not DEBUG,
+    'AUTH_COOKIE_HTTP_ONLY': True,
     "AUTH_COOKIE_SAMESITE": 'Lax',
+    "AUTH_COOKIE_PATH": '/',
 }
 
 # CORS Settings
@@ -186,6 +183,18 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # ============================================
 # CUSTOM USER MODEL
