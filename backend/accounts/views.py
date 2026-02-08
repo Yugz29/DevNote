@@ -7,8 +7,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import authenticate
 from .models import User
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from .cookie_utils import set_auth_cookies, delete_auth_cookies, get_token_from_cookie
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
+from django.conf import settings
 import logging
 
 logger = logging.getLogger('accounts')
@@ -40,23 +42,7 @@ class RegisterView(generics.CreateAPIView):
             'message': 'Registration successful'
         }, status=status.HTTP_201_CREATED)
 
-        response.set_cookie(
-            key='access_token',
-            value=access_token,
-            httponly=True,
-            secure=False, # permute to True in production (HTTPS)
-            samesite='Lax',
-            max_age=3600, # 1h like ACCESS_TOKEN_LIFETIME
-        )
-
-        response.set_cookie(
-            key='refresh_token',
-            value=refresh_token,
-            httponly=True,
-            secure=False, # permute to True in production (?)
-            samesite='Lax',
-            max_age=604800 # 7 days like REFRESH_TOKEN_LIFETIME
-        )
+        set_auth_cookies(response, access_token, refresh_token)
 
         return response
 
@@ -91,23 +77,7 @@ class LoginView(APIView):
             'message': 'Logging successful'
         }, status=status.HTTP_200_OK)
 
-        response.set_cookie(
-            key='access_token',
-            value=access_token,
-            httponly=True,
-            secure=False,
-            samesite='Lax',
-            max_age=3600,
-        )
-
-        response.set_cookie(
-            key='refresh_token',
-            value=refresh_token,
-            httponly=True,
-            secure=False,
-            samesite='Lax',
-            max_age=604800,
-        )
+        set_auth_cookies(response, access_token, refresh_token)
 
         return response
     
@@ -152,8 +122,7 @@ class LogoutView(APIView):
                 status=status.HTTP_200_OK
             )
 
-            response.delete_cookie('access_token')
-            response.delete_cookie('refresh_token')
+            delete_auth_cookies(response)
 
             return response
             
@@ -213,23 +182,7 @@ class RefreshView(APIView):
                 status=status.HTTP_200_OK
             )
 
-            response.set_cookie(
-                key='access_token',
-                value=new_access_token,
-                httponly=True,
-                secure=False,
-                samesite='Lax',
-                max_age=3600
-            )
-
-            response.set_cookie(
-                key='refresh_token',
-                value=new_refresh_token,
-                httponly=True,
-                secure=False,
-                samesite='Lax',
-                max_age=604800
-            )
+            set_auth_cookies(response, new_access_token, new_refresh_token)
 
             return response
         
