@@ -10,7 +10,7 @@ router.register(r'notes', NoteViewSet, basename='note')
 router.register(r'snippets', SnippetViewSet, basename='snippet')
 router.register(r'todos', TODOViewSet, basename='todo')
 
-# Router for nested notes
+# Router for nested routes
 projects_router = nested_routers.NestedDefaultRouter(
     router,
     r'projects',

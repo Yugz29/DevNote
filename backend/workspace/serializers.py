@@ -45,11 +45,6 @@ class ProjectSerializer(serializers.ModelSerializer):
 class NoteSerializer(serializers.ModelSerializer):
     """Serializer for Note model"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
-    project = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(),
-        write_only=True,
-        required=False # Optionnal (as provided by nested route or body)
-    )
 
     class Meta:
         model = Note
@@ -57,7 +52,6 @@ class NoteSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'content',
-            'project',
             'project_id',
             'created_at',
             'updated_at',
@@ -69,25 +63,11 @@ class NoteSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Note title cannot be empty.")
         return value
-        
-    def validate_project(self, value):
-        """Ensure the note's project belongs to the user"""
-        user = self.context['request'].user
-        if value.user != user:
-            raise serializers.ValidationError(
-                "You do not have permission for this project."
-            )
-        return value
 
 
 class SnippetSerializer(serializers.ModelSerializer):
     """Serializer for Snippet model"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
-    project = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(),
-        write_only=True,
-        required=False
-    )
 
     class Meta:
         model = Snippet
@@ -97,7 +77,6 @@ class SnippetSerializer(serializers.ModelSerializer):
             'content',
             'language',
             'description',
-            'project',
             'project_id',
             'created_at',
             'updated_at',
@@ -124,40 +103,11 @@ class SnippetSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             return 'text'
         return value.strip().lower()
-    
-    def validate(self, data):
-        """
-        Validate snippet uniqueness within project
-        - Title must be unique per project (case-insensitive)
-        """
-        title = data.get('title')
-        project = data.get('project')
-        
-        if title and project:
-            queryset = Snippet.objects.filter(
-                project=project,
-                title__iexact=title
-            )
-            
-            if self.instance:
-                queryset = queryset.exclude(pk=self.instance.pk)
-            
-            if queryset.exists():
-                raise serializers.ValidationError({
-                    'title': 'A snippet with this title already exists in this project.'
-                })
-        
-        return data
 
 
 class TODOSerializer(serializers.ModelSerializer):
     """Serializer for Todo objects"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
-    project = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(),
-        write_only=True,
-        required=False
-    )
 
     class Meta:
         model = TODO
@@ -167,12 +117,11 @@ class TODOSerializer(serializers.ModelSerializer):
             'description',
             'status',
             'priority',
-            'project',
             'project_id',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'project_id', 'created_at', 'update_at']
+        read_only_fields = ['id', 'project_id', 'created_at', 'updated_at']
 
     def validate_title(self, value):
         """Title cannot be empty or whitespace only"""

@@ -111,6 +111,9 @@ class Note(models.Model):
         verbose_name = 'Note'
         verbose_name_plural = 'Notes'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['project', '-created_at']),
+        ]
 
     def __str__(self):
         return self.title
@@ -118,22 +121,26 @@ class Note(models.Model):
 
 class Snippet(models.Model):
     """Snippet model represents a snippet linked to a project"""
-    id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
-    title = models.CharField(max_length=255)
-    content = models.TextField()
-    language = models.CharField(max_length=50, default='text')
-    description = models.TextField(blank=True, default='')
+    id = models.UUIDField(primary_key=True, default=uuid7, editable=False, help_text="Unique identifier")
+    title = models.CharField(max_length=255, help_text="Title of the snippet")
+    content = models.TextField(help_text="Content of the snippet")
+    language = models.CharField(max_length=50, default='text', help_text="Language of the snippet")
+    description = models.TextField(blank=True, default='', help_text="Description of the snippet")
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
-        related_name='snippets'
+        related_name='snippets',
+        help_text="Snippet associated to project"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, help_text="Date creation of snippet")
+    updated_at = models.DateTimeField(auto_now=True, help_text="Date of last modification")
 
     class Meta:
         db_table = 'devnote_snippets'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['project', '-created_at']),
+        ]
 
     def __str__(self):
         return f'{self.title} ({self.language})'
@@ -186,6 +193,9 @@ class TODO(models.Model):
         ordering = ['-created_at']
         verbose_name = 'TODO'
         verbose_name_plural = 'TODOs'
+        indexes = [
+            models.Index(fields=['project', '-created_at']),
+        ]
 
     def __str__(self):
         return f'{self.title} ({self.get_status_display()})'
