@@ -136,7 +136,6 @@ class TODOViewSet(viewsets.ModelViewSet):
         logger.info(f"TODO '{todo.title}' (ID: {todo.id}) created in project {project.id} by user {self.request.user.username}")
 
 
-
 class SearchView(APIView):
     """
     Global search across Notes, Snippets and TODOs
@@ -189,4 +188,3 @@ class SearchView(APIView):
             results['todos'] = TODOSerializer(todos, many=True).data
 
         return Response(results, status=status.HTTP_200_OK)
-    
