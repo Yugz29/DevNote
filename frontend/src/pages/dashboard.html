@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevNote - Dashboard</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/dashboard.css">
+</head>
+<body>
+    <!-- LAYOUT: Sidebar + Main -->
+     <div class="layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Projects</h2>
+                <button id="newProjectBtn" class="btn-icon">+</button>
+            </div>
+
+            <div id="projects-list">
+                <p class="loading">Loading projects...</p>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <div id="welcome-screen" class="welcome-screen">
+                <h1>Welcome, <span id="user-name">...</span></h1>
+                <p>Select or create a project to get started</p>
+            </div>
+
+            <!-- AREA displayed project selected -->
+            <div id="project-view" style="display: none;">
+                <header class="project-header">
+                    <h1 id="project-title">Project Name</h1>
+                </header>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="notes">Notes</button>
+                    <button class="tab" data-tab="snippets">Code Snippets</button>
+                    <button class="tab" data-tab="todos">TODOs</button>
+                </div>
+
+                    <div class="tab-content">
+                        <div id="tab-notes" class="tab-pane active">
+                            <div class="panel-header">
+                                <button class="btn-primary" id="add-note-btn">+ New Note</button>
+                            </div>
+                            <div id="notes-list" class="notes-list">
+                                <!-- Dynamic notes inserted here -->
+                            </div>
+                        </div>
+                        
+                        <div id="tab-snippets" class="tab-pane">
+                            <div class="panel-header">
+                                <button class="btn-primary" id="add-snippet-btn">+ New Snippet</button>
+                            </div>
+                            <div id="snippets-list" class="snippets-list">
+                                <!-- Dynamic snippets inseted here -->
+                            </div>
+                        </div>
+                        
+                        <div id="tab-todos" class="tab-pane">
+                            <div class="panel-header">
+                                <button class="btn-primary" id="add-todo-btn">+ New TODO</button>
+                            </div>
+                            <div id="todos-list" class="todos-list">
+                                <!-- Dynamic todos inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+     </div>
+
+    <!-- NEW PROJECT MODAL -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Project</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+
+            <form id="project-form">
+                <div class="form-group">
+                    <label for="projectTitle">Title</label>
+                    <input
+                        type="text"
+                        id="projectTitle"
+                        name="title"
+                        placeholder="Title project"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="projectDescription">Description</label>
+                    <textarea
+                        id="projectDescription"
+                        name="description"
+                        rows="4"
+                        placeholder="Optional description..."
+                    ></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" data-action="cancel">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTE MODAL -->
+     <div id="note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="note-modal-title">Create Note</h2>
+                <button class="modal-close" id="note-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="note-form">
+                    <input type="hidden" name="id">
+
+                    <div class="form-group">
+                        <label for="note-title">Title *</label>
+                        <input
+                            type="text"
+                            id="note-title"
+                            name="title"
+                            required
+                            placeholder="My note"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="note-content">Content *</label>
+                        <textarea
+                            id="note-content"
+                            name="content"
+                            rows="12"
+                            required
+                            placeholder="Write your note here..."
+                        ></textarea>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" data-action="cancel">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SNIPPET MODAL -->
+    <div id="snippet-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Snippet</h2>
+                <button class="modal-close" id="snippet-modal-close">&times;</button>
+            </div>
+
+            <form id="snippet-form">
+                <input type="hidden" name="id">
+
+                <div class="form-group">
+                    <label for="snippet-title">Title *</label>
+                    <input
+                        type="text"
+                        id="snippet-title"
+                        name="title"
+                        placeholder="My Snippet"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="snippet-language">Language *</label>
+                    <select id="snippet-language" name="language" required>
+                        <option value="">Select a language</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="csharp">C#</option>
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="go">Go</option>
+                        <option value="rust">Rust</option>
+                        <option value="sql">SQL</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="bash">Bash</option>
+                        <option value="text">Plain Text</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="snippet-content">Code *</label>
+                    <textarea
+                        id="snippet-content"
+                        name="content"
+                        rows="10"
+                        placeholder="Paste your code here..."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" data-action="cancel">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TODO MODAL -->
+    <div id="todo-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="todo-modal-title">New TODO</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="todo-form">
+                    <input type="hidden" name="id">
+
+                    <div class="form-group">
+                        <label for="todo-title">Title *</label>
+                        <input
+                            type="text"
+                            id="todo-title"
+                            name="title"
+                            required
+                            placeholder="My TODO"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="todo-description">Description</label>
+                        <textarea
+                            id="todo-description"
+                            name="description"
+                            rows="4"
+                            placeholder="Optional description..."
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="todo-priority">Priority</label>
+                        <select id="todo-priority" name="priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" data-action="cancel">Cancel</button>
+                        <button type="submit" class="btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./dashboard.js"></script>
+</body>
+</html>
