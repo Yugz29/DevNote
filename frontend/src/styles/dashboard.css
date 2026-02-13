@@ -1,0 +1,487 @@
+/* ==========================================
+   LAYOUT PRINCIPAL
+   ========================================== */
+
+.layout {
+  display :flex;
+  height: 100vh;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+/* ==========================================
+   SIDEBAR
+   ========================================== */
+
+.sidebar {
+  width: 280px;
+  background-color: #252525;
+  border-right: 1px solid #3a3a3a;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.btn-icon {
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height:32px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background: #0051d5;
+}
+
+#projects-list {
+  flex: 1;                /* Prend tout l'espace restant dans la sidebar */
+  overflow-y: auto;       /* Scroll vertical si trop de projets */
+  padding: 10px;          /* Espacement intérieur */
+}
+
+.loading {
+  text-align: center;     /* Centre le texte "Loading projects..." */
+  color: #888;            /* Gris moyen */
+  padding: 20px;          /* Espacement */
+  font-size: 14px;        /* Petite taille */
+}
+
+
+.project-item {
+  padding: 12px 16px;             /* Espacement intérieur */
+  margin-bottom: 4px;             /* Petit espace entre les projets */
+  background: #2a2a2a;            /* Fond gris un peu plus clair */
+  border-radius: 6px;             /* Coins arrondis */
+  cursor: pointer;                /* Main au survol */
+  transition: background 0.2s;    /* Animation douce du changement de couleur */
+}
+
+.project-item:hover {
+  background: #333333;            /* Gris plus clair au survol */
+}
+
+.project-item.active {
+  background: #007aff;            /* Bleu quand le projet est sélectionné */
+  color: white;                   /* Texte blanc */
+}
+
+.project-item h3 {
+  margin: 0 0 4px 0;              /* Petit espace en bas du titre */
+  font-size: 14px;                /* Taille du nom du projet */
+  font-weight: 500;               /* Gras moyen */
+}
+
+.project-item p {
+  margin: 0;                      /* Pas de marge */
+  font-size: 12px;                /* Petite taille pour la description */
+  color: #999;                    /* Gris clair */
+}
+
+.project-item.active p {
+  color: rgba(255, 255, 255, 0.8); /* Blanc semi-transparent quand actif */
+}
+
+/* ==========================================
+   MAIN CONTENT
+   ========================================== */
+
+.main-content {
+  flex: 1;                    /* Prend tout l'espace restant (après la sidebar) */
+  display: flex;              /* Pour organiser son contenu */
+  flex-direction: column;     /* Empiler les éléments verticalement */
+  overflow: hidden;           /* Cache ce qui dépasse */
+}
+
+.welcome-screen {
+  display: flex;                  /* Pour centrer le contenu */
+  flex-direction: column;         /* Empiler h1 et p */
+  align-items: center;            /* Centre horizontalement */
+  justify-content: center;        /* Centre verticalement */
+  height: 100%;                   /* Prend toute la hauteur */
+  text-align: center;             /* Centre le texte */
+}
+
+.welcome-screen h1 {
+  margin: 0 0 10px 0;             /* Petit espace en bas */
+  font-size: 32px;                /* Grand titre */
+  font-weight: 600;               /* Gras moyen */
+}
+
+.welcome-screen p {
+  color: #888;                    /* Gris moyen */
+  font-size: 16px;                /* Taille normale */
+}
+
+#user-name {
+  color: #007aff;                 /* Bleu pour le nom de l'utilisateur */
+}
+
+#project-view {
+  display: flex;              /* Organisation en colonne */
+  flex-direction: column;     /* Header → Tabs → Contenu */
+  height: 100%;               /* Prend toute la hauteur */
+}
+
+.project-header {
+  padding: 24px 32px;                 /* Espacement intérieur */
+  border-bottom: 1px solid #3a3a3a;   /* Ligne de séparation */
+}
+
+.project-header h1 {
+  margin: 0;                  /* Pas de marge */
+  font-size: 24px;            /* Titre du projet */
+  font-weight: 600;           /* Gras moyen */
+}
+
+.tabs {
+  display: flex;                      /* Met les boutons côte à côte */
+  gap: 4px;                           /* Petit espace entre les tabs */
+  padding: 0 32px;                    /* Espacement gauche/droite */
+  background: #252525;                /* Fond gris foncé */
+  border-bottom: 1px solid #3a3a3a;   /* Ligne de séparation */
+}
+
+.tab {
+  background: none;                   /* Pas de fond par défaut */
+  border: none;                       /* Pas de bordure */
+  color: #888;                        /* Gris moyen */
+  padding: 12px 20px;                 /* Espacement intérieur */
+  font-size: 14px;                    /* Taille du texte */
+  cursor: pointer;                    /* Main au survol */
+  border-bottom: 2px solid transparent; /* Bordure invisible par défaut */
+  transition: all 0.2s;               /* Animation douce */
+}
+
+.tab:hover {
+  color: #e0e0e0;                     /* Gris clair au survol */
+}
+
+.tab.active {
+  color: #007aff;                     /* Bleu quand actif */
+  border-bottom-color: #007aff;       /* Barre bleue en bas */
+}
+.tab-content {
+  flex: 1;                /* Prend tout l'espace restant */
+  overflow-y: auto;       /* Scroll si contenu trop long */
+  padding: 24px 32px;     /* Espacement intérieur */
+}
+
+.tab-pane {
+  display: none;          /* Caché par défaut */
+}
+
+.tab-pane.active {
+  display: block;         /* Visible quand actif */
+}
+.modal {
+  display: none;                      /* Caché par défaut */
+  position: fixed;                    /* Fixé sur l'écran */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);     /* Fond noir semi-transparent (effet blur) */
+  align-items: center;                /* Centre verticalement */
+  justify-content: center;            /* Centre horizontalement */
+  z-index: 1000;                      /* Au-dessus de tout */
+}
+
+.modal.active {
+  display: flex;                      /* Visible quand on ajoute la classe "show" */
+}
+
+.modal-content {
+  background: #2a2a2a;                /* Fond gris foncé */
+  border-radius: 12px;                /* Coins arrondis */
+  width: 90%;                         /* 90% de la largeur sur mobile */
+  max-width: 500px;                   /* Max 500px sur grand écran */
+  padding: 24px;                      /* Espacement intérieur */
+  animation: modalSlideIn 0.3 ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content form {
+  padding: 24px;
+}
+
+.modal-header {
+  display: flex;                      /* Titre à gauche, × à droite */
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #ffffff;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #e0e0e0;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #007aff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0051d5;
+}
+
+.btn-secondary {
+  background: #3a3a3a;
+  color: #e0e0e0;
+}
+
+.btn-secondary:hover {
+  background: #4a4a4a;
+}
+
+/* ==========================================
+   SELECT DROPDOWN
+   ========================================== */
+select {
+  width: 100%;
+  padding: 10px;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+select option {
+  background: #1e1e1e;
+  color: #e0e0e0;
+}
+
+/* ========================================
+   PANEL HEADER (Notes/Snippets/TODOs)
+   ======================================== */
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.panel-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ========================================
+   NOTES LIST (Grid de cartes)
+   ======================================== */
+
+.notes-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.note-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.note-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.note-card h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.note-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    /* Limiter à 3 lignes */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.note-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.note-date {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.note-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.note-actions button {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: color 0.2s;
+}
+
+.note-actions button:hover {
+    color: var(--primary-color);
+}
+
+.note-actions .delete-btn:hover {
+    color: var(--danger-color);
+}
+
+/* ========================================
+   SNIPPETS LIST (même style que notes)
+   ======================================== */
+
+.snippets-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+/* Item actions (Edit/Delete buttons) */
+.item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: flex-end;
+}
+
+/* ========================================
+   TODOS LIST
+   ======================================== */
+
+.todos-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.language-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  background: var(--bg-tertiary, #21262d);
+  border-radius: 4px;
+  color: var(--text-secondary, #8b949e);
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
