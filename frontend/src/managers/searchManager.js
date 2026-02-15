@@ -1,5 +1,14 @@
 import { search } from '../services/searchService.js';
 
+function escape(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 const ICONS = {
     notes: '📝',
     snippets: '💻',
@@ -76,7 +85,7 @@ export default class SearchManager {
         const total = (data.notes?.length || 0) + (data.snippets.length) || 0 + (data.todos?.length || 0);
 
         if (total === 0) {
-            this.resultsContainer.innerHTML = `<p class="search-empty">No results for "<strong>${query}</strong>"</p>`;
+            this.resultsContainer.innerHTML = `<p class="search-empty">No results for "<strong>${escape(query)}</strong>"</p>`;
             return;
         }
 
@@ -95,12 +104,12 @@ export default class SearchManager {
             html += `<div class="search-section-title">${label}</div>`;
 
             html += items.map(item => `
-                <div class="search-result-item" data-type="${key}" data-id="${item.id}" data-project="${item.project_id}">
+                <div class="search-result-item" data-type="${key}" data-id="${escape(item.id)}" data-project="${escape(item.project_id)}">
                     <span class="search-result-icon">${ICONS[key]}</span>
                     <div class="search-result-body">
-                        <div class="search-result-title">${item.title}</div>
-                        ${item.content ? `<div class="search-result-meta">${item.content.substring(0, 60)}...</div>` : ''}
-                        ${item.description ? `<div class="search-result-meta">${item.description.substring(0, 60)}</div>` : ''}
+                        <div class="search-result-title">${escape(item.title)}</div>
+                        ${item.content ? `<div class="search-result-meta">${escape(item.content.substring(0, 60))}...</div>` : ''}
+                        ${item.description ? `<div class="search-result-meta">${escape(item.description.substring(0, 60))}</div>` : ''}
                     </div>
                 </div>
             `).join('');
