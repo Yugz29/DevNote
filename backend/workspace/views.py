@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -176,14 +176,20 @@ class SearchView(APIView):
         # Search in Snippets
         if not search_type or search_type == 'snippets':
             snippets = Snippet.objects.filter(project__user=user).filter(
-                Q(title__icontains=query) | Q(content__icontains=query)
+                Q(title__icontains=query) |
+                Q(content__icontains=query) |
+                Q(language__icontains=query) |
+                Q(description__icontains=query)
             ).select_related('project')
             results['snippets'] = SnippetSerializer(snippets, many=True).data
 
         # Search in TODOs
         if not search_type or search_type == 'todos':
             todos = TODO.objects.filter(project__user=user).filter(
-                Q(title__icontains=query) | Q(description__icontains=query)
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(status__icontains=query) |
+                Q(priority__icontains=query)
             ).select_related('project')
             results['todos'] = TODOSerializer(todos, many=True).data
 
