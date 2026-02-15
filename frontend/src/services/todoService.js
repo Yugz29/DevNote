@@ -22,12 +22,13 @@ export const getTodo = async (todoId) => {
 };
 
 export const updateTodo = async (todoId, title, description, status, priority) => {
-    const response = await api.patch(`/todos/${todoId}/`, {
-        title,
-        description,
-        status,
-        priority
-    });
+    const payload = {};
+    if (title !== undefined) payload.title = title;
+    if (description !== undefined) payload.description = description;
+    if (status !== undefined) payload.status = status;
+    if (priority !== undefined) payload.priority = priority;
+
+    const response = await api.patch(`/todos/${todoId}/`, payload);
     return response.data;
 };
 

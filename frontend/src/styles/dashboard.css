@@ -1,487 +1,998 @@
-/* ==========================================
-   LAYOUT PRINCIPAL
-   ========================================== */
+/* ============================================================
+   DASHBOARD — Main stylesheet
+   Sections:
+   1. Layout
+   2. Sidebar
+   3. Main Content & Project View
+   4. Tabs
+   5. Panel Header
+   6. Notes (document style)
+   7. Snippets
+   8. Todos
+   9. Badges & Shared Utilities
+   10. Modals
+   11. Search Spotlight
+   12. Buttons
+   ============================================================ */
+
+
+/* ============================================================
+   1. LAYOUT
+   ============================================================ */
 
 .layout {
-  display :flex;
-  height: 100vh;
-  background-color: #1e1e1e;
-  color: #e0e0e0;
+    display: flex;
+    height: 100vh;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
 }
 
-/* ==========================================
-   SIDEBAR
-   ========================================== */
+
+/* ============================================================
+   2. SIDEBAR
+   ============================================================ */
 
 .sidebar {
-  width: 280px;
-  background-color: #252525;
-  border-right: 1px solid #3a3a3a;
-  display: flex;
-  flex-direction: column;
+    width: 280px;
+    background-color: #252525;
+    border-right: 1px solid #3a3a3a;
+    display: flex;
+    flex-direction: column;
 }
 
+/* Header */
 .sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #3a3a3a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #3a3a3a;
 }
 
 .sidebar-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
 }
 
-.btn-icon {
-  background: #007aff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  width: 32px;
-  height:32px;
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Search button */
+.sidebar-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid #3a3a3a;
 }
 
-.btn-icon:hover {
-  background: #0051d5;
+.btn-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
 }
 
+.btn-search:hover {
+    border-color: #007aff;
+    color: #e0e0e0;
+}
+
+.search-kbd {
+    margin-left: auto;
+    font-size: 11px;
+    color: #555;
+}
+
+/* Projects list */
 #projects-list {
-  flex: 1;                /* Prend tout l'espace restant dans la sidebar */
-  overflow-y: auto;       /* Scroll vertical si trop de projets */
-  padding: 10px;          /* Espacement intérieur */
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
 }
-
-.loading {
-  text-align: center;     /* Centre le texte "Loading projects..." */
-  color: #888;            /* Gris moyen */
-  padding: 20px;          /* Espacement */
-  font-size: 14px;        /* Petite taille */
-}
-
 
 .project-item {
-  padding: 12px 16px;             /* Espacement intérieur */
-  margin-bottom: 4px;             /* Petit espace entre les projets */
-  background: #2a2a2a;            /* Fond gris un peu plus clair */
-  border-radius: 6px;             /* Coins arrondis */
-  cursor: pointer;                /* Main au survol */
-  transition: background 0.2s;    /* Animation douce du changement de couleur */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    background: #2a2a2a;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 .project-item:hover {
-  background: #333333;            /* Gris plus clair au survol */
+    background: #333333;
 }
 
 .project-item.active {
-  background: #007aff;            /* Bleu quand le projet est sélectionné */
-  color: white;                   /* Texte blanc */
+    background: #007aff;
+    color: white;
 }
 
-.project-item h3 {
-  margin: 0 0 4px 0;              /* Petit espace en bas du titre */
-  font-size: 14px;                /* Taille du nom du projet */
-  font-weight: 500;               /* Gras moyen */
+.project-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
 }
 
-.project-item p {
-  margin: 0;                      /* Pas de marge */
-  font-size: 12px;                /* Petite taille pour la description */
-  color: #999;                    /* Gris clair */
+.btn-delete-project {
+    display: none;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
 }
 
-.project-item.active p {
-  color: rgba(255, 255, 255, 0.8); /* Blanc semi-transparent quand actif */
+.project-item:hover .btn-delete-project {
+    display: block;
 }
 
-/* ==========================================
-   MAIN CONTENT
-   ========================================== */
+.btn-delete-project:hover {
+    color: #f85149;
+}
+
+/* Footer */
+.sidebar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-top: 1px solid #3a3a3a;
+}
+
+.sidebar-user {
+    font-size: 13px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-logout {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-logout:hover {
+    color: #f85149;
+}
+
+
+/* ============================================================
+   3. MAIN CONTENT & PROJECT VIEW
+   ============================================================ */
 
 .main-content {
-  flex: 1;                    /* Prend tout l'espace restant (après la sidebar) */
-  display: flex;              /* Pour organiser son contenu */
-  flex-direction: column;     /* Empiler les éléments verticalement */
-  overflow: hidden;           /* Cache ce qui dépasse */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
+/* Welcome screen */
 .welcome-screen {
-  display: flex;                  /* Pour centrer le contenu */
-  flex-direction: column;         /* Empiler h1 et p */
-  align-items: center;            /* Centre horizontalement */
-  justify-content: center;        /* Centre verticalement */
-  height: 100%;                   /* Prend toute la hauteur */
-  text-align: center;             /* Centre le texte */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
 }
 
 .welcome-screen h1 {
-  margin: 0 0 10px 0;             /* Petit espace en bas */
-  font-size: 32px;                /* Grand titre */
-  font-weight: 600;               /* Gras moyen */
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    font-weight: 600;
 }
 
 .welcome-screen p {
-  color: #888;                    /* Gris moyen */
-  font-size: 16px;                /* Taille normale */
+    color: #888;
+    font-size: 16px;
 }
 
 #user-name {
-  color: #007aff;                 /* Bleu pour le nom de l'utilisateur */
+    color: #007aff;
 }
 
+/* Project view */
 #project-view {
-  display: flex;              /* Organisation en colonne */
-  flex-direction: column;     /* Header → Tabs → Contenu */
-  height: 100%;               /* Prend toute la hauteur */
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 .project-header {
-  padding: 24px 32px;                 /* Espacement intérieur */
-  border-bottom: 1px solid #3a3a3a;   /* Ligne de séparation */
+    padding: 24px 32px;
+    border-bottom: 1px solid #3a3a3a;
 }
 
 .project-header h1 {
-  margin: 0;                  /* Pas de marge */
-  font-size: 24px;            /* Titre du projet */
-  font-weight: 600;           /* Gras moyen */
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
 }
 
+.project-description {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #888;
+}
+
+
+/* ============================================================
+   4. TABS
+   ============================================================ */
+
 .tabs {
-  display: flex;                      /* Met les boutons côte à côte */
-  gap: 4px;                           /* Petit espace entre les tabs */
-  padding: 0 32px;                    /* Espacement gauche/droite */
-  background: #252525;                /* Fond gris foncé */
-  border-bottom: 1px solid #3a3a3a;   /* Ligne de séparation */
+    display: flex;
+    gap: 4px;
+    padding: 0 32px;
+    background: #252525;
+    border-bottom: 1px solid #3a3a3a;
 }
 
 .tab {
-  background: none;                   /* Pas de fond par défaut */
-  border: none;                       /* Pas de bordure */
-  color: #888;                        /* Gris moyen */
-  padding: 12px 20px;                 /* Espacement intérieur */
-  font-size: 14px;                    /* Taille du texte */
-  cursor: pointer;                    /* Main au survol */
-  border-bottom: 2px solid transparent; /* Bordure invisible par défaut */
-  transition: all 0.2s;               /* Animation douce */
+    background: none;
+    border: none;
+    color: #888;
+    padding: 12px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
 }
 
 .tab:hover {
-  color: #e0e0e0;                     /* Gris clair au survol */
+    color: #e0e0e0;
 }
 
 .tab.active {
-  color: #007aff;                     /* Bleu quand actif */
-  border-bottom-color: #007aff;       /* Barre bleue en bas */
+    color: #007aff;
+    border-bottom-color: #007aff;
 }
+
 .tab-content {
-  flex: 1;                /* Prend tout l'espace restant */
-  overflow-y: auto;       /* Scroll si contenu trop long */
-  padding: 24px 32px;     /* Espacement intérieur */
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    min-height: 0;
 }
 
 .tab-pane {
-  display: none;          /* Caché par défaut */
+    display: none;
 }
 
 .tab-pane.active {
-  display: block;         /* Visible quand actif */
+    display: block;
 }
+
+
+/* ============================================================
+   5. PANEL HEADER
+   ============================================================ */
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+
+/* ============================================================
+   6. NOTES — Document style
+   ============================================================ */
+
+.notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.note-block {
+    padding: 24px 0;
+    border-bottom: 1px solid #2a2a2a;
+    background: transparent;
+}
+
+.note-block:first-child {
+    padding-top: 0;
+}
+
+.note-add-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #2a2a2a;
+    color: #444;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.note-add-line:hover {
+    color: #888;
+}
+
+.note-add-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.note-add-text {
+    font-style: italic;
+}
+
+.note-block:last-child {
+    border-bottom: none;
+}
+
+.note-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.note-block-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.note-block-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: none;
+}
+
+.note-block:hover .note-block-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.15s, visibility 0s;
+}
+
+.note-block-meta {
+    margin-bottom: 12px;
+}
+
+.note-block-content {
+    font-size: 14px;
+    color: #aaa;
+    line-height: 1.7;
+}
+
+/* Markdown styles */
+.note-block-content.markdown h1,
+.note-block-content.markdown h2,
+.note-block-content.markdown h3,
+.note-block-content.markdown h4 {
+    color: #e0e0e0;
+    margin: 1em 0 0.4em;
+    line-height: 1.3;
+}
+
+.note-block-content.markdown h1 { font-size: 1.4em; }
+.note-block-content.markdown h2 { font-size: 1.2em; }
+.note-block-content.markdown h3 { font-size: 1.05em; }
+
+.note-block-content.markdown p {
+    margin-bottom: 0.8em;
+}
+
+.note-block-content.markdown strong {
+    color: #e0e0e0;
+    font-weight: 600;
+}
+
+.note-block-content.markdown em {
+    color: #bbb;
+}
+
+.note-block-content.markdown code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    background: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: #58a6ff;
+}
+
+.note-block-content.markdown pre {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    margin: 0.8em 0;
+}
+
+.note-block-content.markdown pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #a0a0a0;
+    font-size: 12px;
+}
+
+.note-block-content.markdown ul,
+.note-block-content.markdown ol {
+    padding-left: 1.4em;
+    margin-bottom: 0.8em;
+}
+
+.note-block-content.markdown li {
+    margin-bottom: 0.2em;
+}
+
+.note-block-content.markdown blockquote {
+    border-left: 3px solid #3a3a3a;
+    margin: 0.8em 0;
+    padding: 4px 12px;
+    color: #777;
+}
+
+.note-block-content.markdown a {
+    color: #007aff;
+    text-decoration: underline;
+}
+
+.note-block-content.markdown hr {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 1em 0;
+}
+
+
+/* ============================================================
+   7. SNIPPETS
+   ============================================================ */
+
+.snippets-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.snippet-card {
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s;
+}
+
+.snippet-card:hover {
+    border-color: #007aff;
+}
+
+.snippet-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.snippet-lang-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.snippet-lang-icon {
+    font-size: 20px;
+}
+
+.snippet-lang-text,
+.snippet-lang-name {
+    font-size: 12px;
+    color: #888;
+    text-transform: capitalize;
+}
+
+.snippet-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.snippet-description {
+    font-size: 12px;
+    color: #888;
+}
+
+.snippet-preview {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #a0a0a0;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+}
+
+.snippet-card-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+/* ============================================================
+   8. TODOS
+   ============================================================ */
+
+.todos-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.todo-card {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s;
+}
+
+.todo-card:hover {
+    border-color: #007aff;
+}
+
+.todo-done {
+    opacity: 0.6;
+}
+
+.todo-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.todo-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #007aff;
+    flex-shrink: 0;
+}
+
+.todo-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e0e0e0;
+}
+
+.todo-title-done {
+    text-decoration: line-through;
+    color: #666;
+}
+
+.todo-description {
+    font-size: 13px;
+    color: #888;
+    padding-left: 26px;
+}
+
+.todo-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 26px;
+}
+
+
+/* ============================================================
+   9. BADGES & SHARED UTILITIES
+   ============================================================ */
+
+/* Badges */
+.badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.badge-low         { background: #2a2a2a; color: #888;    border: 1px solid #444; }
+.badge-medium      { background: #332d00; color: #d29922; border: 1px solid #6a4f00; }
+.badge-high        { background: #3d0000; color: #f85149; border: 1px solid #7a0000; }
+.badge-pending     { background: #1e2a3a; color: #58a6ff; border: 1px solid #1f4a7a; }
+.badge-in-progress { background: #2a1e3a; color: #a78bfa; border: 1px solid #5a3a7a; }
+.badge-done        { background: #1a3a1a; color: #3fb950; border: 1px solid #1a6a1a; }
+
+/* Card action buttons */
+.item-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s, visibility 0s 0.15s;
+}
+
+.snippet-card:hover .item-actions,
+.todo-card:hover .item-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.15s, visibility 0s;
+}
+
+.btn-card-action {
+    background: none;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    color: #888;
+    font-size: 12px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-card-action:hover {
+    border-color: #007aff;
+    color: #007aff;
+}
+
+.btn-card-danger:hover {
+    border-color: #f85149;
+    color: #f85149;
+}
+
+.card-date {
+    font-size: 12px;
+    color: #555;
+    margin-left: auto;
+}
+
+/* Misc */
+.loading {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.empty {
+    text-align: center;
+    color: #555;
+    padding: 40px;
+    font-size: 14px;
+}
+
+
+/* ============================================================
+   10. MODALS
+   ============================================================ */
+
 .modal {
-  display: none;                      /* Caché par défaut */
-  position: fixed;                    /* Fixé sur l'écran */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);     /* Fond noir semi-transparent (effet blur) */
-  align-items: center;                /* Centre verticalement */
-  justify-content: center;            /* Centre horizontalement */
-  z-index: 1000;                      /* Au-dessus de tout */
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
 
 .modal.active {
-  display: flex;                      /* Visible quand on ajoute la classe "show" */
+    display: flex;
 }
 
 .modal-content {
-  background: #2a2a2a;                /* Fond gris foncé */
-  border-radius: 12px;                /* Coins arrondis */
-  width: 90%;                         /* 90% de la largeur sur mobile */
-  max-width: 500px;                   /* Max 500px sur grand écran */
-  padding: 24px;                      /* Espacement intérieur */
-  animation: modalSlideIn 0.3 ease;
+    background: #252525;
+    border: 1px solid #3a3a3a;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+    padding: 0;
+    animation: modalSlideIn 0.3s ease;
 }
 
 @keyframes modalSlideIn {
-  from {
-    transform: translateY(-50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+    from { transform: translateY(-50px); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
 }
 
-.modal-content form {
-  padding: 24px;
+.modal-content form,
+.modal-body form {
+    padding: 24px;
 }
 
 .modal-header {
-  display: flex;                      /* Titre à gauche, × à droite */
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #3a3a3a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #3a3a3a;
 }
 
 .modal-header h2 {
-  margin: 0;
-  font-size: 20px;
+    margin: 0;
+    font-size: 20px;
 }
 
 .modal-close {
-  background: none;
-  border: none;
-  color: #888;
-  font-size: 28px;
-  cursor: pointer;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 28px;
+    cursor: pointer;
 }
 
 .modal-close:hover {
-  color: #ffffff;
+    color: #ffffff;
 }
 
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Form groups */
 .form-group {
-  margin-bottom: 16px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  color: #e0e0e0;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #e0e0e0;
 }
 
 .form-group input,
 .form-group textarea {
-  width: 100%;
-  padding: 10px;
-  background: #1e1e1e;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  color: #e0e0e0;
-  font-size: 14px;
+    width: 100%;
+    padding: 10px;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-  outline: none;
-  border-color: #007aff;
+    outline: none;
+    border-color: #007aff;
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+select {
+    width: 100%;
+    padding: 10px;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: #007aff;
+}
+
+select option {
+    background: #1e1e1e;
+    color: #e0e0e0;
+}
+
+
+/* ============================================================
+   11. SEARCH SPOTLIGHT
+   ============================================================ */
+
+.search-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 2000;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+    backdrop-filter: blur(4px);
+}
+
+.search-overlay.active {
+    display: flex;
+}
+
+.search-modal {
+    width: 90%;
+    max-width: 600px;
+    background: #252525;
+    border: 1px solid #3a3a3a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.search-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: #e0e0e0;
+    font-size: 16px;
+}
+
+.search-input::placeholder {
+    color: #555;
+}
+
+.search-shortcut {
+    font-size: 12px;
+    color: #555;
+    flex-shrink: 0;
+}
+
+.search-results {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.search-hint,
+.search-empty {
+    text-align: center;
+    color: #555;
+    font-size: 13px;
+    padding: 32px;
+}
+
+.search-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 20px 4px;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.search-result-item:hover {
+    background: #2f2f2f;
+}
+
+.search-result-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+.search-result-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-result-title {
+    font-size: 14px;
+    color: #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-meta {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+
+/* ============================================================
+   12. BUTTONS
+   ============================================================ */
+
+.btn-icon {
+    background: #007aff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: #0051d5;
 }
 
 .btn-primary,
 .btn-secondary {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 .btn-primary {
-  background: #007aff;
-  color: white;
+    background: #007aff;
+    color: white;
 }
 
 .btn-primary:hover {
-  background: #0051d5;
+    background: #0051d5;
 }
 
 .btn-secondary {
-  background: #3a3a3a;
-  color: #e0e0e0;
+    background: #3a3a3a;
+    color: #e0e0e0;
 }
 
 .btn-secondary:hover {
-  background: #4a4a4a;
-}
-
-/* ==========================================
-   SELECT DROPDOWN
-   ========================================== */
-select {
-  width: 100%;
-  padding: 10px;
-  background: #1e1e1e;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  color: #e0e0e0;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-select:focus {
-  outline: none;
-  border-color: #007aff;
-}
-
-select option {
-  background: #1e1e1e;
-  color: #e0e0e0;
-}
-
-/* ========================================
-   PANEL HEADER (Notes/Snippets/TODOs)
-   ======================================== */
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.panel-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-/* ========================================
-   NOTES LIST (Grid de cartes)
-   ======================================== */
-
-.notes-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.note-card {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.note-card:hover {
-  border-color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.note-card h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-}
-
-.note-card p {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    line-height: 1.5;
-    /* Limiter à 3 lignes */
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.note-card-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.note-date {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.note-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.note-actions button {
-    background: none;
-    border: none;
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    transition: color 0.2s;
-}
-
-.note-actions button:hover {
-    color: var(--primary-color);
-}
-
-.note-actions .delete-btn:hover {
-    color: var(--danger-color);
-}
-
-/* ========================================
-   SNIPPETS LIST (même style que notes)
-   ======================================== */
-
-.snippets-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-/* Item actions (Edit/Delete buttons) */
-.item-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    justify-content: flex-end;
-}
-
-/* ========================================
-   TODOS LIST
-   ======================================== */
-
-.todos-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.language-badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  background: var(--bg-tertiary, #21262d);
-  border-radius: 4px;
-  color: var(--text-secondary, #8b949e);
-}
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
+    background: #4a4a4a;
 }

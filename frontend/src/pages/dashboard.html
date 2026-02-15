@@ -8,6 +8,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="../styles/main.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
 </head>
 <body>
     <!-- LAYOUT: Sidebar + Main -->
@@ -20,8 +21,21 @@
                 <button id="newProjectBtn" class="btn-icon">+</button>
             </div>
 
+            <div class="sidebar-search">
+                <button id="search-btn" class="btn-search">
+                    <span>🔍</span>
+                    <span>Search</span>
+                    <span class="search-kbd">⌘K</span>
+                </button>
+            </div>
+
             <div id="projects-list">
                 <p class="loading">Loading projects...</p>
+            </div>
+
+            <div class="sidebar-footer">
+                <span id="sidebar-user-name" class="sidebar-user">...</span>
+                <button id="logout-btn" class="btn-logout" title="Logout">↪</button>
             </div>
         </aside>
 
@@ -36,6 +50,7 @@
             <div id="project-view" style="display: none;">
                 <header class="project-header">
                     <h1 id="project-title">Project Name</h1>
+                    <p id="project-description" class="project-description"></p>
                 </header>
 
                 <div class="tabs">
@@ -46,9 +61,6 @@
 
                     <div class="tab-content">
                         <div id="tab-notes" class="tab-pane active">
-                            <div class="panel-header">
-                                <button class="btn-primary" id="add-note-btn">+ New Note</button>
-                            </div>
                             <div id="notes-list" class="notes-list">
                                 <!-- Dynamic notes inserted here -->
                             </div>
@@ -72,7 +84,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
             </div>
         </main>
      </div>
@@ -180,6 +191,16 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="snippet-description">Description</label>
+                    <input
+                        type="text"
+                        id="snippet-description"
+                        name="description"
+                        placeholder="Optional description..."
+                    >
+                </div>
+
+                <div class="form-group">
                     <label for="snippet-language">Language *</label>
                     <select id="snippet-language" name="language" required>
                         <option value="">Select a language</option>
@@ -218,7 +239,7 @@
         </div>
     </div>
 
-    <!-- TODO MODAL -->
+    <!-- TODOS MODAL -->
     <div id="todo-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -251,6 +272,15 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="todo-status">Status</label>
+                        <select id="todo-status" name="status">
+                            <option value="pending">Pending</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="todo-priority">Priority</label>
                         <select id="todo-priority" name="priority">
                             <option value="low">Low</option>
@@ -264,6 +294,26 @@
                         <button type="submit" class="btn-primary">Save</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-overlay" class="search-overlay">
+        <div class="search-modal">
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input
+                    type="text"
+                    id="search-input"
+                    class="search-input"
+                    placeholder="Search notes, snippets, todos..."
+                    autocomplete="off"
+                >
+                <span class="search-shortcut">Esc</span>
+            </div>
+            <div id="search-results" class="search-results">
+                <p class="search-hint">Type to search across all your projects</p>
             </div>
         </div>
     </div>

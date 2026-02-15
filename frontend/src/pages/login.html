@@ -7,18 +7,60 @@
     <link rel="stylesheet" href="/src/styles/reset.css">
     <link rel="stylesheet" href="/src/styles/variables.css">
     <link rel="stylesheet" href="/src/styles/main.css">
+    <link rel="stylesheet" href="/src/styles/auth.css">
 </head>
-<body>
-    <div class="login-container">
-        <h1>Login</h1>
-        <form id="login-form">
-            <input type="email" id="email" placeholder="Email" required>
-            <input type="password" id="password" placeholder="Password" required>
+<body class="auth-page">
 
-            <p id="error-message" class="error"></p>
+    <div class="auth-container">
 
-            <button type="submit">Connexion</button>
-        </form>
+        <!-- Brand -->
+        <div class="auth-brand">
+            <h1 class="auth-title">DevNote</h1>
+            <p class="auth-subtitle">Your dev knowledge, everywhere, instantly</p>
+        </div>
+
+        <!-- Card -->
+        <div class="auth-card">
+            <h2 class="auth-card-title">Sign in</h2>
+
+            <form id="login-form" class="auth-form" novalidate>
+
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="email@example.com"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <p id="error-message" class="auth-error"></p>
+
+                <button type="submit" id="submit-btn" class="btn-auth">
+                    Sign in
+                </button>
+
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <p class="auth-footer">
+            Don't have an account? <a href="/src/pages/register.html">Sign up</a>
+        </p>
+
     </div>
 
     <script type="module" src="/src/pages/login.js"></script>

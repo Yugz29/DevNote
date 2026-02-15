@@ -1,7 +1,8 @@
-import api from '../services/api.js';
+import { login } from '../services/authService.js';
 
 const loginForm = document.getElementById('login-form');
-const errorMessage = document.getElementById('error-message')
+const errorMessage = document.getElementById('error-message');
+const submitBtn = document.getElementById('submit-btn');
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -15,11 +16,19 @@ loginForm.addEventListener('submit', async (e) => {
         return;
     }
 
+    submitBtn.disabled = true;
+    submitBtn.testContent = 'Signing in';
+
     try {
-        const response = await api.post('/auth/login/', { email, password });
+        await login(email, password);
         window.location.href = "/src/pages/dashboard.html";
     } catch (error) {
-        const message = error.response?.data?.detail || 'Login failed';
+        const message = error.response?.data?.non_field_errors?.[0]
+            || error.response?.data?.detail
+            || 'Invalied email or password';
         errorMessage.textContent = message;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign in';
     }
 });
