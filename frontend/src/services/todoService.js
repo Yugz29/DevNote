@@ -8,6 +8,20 @@ export const getTodos = async (projectId, url = null) => {
     return response.data;
 };
 
+export const getAllTodos = async (projectId) => {
+    let url = null;
+    let allResults = [];
+
+    do {
+        const data = await getTodos(projectId, url);
+        const items = data.results ?? data;
+        allResults = [...allResults, ...items];
+        url = data.next ?? null;
+    } while (url);
+
+    return allResults;
+};
+
 export const createTodo = async (projectId, title, description, status, priority) => {
     const response = await api.post(`/projects/${projectId}/todos/`, {
         title,
