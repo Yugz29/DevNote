@@ -135,27 +135,9 @@ export default class TodoManager extends BaseManager {
     }
 
     async appendItems(items) {
+        // appendItems is not used — fetchPage always returns all todos at once
+        // Kept to satisfy BaseManager interface
         this._allTodos = [...this._allTodos, ...items];
-        if (this.currentView === 'kanban') {
-            this.renderKanbanView(this._allTodos);
-        } else {
-            items.forEach(todo => {
-                const section = this.container.querySelector(
-                    `.todo-group[data-status="${todo.status}"] .todo-group-items`
-                );
-                if (section) section.insertAdjacentHTML('beforeend', this.renderTodo(todo));
-            });
-            // Update group counts after append
-            ['pending', 'in_progress', 'done'].forEach(status => {
-                const countEl = this.container.querySelector(
-                    `.todo-group[data-status="${status}"] .todo-group-count`
-                );
-                if (countEl) {
-                    const count = this._allTodos.filter(t => t.status === status).length;
-                    countEl.textContent = count;
-                }
-            });
-        }
     }
 
 
