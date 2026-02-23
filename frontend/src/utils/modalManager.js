@@ -10,7 +10,7 @@ export class ModalManager {
     this.onSubmit = onSubmit;
 
     if (!this.modal || !this.form) {
-      console.error(`Modal ${modalId} ou form ${formId} introuvable`);
+      console.error(`Modal #${modalId} or form #${formId} not found in DOM`);
       return;
     }
 
@@ -18,19 +18,19 @@ export class ModalManager {
   }
 
   init() {
-    // Bouton close (X) - supporte plusieurs classes possibles
+    // Close button (X)
     const closeBtn = this.modal.querySelector('.modal-close, .close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => this.close());
     }
 
-    // Bouton Cancel
+    // Cancel button
     const cancelBtn = this.modal.querySelector('[data-action="cancel"]');
     if (cancelBtn) {
       cancelBtn.addEventListener('click', () => this.close());
     }
 
-    // Clic outside
+    // Click outside
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) {
         this.close();
@@ -64,17 +64,14 @@ export class ModalManager {
     // Reset form first
     this.form.reset();
     
-    // Vider l'editId
     delete this.form.dataset.editId;
 
-    // Si on est en mode édition (un id est fourni)
     if (prefillData.id) {
         this.form.dataset.editId = prefillData.id;
     }
 
-    // Pré-remplir les champs par leur attribut name
+    // Pre-fill fields by name attribute, falling back to id
     for (const [key, value] of Object.entries(prefillData)) {
-        // Chercher d'abord par name, puis par id
         const input = this.form.querySelector(`[name="${key}"]`) ||
                       this.form.querySelector(`#${key}`);
         if (input && value !== undefined) {
