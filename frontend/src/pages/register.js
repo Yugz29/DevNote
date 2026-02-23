@@ -1,4 +1,15 @@
-import { register } from '../services/authService.js';
+import { register, getCurrentUser } from '../services/authService.js';
+
+const checkAuth = async () => {
+    try {
+        await getCurrentUser();
+        window.location.href = '/src/pages/dashboard.html';
+    } catch {
+        // Not authenticated ? Stay on register page
+    }
+};
+
+checkAuth();
 
 const registerForm = document.getElementById('register-form');
 const errorMessage = document.getElementById('error-message');
@@ -26,7 +37,7 @@ registerForm.addEventListener('submit', async (e) => {
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Creationg account...';
+    submitBtn.textContent = 'Creating account...';
 
     try {
         await register(email, password, password2, firstName, lastName, username);

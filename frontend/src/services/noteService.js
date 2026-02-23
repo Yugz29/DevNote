@@ -1,8 +1,10 @@
 import api from './api';
 
 
-export const getNotes = async (projectId) => {
-    const response = await api.get(`/projects/${projectId}/notes/`);
+export const getNotes = async (projectId, url = null) => {
+    const response = url
+        ? await api.get(url)
+        : await api.get(`/projects/${projectId}/notes/`);
     return response.data;
 };
 

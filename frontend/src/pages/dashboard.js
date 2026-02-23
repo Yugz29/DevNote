@@ -1,12 +1,12 @@
 import { ModalManager } from '../utils/modalManager.js';
+import { showAlert, showConfirm } from '../utils/dialog.js';
 import NoteManager from '../managers/noteManager.js';
 import SnippetManager from '../managers/snippetManager.js';
 import TodoManager from '../managers/todoManager.js';
 import SearchManager from '../managers/searchManager.js';
-import { createProject, getProjects, getProject, deleteProject } from '../services/projectService.js';
-import { createNote, updateNote } from '../services/noteService.js';
-import { createSnippet, updateSnippet } from '../services/snippetService.js';
-import { createTodo, updateTodo } from '../services/todoService.js';
+import { createProject, getProjects, getProject, updateProject, deleteProject } from '../services/projectService.js';
+
+
 import { getCurrentUser, logout } from '../services/authService.js';
 
 
@@ -16,12 +16,16 @@ import { getCurrentUser, logout } from '../services/authService.js';
 
 let currentProject = null;
 let currentTab = 'notes';
+let nextProjectsUrl = null;
+let isLoadingProjects = false;
+let allProjects = [];
+let currentSort = localStorage.getItem('devnote_project_sort') || 'created_desc';
 
 // ==========================================
 // MODAL MANAGERS
 // ==========================================
 
-let projectModal, noteModal, snippetModal, todoModal;
+let projectModal, snippetModal, todoModal;
 let noteManager, snippetManager, todoManager, searchManager;
 
 // ==========================================
@@ -30,68 +34,32 @@ let noteManager, snippetManager, todoManager, searchManager;
 
 function initializeModals() {
 
-    // --- PROJECT MODAL ---
+    // --- PROJECT MODAL (create + edit) ---
     projectModal = new ModalManager({
         modalId: 'project-modal',
         formId: 'project-form',
         onSubmit: async (data) => {
-            const project = await createProject(data.title, data.description);
-            await loadProjects();
-            selectProject(project.id);
-        }
-    });
-
-    // --- NOTE MODAL ---
-    noteModal = new ModalManager({
-        modalId: 'note-modal',
-        formId: 'note-form',
-        onSubmit: async (data) => {
-            const editId = document.getElementById('note-form').dataset.editId;
-
+            const editId = document.getElementById('project-form').dataset.editId;
             if (editId) {
-                await updateNote(editId, data.title, data.content);
+                // Edit mode
+                const updated = await updateProject(editId, data.title, data.description ?? currentProject.description);
+                currentProject = updated;
+                document.getElementById('project-title').textContent = updated.title;
+                document.getElementById('project-description').textContent = updated.description || '';
+                const sidebarItem = document.querySelector(`.project-item[data-id="${editId}"] .project-name`);
+                if (sidebarItem) sidebarItem.textContent = updated.title;
             } else {
-                await createNote(currentProject.id, data.title, data.content);
+                // Create mode
+                const project = await createProject(data.title, data.description);
+                await loadProjects();
+                selectProject(project.id);
             }
-            await noteManager.load();
         }
     });
 
-    // --- SNIPPET MODAL ---
-    snippetModal = new ModalManager({
-        modalId: 'snippet-modal',
-        formId: 'snippet-form',
-        onSubmit: async (data) => {
-            const editId = document.getElementById('snippet-form').dataset.editId;
-
-            if (editId) {
-                await updateSnippet(editId, data.title, data.language, data.content, data.description);
-            } else {
-                await createSnippet(currentProject.id, data.title, data.language, data.content, data.description);
-            }
-            await snippetManager.load();
-        }
-    });
-
-    // --- TODO MODAL ---
-    todoModal = new ModalManager({
-        modalId: 'todo-modal',
-        formId: 'todo-form',
-        onSubmit: async (data) => {
-            const editId = document.getElementById('todo-form').dataset.editId;
-
-            if (editId) {
-                await updateTodo(editId, data.title, data.description, data.status, data.priority);
-            } else {
-                await createTodo(currentProject.id, data.title, data.description, data.status, data.priority);
-            }
-            await todoManager.load();
-        }
-    });
-
-    noteManager = new NoteManager(noteModal);
-    snippetManager = new SnippetManager(snippetModal);
-    todoManager = new TodoManager(todoModal);
+    noteManager = new NoteManager();
+    snippetManager = new SnippetManager();
+    todoManager = new TodoManager();
 }
 
 // ==========================================
@@ -117,11 +85,114 @@ async function checkAuth() {
 async function loadProjects() {
     try {
         const data = await getProjects();
-        displayProjects(data.results);
+        nextProjectsUrl = data.next ?? null;
+        allProjects = data.results;
+        displayProjects(sortProjects(allProjects));
     } catch (error) {
         console.log('Error loading projects:', error);
         document.getElementById('projects-list').innerHTML =
         '<p style="padding: 20px; color: #888;">Error loading projects</p>';
+    }
+}
+
+// ==========================================
+// SORT PROJECTS
+// ==========================================
+
+function sortProjects(projects) {
+    const sorted = [...projects];
+    switch (currentSort) {
+        case 'name_asc':
+            return sorted.sort((a, b) => a.title.localeCompare(b.title));
+        case 'name_desc':
+            return sorted.sort((a, b) => b.title.localeCompare(a.title));
+        case 'created_asc':
+            return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        case 'created_desc':
+            return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        case 'updated_desc':
+            return sorted.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+        default:
+            return sorted;
+    }
+}
+
+// ==========================================
+// SETUP PROJECT SORT
+// ==========================================
+
+function setupProjectSort() {
+    const btn = document.getElementById('project-sort-btn');
+    const dropdown = document.getElementById('project-sort-dropdown');
+
+    // Mark active option + icon on init
+    updateSortUI();
+
+    // Toggle dropdown
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => {
+        dropdown.classList.remove('open');
+        document.querySelectorAll('.dn-select-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            if (d._cleanup) { d._cleanup(); d._cleanup = null; }
+        });
+    });
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    // Handle option selection
+    dropdown.querySelectorAll('.sort-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            currentSort = opt.dataset.sort;
+            localStorage.setItem('devnote_project_sort', currentSort);
+            updateSortUI();
+            displayProjects(sortProjects(allProjects));
+            dropdown.classList.remove('open');
+        });
+    });
+}
+
+function updateSortUI() {
+    const btn = document.getElementById('project-sort-btn');
+    const dropdown = document.getElementById('project-sort-dropdown');
+    const isDefault = currentSort === 'created_desc';
+
+    // Highlight button if non-default sort active
+    btn.classList.toggle('sorted', !isDefault);
+
+    // Update icon based on sort type
+    const iconMap = {
+        name_asc: 'ph-sort-ascending',
+        name_desc: 'ph-sort-descending',
+        created_desc: 'ph-sort-ascending',
+        created_asc: 'ph-sort-descending',
+        updated_desc: 'ph-clock-clockwise',
+    };
+    btn.querySelector('i').className = `ph-light ${iconMap[currentSort] || 'ph-sort-ascending'}`;
+
+    // Mark active option
+    dropdown.querySelectorAll('.sort-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.sort === currentSort);
+    });
+}
+
+async function loadMoreProjects() {
+    if (!nextProjectsUrl || isLoadingProjects) return;
+
+    isLoadingProjects = true;
+    try {
+        const data = await getProjects(nextProjectsUrl);
+        nextProjectsUrl = data.next ?? null;
+        allProjects = [...allProjects, ...data.results];
+        appendProjects(data.results);
+    } catch (error) {
+        console.error('Error loading more projects:', error);
+    } finally {
+        isLoadingProjects = false;
     }
 }
 
@@ -133,18 +204,27 @@ function displayProjects(projects) {
     const container = document.getElementById('projects-list');
 
     if (projects.length === 0) {
-        container.innerHTML = '<p>No project</p>';
+        container.innerHTML = `
+            <div class="projects-empty">
+                <i class="ph-light ph-folder-open"></i>
+                <p>No projects yet</p>
+                <span>Create your first project<br>to get started</span>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = projects.map(project => `
         <div class="project-item" data-id="${project.id}">
-            <span class="project-icon">📁</span>
+            <span class="project-icon"><i class="ph-light ph-folder"></i></span>
             <span class="project-name">${project.title}</span>
-            <button class="btn-delete-project" data-id='${project.id}' title="DeleteProject">🗑️</button>
         </div>
         `).join('');
 
+    attachProjectListeners();
+}
+
+function attachProjectListeners() {
     // Add click event to each project
     document.querySelectorAll('.project-item').forEach(item => {
         item.addEventListener('click', () => {
@@ -152,37 +232,26 @@ function displayProjects(projects) {
         });
     });
 
-    // Add click on delete button
-    document.querySelectorAll('.btn-delete-project').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const projectId = btn.dataset.id;
+    
+}
 
-            if (!confirm('Delete this project and all its contents ?')) return;
-
-            try {
-                await deleteProject(projectId);
-
-                if (currentProject?.id === projectId) {
-                    currentProject = null;
-                    document.getElementById('project-view').style.display = 'none';
-                    document.getElementById('welcome-screen').style.display = 'flex';
-                }
-
-                await loadProjects();
-            } catch (error) {
-                console.error('Error deleting project', error);
-                alert('Failed to delete project');
-            }
-        });
-    });
+function appendProjects(projects) {
+    const container = document.getElementById('projects-list');
+    const html = projects.map(project => `
+        <div class="project-item" data-id="${project.id}">
+            <span class="project-icon"><i class="ph-light ph-folder"></i></span>
+            <span class="project-name">${project.title}</span>
+        </div>
+    `).join('');
+    container.insertAdjacentHTML('beforeend', html);
+    attachProjectListeners();
 }
 
 // ==========================================
 // SELECT PROJECT (Show project view)
 // ==========================================
 
-async function selectProject(projectId, tab = null) {
+async function selectProject(projectId, tab = null, searchQuery = null, searchItemId = null) {
     try {
         currentProject = await getProject(projectId);
 
@@ -217,19 +286,142 @@ async function selectProject(projectId, tab = null) {
             });
         }
 
-        loadTabContent(currentTab);
+        loadTabContent(currentTab, searchQuery, searchItemId);
 
     } catch (error) {
         console.error('Error loading project:', error);
-        alert('Failed to load project');
+        await showAlert('Failed to load project');
     }
 }
+
+// ==========================================
+// PROJECT INLINE EDITING
+// ==========================================
+
+function setupSidebarToggle() {
+    const layout = document.querySelector('.layout');
+    const toggleBtn = document.getElementById('sidebar-toggle'); // dans la sidebar
+    const openBtn = document.getElementById('sidebar-open');
+    const overlay = document.getElementById('sidebar-overlay');
+    const isMobile = () => window.innerWidth <= 768;
+
+    // Restore desktop preference
+    if (!isMobile() && localStorage.getItem('devnote_sidebar_hidden') === 'true') {
+        layout.classList.add('sidebar-hidden');
+    }
+
+    // Ferme la sidebar (bouton dans le header)
+    toggleBtn.addEventListener('click', () => {
+        if (isMobile()) {
+            layout.classList.remove('sidebar-visible');
+        } else {
+            layout.classList.add('sidebar-hidden');
+            localStorage.setItem('devnote_sidebar_hidden', 'true');
+        }
+    });
+
+    // Ouvre la sidebar (bouton fixe ou inline)
+    openBtn.addEventListener('click', () => {
+        if (isMobile()) {
+            layout.classList.add('sidebar-visible');
+        } else {
+            layout.classList.remove('sidebar-hidden');
+            localStorage.setItem('devnote_sidebar_hidden', 'false');
+        }
+    });
+
+    // Close on overlay click (mobile)
+    overlay.addEventListener('click', () => {
+        layout.classList.remove('sidebar-visible');
+    });
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+        if (!isMobile()) {
+            layout.classList.remove('sidebar-visible');
+        } else {
+            layout.classList.remove('sidebar-hidden');
+        }
+    });
+}
+
+
+function setupProjectMenu() {
+    const menuBtn = document.getElementById('project-menu-btn');
+    const dropdown = document.getElementById('project-menu-dropdown');
+    const modalHeader = document.querySelector('#project-modal .modal-header h2');
+    const submitBtn = document.getElementById('project-form-submit');
+    const descGroup = document.getElementById('project-description-group');
+
+    // Toggle dropdown
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    // Actions
+    dropdown.querySelectorAll('.project-menu-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            dropdown.classList.remove('open');
+            const action = item.dataset.action;
+
+            if (action === 'rename') {
+                modalHeader.textContent = 'Rename Project';
+                submitBtn.textContent = 'Save';
+                descGroup.style.display = 'none';
+                projectModal.open({ id: currentProject.id, title: currentProject.title });
+            }
+
+            if (action === 'description') {
+                modalHeader.textContent = 'Edit Description';
+                submitBtn.textContent = 'Save';
+                descGroup.style.display = '';
+                // Hide title field for description-only edit
+                projectModal.open({ id: currentProject.id, title: currentProject.title, description: currentProject.description || '' });
+            }
+
+            if (action === 'delete') {
+                const confirmed = await showConfirm('Delete this project and all its contents?');
+                if (!confirmed) return;
+                try {
+                    await deleteProject(currentProject.id);
+                    currentProject = null;
+                    document.getElementById('project-view').style.display = 'none';
+                    document.getElementById('welcome-screen').style.display = 'flex';
+                    await loadProjects();
+                } catch (error) {
+                    console.error('Error deleting project:', error);
+                    await showAlert('Failed to delete project');
+                }
+            }
+        });
+    });
+
+    // Reset modal to "create" state when opened via new project btn
+    document.getElementById('newProjectBtn').addEventListener('click', () => {
+        modalHeader.textContent = 'New Project';
+        submitBtn.textContent = 'Create';
+        descGroup.style.display = '';
+    }, true);
+}
+
 
 // ==========================================
 // TABS MANAGEMENT
 // ==========================================
 
 function setupTabs() {
+    const noteControls = document.querySelector('.note-controls');
+    noteControls.classList.add('visible'); // Notes tab is active by default
+    const snippetControls = document.querySelector('.snippet-controls');
+    const snippetViewToggle = document.getElementById('snippet-view-toggle');
+    const todoControls = document.querySelector('.todo-controls');
+    const todoToggle = document.getElementById('todo-view-toggle');
+
     document.querySelectorAll('.tab').forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
@@ -243,8 +435,97 @@ function setupTabs() {
             document.querySelectorAll('.tab-pane').forEach(tc => tc.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
 
+            // Show/hide controls per tab
+            noteControls.classList.toggle('visible', tab === 'notes');
+            snippetControls.classList.toggle('visible', tab === 'snippets');
+            todoControls.classList.toggle('visible', tab === 'todos');
+
             // Load content for this tab
             loadTabContent(tab);
+        });
+    });
+
+    // Toggle view listeners (list / kanban)
+    todoToggle.querySelectorAll('.btn-view-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            todoToggle.querySelectorAll('.btn-view-toggle').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            todoManager.switchView(btn.dataset.view);
+        });
+    });
+
+    // Helper: setup a content sort dropdown
+    function setupContentSort({ btnId, dropdownId, labelId, defaultSort, onSort }) {
+        const btn = document.getElementById(btnId);
+        const dropdown = document.getElementById(dropdownId);
+        const label = document.getElementById(labelId);
+
+        const updateUI = (sort) => {
+            const active = dropdown.querySelector(`[data-sort="${sort}"]`);
+            label.textContent = active ? active.textContent : '';
+            dropdown.querySelectorAll('.sort-option').forEach(o =>
+                o.classList.toggle('active', o.dataset.sort === sort)
+            );
+            const isDefault = sort === defaultSort;
+            btn.classList.toggle('active', !isDefault);
+        };
+
+        // Init with saved preference
+        updateUI(onSort.get());
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other dropdowns
+            document.querySelectorAll('.content-sort-wrap .project-sort-dropdown.open').forEach(d => {
+                if (d !== dropdown) d.classList.remove('open');
+            });
+            dropdown.classList.toggle('open');
+            const chevron = btn.querySelector('.sort-chevron');
+            if (chevron) chevron.style.transform = dropdown.classList.contains('open') ? 'rotate(180deg)' : '';
+        });
+
+        dropdown.querySelectorAll('.sort-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const sort = opt.dataset.sort;
+                updateUI(sort);
+                dropdown.classList.remove('open');
+                const chevron = btn.querySelector('.sort-chevron');
+                if (chevron) chevron.style.transform = '';
+                onSort.set(sort);
+            });
+        });
+    }
+
+    setupContentSort({
+        btnId: 'note-sort-btn',
+        dropdownId: 'note-sort-dropdown',
+        labelId: 'note-sort-label',
+        defaultSort: 'created',
+        onSort: { get: () => noteManager.getSortPreference(), set: (s) => noteManager.setSort(s) }
+    });
+
+    setupContentSort({
+        btnId: 'snippet-sort-btn',
+        dropdownId: 'snippet-sort-dropdown',
+        labelId: 'snippet-sort-label',
+        defaultSort: 'created',
+        onSort: { get: () => snippetManager.getSortPreference(), set: (s) => snippetManager.setSort(s) }
+    });
+
+    setupContentSort({
+        btnId: 'todo-sort-btn',
+        dropdownId: 'todo-sort-dropdown',
+        labelId: 'todo-sort-label',
+        defaultSort: 'priority',
+        onSort: { get: () => todoManager.getSortPreference(), set: (s) => todoManager.setSort(s) }
+    });
+
+    // Snippet view toggle
+    snippetViewToggle.querySelectorAll('.btn-view-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            snippetViewToggle.querySelectorAll('.btn-view-toggle').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            snippetManager.switchView(btn.dataset.view);
         });
     });
 }
@@ -253,21 +534,32 @@ function setupTabs() {
 // LOAD TAB CONTENT
 // ==========================================
 
-async function loadTabContent(tab) {
+async function loadTabContent(tab, searchQuery = null, searchItemId = null) {
     if (!currentProject) return;
 
     if (tab === 'notes') {
-        await noteManager.load()
+        await noteManager.load();
+        if (searchQuery) noteManager.highlight(searchQuery, searchItemId);
         return;
     }
 
     if (tab === 'snippets') {
-        await snippetManager.load()
+        const savedView = snippetManager.getViewPreference();
+        document.getElementById('snippet-view-toggle').querySelectorAll('.btn-view-toggle').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === savedView);
+        });
+        await snippetManager.load();
+        if (searchQuery) snippetManager.highlight(searchQuery, searchItemId);
         return;
     }
 
     if (tab === 'todos') {
-        await todoManager.load()
+        const savedView = todoManager.getViewPreference();
+        document.getElementById('todo-view-toggle').querySelectorAll('.btn-view-toggle').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === savedView);
+        });
+        await todoManager.load();
+        if (searchQuery) todoManager.highlight(searchQuery, searchItemId);
         return;
     }
 
@@ -305,8 +597,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeModals();
 
     searchManager = new SearchManager({
-        onSelectProject: (projectId, tab) => {
-            selectProject(projectId, tab);
+        onSelectProject: (projectId, tab, query, itemId) => {
+            selectProject(projectId, tab, query, itemId);
         }
     });
 
@@ -315,8 +607,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     await loadProjects();
+    setupProjectSort();
     setupTabs();
     setupModalButtons();
+    setupProjectMenu();
+    setupSidebarToggle();
 
     // Logout
     document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -327,4 +622,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     console.log('Dashboard ready!');
+
+    // Infinite scroll
+    document.getElementById('projects-list').addEventListener('scroll', () => {
+        const el = document.getElementById('projects-list');
+        const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        if (distanceFromBottom < 100) {
+            loadMoreProjects();
+        }
+    });
 });

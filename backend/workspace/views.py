@@ -153,7 +153,7 @@ class SearchView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        VALID_TYPES = ['notes', 'snippets', 'todos']
+        VALID_TYPES = ['projects', 'notes', 'snippets', 'todos']
         if search_type and search_type not in VALID_TYPES:
             return Response(
                 {
@@ -165,6 +165,14 @@ class SearchView(APIView):
 
         user = request.user
         results = {}
+
+        # Search in Projects
+        if not search_type or search_type == 'projects':
+            projects = Project.objects.filter(user=user).filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+            from .serializers import ProjectSerializer as PS
+            results['projects'] = PS(projects, many=True).data
 
         # Search in Notes
         if not search_type or search_type =='notes':

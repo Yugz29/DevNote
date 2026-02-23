@@ -5,28 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevNote - Dashboard</title>
 
+    <!-- Preload fonts to avoid CLS -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net/gh">
+
     <!-- CSS -->
     <link rel="stylesheet" href="../styles/main.css">
     <link rel="stylesheet" href="../styles/dashboard.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css">
 </head>
 <body>
     <!-- LAYOUT: Sidebar + Main -->
      <div class="layout">
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>Projects</h2>
-                <button id="newProjectBtn" class="btn-icon">+</button>
-            </div>
-
-            <div class="sidebar-search">
-                <button id="search-btn" class="btn-search">
-                    <span>🔍</span>
-                    <span>Search</span>
-                    <span class="search-kbd">⌘K</span>
-                </button>
+                <div class="sidebar-header-left">
+                    <button id="sidebar-toggle" class="btn-icon-sm" title="Close sidebar">
+                        <i class="ph-light ph-list"></i>
+                    </button>
+                    <h2>Projects</h2>
+                </div>
+                <div class="sidebar-header-right">
+                    <button id="search-btn" class="btn-icon-sm" title="Search (⌘K)">
+                        <i class="ph-light ph-magnifying-glass"></i>
+                    </button>
+                    <div class="project-sort-wrap">
+                        <button id="project-sort-btn" class="btn-icon-sm" title="Sort projects">
+                            <i class="ph-light ph-sort-ascending"></i>
+                        </button>
+                        <div id="project-sort-dropdown" class="project-sort-dropdown">
+                            <button class="sort-option active" data-sort="created_desc">Newest first</button>
+                            <button class="sort-option" data-sort="created_asc">Oldest first</button>
+                            <button class="sort-option" data-sort="updated_desc">Recently updated</button>
+                            <button class="sort-option" data-sort="name_asc">Name A → Z</button>
+                            <button class="sort-option" data-sort="name_desc">Name Z → A</button>
+                        </div>
+                    </div>
+                    <button id="newProjectBtn" class="btn-icon-sm" title="New project">
+                        <i class="ph-light ph-plus"></i>
+                    </button>
+                </div>
             </div>
 
             <div id="projects-list">
@@ -35,28 +58,118 @@
 
             <div class="sidebar-footer">
                 <span id="sidebar-user-name" class="sidebar-user">...</span>
-                <button id="logout-btn" class="btn-logout" title="Logout">↪</button>
+                <button id="logout-btn" class="btn-logout" title="Logout">
+                    <i class="ph-light ph-sign-out"></i>
+                </button>
             </div>
         </aside>
 
         <!-- MAIN CONTENT -->
         <main class="main-content">
+            <!-- Burger button — always in main, always accessible -->
+            <button id="sidebar-open" class="btn-sidebar-open" title="Open sidebar">
+                <i class="ph-light ph-list"></i>
+            </button>
+
             <div id="welcome-screen" class="welcome-screen">
                 <h1>Welcome, <span id="user-name">...</span></h1>
-                <p>Select or create a project to get started</p>
             </div>
 
             <!-- AREA displayed project selected -->
             <div id="project-view" style="display: none;">
                 <header class="project-header">
-                    <h1 id="project-title">Project Name</h1>
-                    <p id="project-description" class="project-description"></p>
+                    <div class="project-header-left">
+                        <div>
+                            <h1 id="project-title">Project Name</h1>
+                            <p id="project-description" class="project-description"></p>
+                        </div>
+                    </div>
+                    <div class="project-menu-wrap">
+                        <button id="project-menu-btn" class="btn-project-menu" title="Project settings">
+                            <i class="ph-light ph-dots-three"></i>
+                        </button>
+                        <div id="project-menu-dropdown" class="project-menu-dropdown">
+                            <button class="project-menu-item" data-action="rename">
+                                <i class="ph-light ph-pencil-simple"></i>
+                                Rename
+                            </button>
+                            <button class="project-menu-item" data-action="description">
+                                <i class="ph-light ph-text-align-left"></i>
+                                Edit description
+                            </button>
+                            <div class="project-menu-divider"></div>
+                            <button class="project-menu-item project-menu-item--danger" data-action="delete">
+                                <i class="ph-light ph-trash"></i>
+                                Delete project
+                            </button>
+                        </div>
+                    </div>
                 </header>
 
                 <div class="tabs">
-                    <button class="tab active" data-tab="notes">Notes</button>
-                    <button class="tab" data-tab="snippets">Code Snippets</button>
-                    <button class="tab" data-tab="todos">TODOs</button>
+                    <div class="tabs-inner">
+                        <button class="tab active" data-tab="notes">Notes</button>
+                        <button class="tab" data-tab="snippets">Code Snippets</button>
+                        <button class="tab" data-tab="todos">TODOs</button>
+                    </div>
+                    <div class="note-controls">
+                    <div class="content-sort-wrap">
+                        <button id="note-sort-btn" class="content-sort-btn">
+                            <i class="ph-light ph-sort-ascending"></i>
+                            <span id="note-sort-label">Created</span>
+                            <i class="ph-light ph-caret-down sort-chevron"></i>
+                        </button>
+                        <div id="note-sort-dropdown" class="project-sort-dropdown">
+                            <button class="sort-option" data-sort="created">Created</button>
+                            <button class="sort-option" data-sort="updated">Updated</button>
+                            <button class="sort-option" data-sort="title">Title A → Z</button>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="snippet-controls">
+                    <div class="content-sort-wrap">
+                        <button id="snippet-sort-btn" class="content-sort-btn">
+                            <i class="ph-light ph-sort-ascending"></i>
+                            <span id="snippet-sort-label">Created</span>
+                            <i class="ph-light ph-caret-down sort-chevron"></i>
+                        </button>
+                        <div id="snippet-sort-dropdown" class="project-sort-dropdown">
+                            <button class="sort-option" data-sort="created">Created</button>
+                            <button class="sort-option" data-sort="updated">Updated</button>
+                            <button class="sort-option" data-sort="title">Title A → Z</button>
+                        </div>
+                    </div>
+                    <div id="snippet-view-toggle" class="todo-view-toggle">
+                        <button class="btn-view-toggle active" data-view="grid" title="Grid view">
+                            <i class="ph-light ph-squares-four"></i>
+                        </button>
+                        <button class="btn-view-toggle" data-view="grouped" title="By language">
+                            <i class="ph-light ph-rows"></i>
+                        </button>
+                    </div>
+                    </div>
+                    <div class="todo-controls">
+                    <div class="content-sort-wrap">
+                        <button id="todo-sort-btn" class="content-sort-btn">
+                            <i class="ph-light ph-sort-ascending"></i>
+                            <span id="todo-sort-label">Priority</span>
+                            <i class="ph-light ph-caret-down sort-chevron"></i>
+                        </button>
+                        <div id="todo-sort-dropdown" class="project-sort-dropdown">
+                            <button class="sort-option" data-sort="priority">Priority</button>
+                            <button class="sort-option" data-sort="created">Created</button>
+                            <button class="sort-option" data-sort="updated">Updated</button>
+                        </div>
+                    </div>
+                    <div id="todo-view-toggle" class="todo-view-toggle">
+                        <button class="btn-view-toggle active" data-view="list" title="List view">
+                            <i class="ph-light ph-list-bullets"></i>
+                        </button>
+                        <button class="btn-view-toggle" data-view="kanban" title="Kanban view">
+                            <i class="ph-light ph-columns"></i>
+                        </button>
+                    </div>
+                    </div>
                 </div>
 
                     <div class="tab-content">
@@ -67,18 +180,12 @@
                         </div>
                         
                         <div id="tab-snippets" class="tab-pane">
-                            <div class="panel-header">
-                                <button class="btn-primary" id="add-snippet-btn">+ New Snippet</button>
-                            </div>
                             <div id="snippets-list" class="snippets-list">
                                 <!-- Dynamic snippets inseted here -->
                             </div>
                         </div>
                         
                         <div id="tab-todos" class="tab-pane">
-                            <div class="panel-header">
-                                <button class="btn-primary" id="add-todo-btn">+ New TODO</button>
-                            </div>
                             <div id="todos-list" class="todos-list">
                                 <!-- Dynamic todos inserted here -->
                             </div>
@@ -93,34 +200,36 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>New Project</h2>
-                <button class="modal-close">&times;</button>
+                <button class="modal-close" title="Close"><i class="ph-light ph-x"></i></button>
             </div>
 
             <form id="project-form">
+                <input type="hidden" name="id">
                 <div class="form-group">
                     <label for="projectTitle">Title</label>
                     <input
                         type="text"
                         id="projectTitle"
                         name="title"
-                        placeholder="Title project"
+                        placeholder="My project..."
                         required
+                        autocomplete="off"
                     >
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" id="project-description-group">
                     <label for="projectDescription">Description</label>
                     <textarea
                         id="projectDescription"
                         name="description"
-                        rows="4"
+                        rows="3"
                         placeholder="Optional description..."
                     ></textarea>
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" data-action="cancel">Cancel</button>
-                    <button type="submit" class="btn-primary">Create Project</button>
+                    <button type="button" class="dn-dialog-btn dn-dialog-btn--cancel" data-action="cancel">Cancel</button>
+                    <button type="submit" id="project-form-submit" class="dn-dialog-btn dn-dialog-btn--primary">Create</button>
                 </div>
             </form>
         </div>
@@ -138,7 +247,7 @@
                     <input type="hidden" name="id">
 
                     <div class="form-group">
-                        <label for="note-title">Title *</label>
+                        <label for="note-title">Title</label>
                         <input
                             type="text"
                             id="note-title"
@@ -149,7 +258,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="note-content">Content *</label>
+                        <label for="note-content">Content</label>
                         <textarea
                             id="note-content"
                             name="content"
@@ -180,7 +289,7 @@
                 <input type="hidden" name="id">
 
                 <div class="form-group">
-                    <label for="snippet-title">Title *</label>
+                    <label for="snippet-title">Title</label>
                     <input
                         type="text"
                         id="snippet-title"
@@ -201,7 +310,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="snippet-language">Language *</label>
+                    <label for="snippet-language">Language</label>
                     <select id="snippet-language" name="language" required>
                         <option value="">Select a language</option>
                         <option value="javascript">JavaScript</option>
@@ -221,7 +330,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="snippet-content">Code *</label>
+                    <label for="snippet-content">Code</label>
                     <textarea
                         id="snippet-content"
                         name="content"
@@ -251,7 +360,7 @@
                     <input type="hidden" name="id">
 
                     <div class="form-group">
-                        <label for="todo-title">Title *</label>
+                        <label for="todo-title">Title</label>
                         <input
                             type="text"
                             id="todo-title"
@@ -302,12 +411,12 @@
     <div id="search-overlay" class="search-overlay">
         <div class="search-modal">
             <div class="search-input-wrapper">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"><i class="ph-light ph-magnifying-glass"></i></span>
                 <input
                     type="text"
                     id="search-input"
                     class="search-input"
-                    placeholder="Search notes, snippets, todos..."
+                    placeholder="Global search..."
                     autocomplete="off"
                 >
                 <span class="search-shortcut">Esc</span>

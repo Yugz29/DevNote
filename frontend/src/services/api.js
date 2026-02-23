@@ -9,20 +9,37 @@ const api = axios.create({
     }
 });
 
-// Interceptor to handle errors globally
-api.interceptors.response.use(
-    // If the request is successful (2xx), it is allowed to pass
-    response => response,
-    error => {
-        // Case 1: The server responded with an error (4xx, 5xx)
-        if (error.response) {
-            const status = error.response.status;
+let isRefreshing = false;
 
-            if (status === 401) {
-                console.error('Session expired, redirecting...');
-                window.location.href = '/index.html';
+api.interceptors.response.use(
+    response => response,
+    async error => {
+        const originalRequest = error.config;
+        
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                if (!window.location.pathname.includes('login') &&
+                    !window.location.pathname.includes('register')) {
+                    window.location.href = '/src/pages/login.html';
+                }
             }
 
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                await api.post('/auth/refresh/');
+                isRefreshing = false;
+                return api(originalRequest);
+            } catch (refreshError) {
+                isRefreshing = false;
+                if (!window.location.pathname.includes('login') && 
+                !window.location.pathname.includes('register')) {
+                window.location.href = '/src/pages/login.html';
+            }
+        }
+        // Case 1: Server responded with an error (4xx, 5xx)
+        if (error.response) {
             console.error('Server error:', error.response.data);
         }
         // Case 2: No response (backend down, network disconnected)
@@ -34,9 +51,9 @@ api.interceptors.response.use(
         else {
             console.error('Error:', error.message);
         }
-
-        return Promise.reject(error);
+        
+        throw error;
     }
-);
+});
 
 export default api;

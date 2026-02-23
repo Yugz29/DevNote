@@ -1,7 +1,9 @@
 import api from './api';
 
-export const getProjects = async () => {
-    const response = await api.get('/projects/')
+export const getProjects = async (url = null) => {
+    const response = url
+        ? await api.get(url)
+        : await api.get('/projects/');
     return response.data;
 };
 
