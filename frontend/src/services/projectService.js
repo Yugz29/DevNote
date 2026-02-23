@@ -1,4 +1,4 @@
-import api from './api';
+import api from './api.js';
 
 export const getProjects = async (url = null) => {
     const response = url

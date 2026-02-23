@@ -1,4 +1,4 @@
-import api from './api';
+import api from './api.js';
 
 
 export const getTodos = async (projectId, url = null) => {
