@@ -1,8 +1,20 @@
-import { login } from '../services/authService.js';
+import { login, getCurrentUser } from '../services/authService.js';
+
 
 const loginForm = document.getElementById('login-form');
 const errorMessage = document.getElementById('error-message');
 const submitBtn = document.getElementById('submit-btn');
+
+const checkAuth = async () => {
+    try {
+        await getCurrentUser();
+        window.location.href = '/src/pages/dashboard.html';
+    } catch {
+        // Not authenticated ? Stay on login page
+    }
+};
+
+checkAuth();
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -17,7 +29,7 @@ loginForm.addEventListener('submit', async (e) => {
     }
 
     submitBtn.disabled = true;
-    submitBtn.testContent = 'Signing in';
+    submitBtn.textContent = 'Signing in';
 
     try {
         await login(email, password);
@@ -25,7 +37,7 @@ loginForm.addEventListener('submit', async (e) => {
     } catch (error) {
         const message = error.response?.data?.non_field_errors?.[0]
             || error.response?.data?.detail
-            || 'Invalied email or password';
+            || 'Invalid email or password';
         errorMessage.textContent = message;
     } finally {
         submitBtn.disabled = false;
