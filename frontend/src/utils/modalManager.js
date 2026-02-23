@@ -1,6 +1,7 @@
 /**
  * Generic modal manager
  */
+import { showAlert } from './dialog.js';
 
 export class ModalManager {
   constructor({ modalId, formId, onSubmit }) {
@@ -54,7 +55,7 @@ export class ModalManager {
         this.close();
       } catch (error) {
         console.error('Erreur soumission modal:', error);
-        alert('An error occurred. Please try again.');
+        await showAlert('An error occurred. Please try again.');
       }
     });
   }
