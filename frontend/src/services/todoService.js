@@ -1,4 +1,4 @@
-import api from './api';
+import api from './api.js';
 
 
 export const getTodos = async (projectId, url = null) => {
@@ -6,6 +6,20 @@ export const getTodos = async (projectId, url = null) => {
         ? await api.get(url)
         : await api.get(`/projects/${projectId}/todos/`);
     return response.data;
+};
+
+export const getAllTodos = async (projectId) => {
+    let url = null;
+    let allResults = [];
+
+    do {
+        const data = await getTodos(projectId, url);
+        const items = data.results ?? data;
+        allResults = [...allResults, ...items];
+        url = data.next ?? null;
+    } while (url);
+
+    return allResults;
 };
 
 export const createTodo = async (projectId, title, description, status, priority) => {

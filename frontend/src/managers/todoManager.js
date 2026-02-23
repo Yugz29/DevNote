@@ -1,5 +1,5 @@
 import BaseManager from '../utils/baseManager.js';
-import { getTodos, createTodo, updateTodo, deleteTodo } from '../services/todoService.js';
+import { getAllTodos, getTodos, createTodo, updateTodo, deleteTodo } from '../services/todoService.js';
 import { showAlert, showConfirm } from '../utils/dialog.js';
 
 
@@ -32,7 +32,12 @@ export default class TodoManager extends BaseManager {
         super(null, document.getElementById('todos-list'));
         this.currentView = this.getViewPreference();
         this._allTodos = [];
+        // Todos are always fully loaded — no infinite scroll needed
+        this.nextPageUrl = null;
     }
+
+    // Override loadMore to do nothing
+    async loadMore() {}
 
 
     // ==========================================
@@ -123,21 +128,16 @@ export default class TodoManager extends BaseManager {
     // ==========================================
 
     async fetchPage(projectId, url = null) {
-        return await getTodos(projectId ?? this.projectId, url);
+        if (url) return await getTodos(null, url);
+        // Fetch all pages at once — grouping by status requires complete data
+        const allItems = await getAllTodos(projectId ?? this.projectId);
+        return { results: allItems, next: null };
     }
 
     async appendItems(items) {
+        // appendItems is not used — fetchPage always returns all todos at once
+        // Kept to satisfy BaseManager interface
         this._allTodos = [...this._allTodos, ...items];
-        if (this.currentView === 'kanban') {
-            this.renderKanbanView(this._allTodos);
-        } else {
-            items.forEach(todo => {
-                const section = this.container.querySelector(
-                    `.todo-group[data-status="${todo.status}"] .todo-group-items`
-                );
-                if (section) section.insertAdjacentHTML('beforeend', this.renderTodo(todo));
-            });
-        }
     }
 
 

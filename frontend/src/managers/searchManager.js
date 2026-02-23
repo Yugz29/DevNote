@@ -83,7 +83,7 @@ export default class SearchManager {
     }
 
     render(data, query) {
-        const total = (data.notes?.length || 0) + (data.snippets?.length) || 0 + (data.todos?.length || 0);
+        const total = (data.notes?.length || 0) + (data.snippets?.length || 0) + (data.todos?.length || 0);
 
         if (total === 0) {
             this.resultsContainer.innerHTML = `<p class="search-empty">No results for "<strong>${escape(query)}</strong>"</p>`;

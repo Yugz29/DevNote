@@ -231,25 +231,6 @@ export default class NoteManager extends BaseManager {
         this.load();
     }
 
-    renderCompactCard(note) {
-        const preview = note.content
-            ? note.content.replace(/[#*`_>\[\]]/g, '').trim().substring(0, 120)
-            : '';
-        return `
-            <div class="note-compact-card" data-id="${note.id}">
-                <div class="note-compact-title">${note.title}</div>
-                ${preview ? `<div class="note-compact-preview">${preview}</div>` : ''}
-                <div class="note-compact-footer">
-                    <span class="card-date">${new Date(note.updated_at).toLocaleDateString()}</span>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-card-icon-action btn-edit" data-id="${note.id}" title="Edit"><i class="ph-light ph-pencil-simple"></i></button>
-                    <button class="btn-card-icon-action btn-card-icon-danger btn-delete" data-id="${note.id}" title="Delete"><i class="ph-light ph-trash"></i></button>
-                </div>
-            </div>
-        `;
-    }
-
     getCollapsedState() {
         const key = `devnote_collapsed_${this.projectId}`;
         const stored = localStorage.getItem(key);

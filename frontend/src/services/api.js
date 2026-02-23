@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-
 const api = axios.create({
     baseURL: '/api',
     withCredentials: true,
@@ -15,13 +14,11 @@ api.interceptors.response.use(
     response => response,
     async error => {
         const originalRequest = error.config;
-        
+
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
-                if (!window.location.pathname.includes('login') &&
-                    !window.location.pathname.includes('register')) {
-                    window.location.href = '/src/pages/login.html';
-                }
+                redirectToLogin();
+                return Promise.reject(error);
             }
 
             originalRequest._retry = true;
@@ -31,29 +28,31 @@ api.interceptors.response.use(
                 await api.post('/auth/refresh/');
                 isRefreshing = false;
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch {
                 isRefreshing = false;
-                if (!window.location.pathname.includes('login') && 
-                !window.location.pathname.includes('register')) {
-                window.location.href = '/src/pages/login.html';
+                redirectToLogin();
+                return Promise.reject(error);
             }
         }
-        // Case 1: Server responded with an error (4xx, 5xx)
+
+        // Log errors for debugging
         if (error.response) {
-            console.error('Server error:', error.response.data);
+            console.error(`API error ${error.response.status}:`, error.response.data);
+        } else if (error.request) {
+            console.error('No response from server — is the backend running?');
+        } else {
+            console.error('Request error:', error.message);
         }
-        // Case 2: No response (backend down, network disconnected)
-        else if (error.request) {
-            console.error('Unable to contact the server');
-            alert('Server is running ?');
-        }
-        // Case 3: Error in the code
-        else {
-            console.error('Error:', error.message);
-        }
-        
-        throw error;
+
+        return Promise.reject(error);
     }
-});
+);
+
+function redirectToLogin() {
+    const current = window.location.pathname;
+    if (!current.includes('login') && !current.includes('register')) {
+        window.location.href = '/src/pages/login.html';
+    }
+}
 
 export default api;

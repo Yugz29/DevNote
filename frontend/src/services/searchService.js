@@ -1,4 +1,4 @@
-import api from './api';
+import api from './api.js';
 
 export const search = async (query, type = null) => {
     const params = { q: query };
