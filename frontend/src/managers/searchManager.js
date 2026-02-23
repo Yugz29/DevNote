@@ -10,9 +10,10 @@ function escape(str) {
 }
 
 const ICONS = {
-    notes: '📝',
-    snippets: '💻',
-    todos: '✅'
+    projects: '<i class="ph-light ph-folder"></i>',
+    notes:    '<i class="ph-light ph-note"></i>',
+    snippets: '<i class="ph-light ph-code"></i>',
+    todos:    '<i class="ph-light ph-check-square"></i>'
 };
 
 export default class SearchManager {
@@ -66,7 +67,7 @@ export default class SearchManager {
     }
 
     showHint() {
-        this.resultsContainer.innerHTML = '<p class="search-hint">Type to search across all your projects</p>';
+        this.resultsContainer.innerHTML = '<p class="search-hint">Search projects, notes, snippets and todos...</p>';
     }
 
     async doSearch(query) {
@@ -82,7 +83,7 @@ export default class SearchManager {
     }
 
     render(data, query) {
-        const total = (data.notes?.length || 0) + (data.snippets.length) || 0 + (data.todos?.length || 0);
+        const total = (data.notes?.length || 0) + (data.snippets?.length) || 0 + (data.todos?.length || 0);
 
         if (total === 0) {
             this.resultsContainer.innerHTML = `<p class="search-empty">No results for "<strong>${escape(query)}</strong>"</p>`;
@@ -92,6 +93,7 @@ export default class SearchManager {
         let html = '';
 
         const sections = [
+            { key: 'projects', label: 'Projects' },
             { key: 'notes', label: 'Notes' },
             { key: 'snippets', label: 'Snippets'},
             { key: 'todos', label: 'TODOs'}
@@ -103,16 +105,20 @@ export default class SearchManager {
 
             html += `<div class="search-section-title">${label}</div>`;
 
-            html += items.map(item => `
-                <div class="search-result-item" data-type="${key}" data-id="${escape(item.id)}" data-project="${escape(item.project_id)}">
+            html += items.map(item => {
+                const projectId = key === 'projects' ? item.id : item.project_id;
+                const meta = key === 'projects'
+                    ? (item.description || '')
+                    : (item.content || item.description || '');
+                return `
+                <div class="search-result-item" data-type="${key}" data-id="${escape(item.id)}" data-project="${escape(projectId)}">
                     <span class="search-result-icon">${ICONS[key]}</span>
                     <div class="search-result-body">
                         <div class="search-result-title">${escape(item.title)}</div>
-                        ${item.content ? `<div class="search-result-meta">${escape(item.content.substring(0, 60))}...</div>` : ''}
-                        ${item.description ? `<div class="search-result-meta">${escape(item.description.substring(0, 60))}</div>` : ''}
+                        ${meta ? `<div class="search-result-meta">${escape(meta.substring(0, 60))}${meta.length > 60 ? '...' : ''}</div>` : ''}
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
         
         this.resultsContainer.innerHTML= html;
@@ -121,9 +127,14 @@ export default class SearchManager {
         this.resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
             item.addEventListener('click', () => {
                 const projectId = item.dataset.project;
-                const tab = item.dataset.type;
+                const type = item.dataset.type;
+                const itemId = item.dataset.id;
                 this.close();
-                this.onSelectProject(projectId, tab);
+                if (type === 'projects') {
+                    this.onSelectProject(projectId);
+                } else {
+                    this.onSelectProject(projectId, type, query, itemId);
+                }
             });
         });
     }
