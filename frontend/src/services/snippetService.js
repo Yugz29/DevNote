@@ -1,8 +1,10 @@
 import api from './api';
 
 
-export const getSnippets = async (projectId) => {
-    const response = await api.get(`/projects/${projectId}/snippets/`);
+export const getSnippets = async (projectId, url = null) => {
+    const response = url
+        ? await api.get(url)
+        : await api.get(`/projects/${projectId}/snippets/`);
     return response.data;
 };
 
