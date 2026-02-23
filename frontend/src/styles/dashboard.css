@@ -531,6 +531,38 @@
     color: #555;
 }
 
+/* Inline editing — title & description */
+#project-title,
+#project-description {
+    border-radius: 5px;
+    padding: 2px 6px;
+    margin-left: -6px;
+    cursor: text;
+    outline: none;
+    transition: background 0.15s, box-shadow 0.15s;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+#project-title:hover,
+#project-description:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+#project-title[contenteditable=true],
+#project-description[contenteditable=true] {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    cursor: text;
+}
+
+#project-description:empty::before {
+    content: 'Add a description...';
+    color: #3a3a3a;
+    pointer-events: none;
+    font-style: italic;
+}
+
 /* Project menu button */
 .project-menu-wrap {
     position: relative;

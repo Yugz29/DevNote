@@ -349,39 +349,34 @@ function setupSidebarToggle() {
 function setupProjectMenu() {
     const menuBtn = document.getElementById('project-menu-btn');
     const dropdown = document.getElementById('project-menu-dropdown');
-    const modalHeader = document.querySelector('#project-modal .modal-header h2');
-    const submitBtn = document.getElementById('project-form-submit');
-    const descGroup = document.getElementById('project-description-group');
 
     // Toggle dropdown
     menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         dropdown.classList.toggle('open');
+        menuBtn.classList.toggle('open', dropdown.classList.contains('open'));
     });
 
     // Close on outside click
-    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    document.addEventListener('click', () => {
+        dropdown.classList.remove('open');
+        menuBtn.classList.remove('open');
+    });
     dropdown.addEventListener('click', (e) => e.stopPropagation());
 
     // Actions
     dropdown.querySelectorAll('.project-menu-item').forEach(item => {
         item.addEventListener('click', async () => {
             dropdown.classList.remove('open');
+            menuBtn.classList.remove('open');
             const action = item.dataset.action;
 
             if (action === 'rename') {
-                modalHeader.textContent = 'Rename Project';
-                submitBtn.textContent = 'Save';
-                descGroup.style.display = 'none';
-                projectModal.open({ id: currentProject.id, title: currentProject.title });
+                startInlineEdit('title');
             }
 
             if (action === 'description') {
-                modalHeader.textContent = 'Edit Description';
-                submitBtn.textContent = 'Save';
-                descGroup.style.display = '';
-                // Hide title field for description-only edit
-                projectModal.open({ id: currentProject.id, title: currentProject.title, description: currentProject.description || '' });
+                startInlineEdit('description');
             }
 
             if (action === 'delete') {
@@ -400,13 +395,82 @@ function setupProjectMenu() {
             }
         });
     });
+}
 
-    // Reset modal to "create" state when opened via new project btn
-    document.getElementById('newProjectBtn').addEventListener('click', () => {
-        modalHeader.textContent = 'New Project';
-        submitBtn.textContent = 'Create';
-        descGroup.style.display = '';
-    }, true);
+// ==========================================
+// PROJECT INLINE EDITING
+// ==========================================
+
+function setupInlineEditing() {
+    const titleEl = document.getElementById('project-title');
+    const descEl = document.getElementById('project-description');
+
+    titleEl.addEventListener('click', () => startInlineEdit('title'));
+    descEl.addEventListener('click', () => startInlineEdit('description'));
+}
+
+function startInlineEdit(field) {
+    const titleEl = document.getElementById('project-title');
+    const descEl = document.getElementById('project-description');
+    const el = field === 'title' ? titleEl : descEl;
+
+    if (el.contentEditable === 'true') return; // already editing
+
+    const original = el.textContent;
+
+    el.contentEditable = 'true';
+    el.dataset.original = original;
+    el.focus();
+
+    // Place cursor at end
+    const range = document.createRange();
+    const sel = window.getSelection();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    async function save() {
+        el.contentEditable = 'false';
+        const newValue = el.textContent.trim();
+
+        if (!newValue || newValue === original) {
+            el.textContent = original;
+            return;
+        }
+
+        const updatedTitle = field === 'title' ? newValue : currentProject.title;
+        const updatedDesc  = field === 'description' ? newValue : (currentProject.description || '');
+
+        try {
+            const updated = await updateProject(currentProject.id, updatedTitle, updatedDesc);
+            currentProject = updated;
+            // Sync sidebar
+            const sidebarItem = document.querySelector(`.project-item[data-id="${currentProject.id}"] .project-name`);
+            if (sidebarItem) sidebarItem.textContent = updated.title;
+        } catch (err) {
+            console.error('Failed to update project:', err);
+            el.textContent = original;
+        }
+    }
+
+    function cancel() {
+        el.contentEditable = 'false';
+        el.textContent = original;
+    }
+
+    el.addEventListener('blur', save, { once: true });
+
+    el.addEventListener('keydown', (e) => {
+        if (field === 'title' && e.key === 'Enter') {
+            e.preventDefault();
+            el.blur();
+        }
+        if (e.key === 'Escape') {
+            el.removeEventListener('blur', save);
+            cancel();
+        }
+    }, { once: true });
 }
 
 
@@ -611,6 +675,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupTabs();
     setupModalButtons();
     setupProjectMenu();
+    setupInlineEditing();
     setupSidebarToggle();
 
     // Logout
