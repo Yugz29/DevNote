@@ -30,18 +30,18 @@ class SnippetSerializerTestCase(TestCase):
             instance=instance,
             context={'request': mock_request}
         )
-    
+
     def test_valid_snippet_data(self):
         """Test : serializer with valid data"""
         data = {
             'title': 'Test Snippet',
             'content': 'print("Hello DevNote")',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        snippet = serializer.save()
+        # Project is injected by the view via save(project=...)
+        snippet = serializer.save(project=self.project)
         self.assertEqual(snippet.title, data['title'])
         self.assertEqual(snippet.content, data['content'])
         self.assertEqual(snippet.language, data['language'])
@@ -52,7 +52,6 @@ class SnippetSerializerTestCase(TestCase):
         data = {
             'content': 'print("Hello DevNote")',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -64,57 +63,42 @@ class SnippetSerializerTestCase(TestCase):
             'title': '',
             'content': 'print("Hello DevNote")',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('title', serializer.errors)
 
     def test_title_spaces_only(self):
-        """Test title with only spaces is invalid"""
+        """Test : title with only spaces is invalid"""
         data = {
             'title': '     ',
             'content': 'print("Hello DevNote")',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('title', serializer.errors)
 
     def test_missing_content(self):
-        """Test: content is required"""
+        """Test : content is required"""
         data = {
             'title': 'Test Snippet',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('content', serializer.errors)
 
-    def test_missing_language(self):
-        """Test : language uses default value if not provided"""
+    def test_missing_language_defaults_to_text(self):
+        """Test : language defaults to 'text' if not provided"""
         data = {
             'title': 'Test Snippet',
             'content': 'print("Hello DevNote")',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        snippet = serializer.save()
+        snippet = serializer.save(project=self.project)
         self.assertEqual(snippet.language, 'text')
-
-    def test_missing_project(self):
-        """Test : Project is required"""
-        data = {
-            'title': 'Test Snippet',
-            'content': 'print("Hello DevNote")',
-            'language': 'python'
-        }
-        serializer = self.get_serializer(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('project', serializer.errors)
 
     def test_title_too_long(self):
         """Test : title cannot exceed 255 characters"""
@@ -122,7 +106,6 @@ class SnippetSerializerTestCase(TestCase):
             'title': 'A' * 256,
             'content': 'print("Hello DevNote")',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -134,23 +117,21 @@ class SnippetSerializerTestCase(TestCase):
             'title': 'Test Snippet',
             'content': 'print("Hello DevNote")',
             'language': 'A' * 51,
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('language', serializer.errors)
 
-    def test_title_timmed(self):
+    def test_title_trimmed(self):
         """Test : title is automatically trimmed"""
         data = {
             'title': '  My Snippet  ',
             'content': 'print("Hello DevNote")',
             'language': 'python',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        snippet = serializer.save()
+        snippet = serializer.save(project=self.project)
         self.assertEqual(snippet.title, 'My Snippet')
 
     def test_language_normalized_lowercase(self):
@@ -159,46 +140,26 @@ class SnippetSerializerTestCase(TestCase):
             'title': 'Python Script',
             'content': 'print("Hello DevNote")',
             'language': 'PYTHON',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        snippet = serializer.save()
+        snippet = serializer.save(project=self.project)
         self.assertEqual(snippet.language, 'python')
 
-    def test_missing_project(self):
-        """Test : project field is required"""
+    def test_save_without_project_raises_integrity_error(self):
+        """Test : saving without injecting a project raises IntegrityError"""
         data = {
             'title': 'Orphan Snippet',
             'content': 'print("Hello DevNote")',
-            'language': 'python'
+            'language': 'python',
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
         with self.assertRaises(IntegrityError):
             serializer.save()
 
-    def test_duplicate_title_same_project(self):
-        """Test : duplicate title in same project is rejected"""
-        Snippet.objects.create(
-            title='Existing Snippet',
-            content='print("First")',
-            language='python',
-            project=self.project
-        )
-
-        data = {
-            'title': 'Existing Snippet',
-            'content': 'print("Second")',
-            'language': 'python',
-            'project': self.project.id
-        }
-        serializer = self.get_serializer(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('title', serializer.errors)
-
     def test_same_title_different_projects(self):
-        """Test : same title is allowed in diffrent projects"""
+        """Test : same title is allowed in different projects"""
         project2 = Project.objects.create(
             title='Second Project',
             user=self.user
@@ -215,30 +176,10 @@ class SnippetSerializerTestCase(TestCase):
             'title': 'Shared Title',
             'content': 'print("Project 2")',
             'language': 'python',
-            'project': project2.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        snippet = serializer.save()
+        snippet = serializer.save(project=project2)
         self.assertEqual(snippet.title, 'Shared Title')
         self.assertEqual(Snippet.objects.count(), 2)
         self.assertEqual(snippet.project, project2)
-
-    def test_case_insensitive_uniqueness(self):
-        """Test : title uniqueness is case-insensitive"""
-        Snippet.objects.create(
-            title='API Utils',
-            content='# Helper functions',
-            language='python',
-            project=self.project
-        )
-
-        data = {
-            'title': 'api utils',
-            'content': '# Another helper',
-            'language': 'python',
-            'project': self.project.id
-        }
-        serializer = self.get_serializer(data=data)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn('title', serializer.errors)

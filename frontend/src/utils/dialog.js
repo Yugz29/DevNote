@@ -2,6 +2,7 @@
  * Custom dialog utilities — replaces native alert() and confirm()
  * Both return Promises, so they can be used with await.
  */
+import { escape } from './escape.js';
 
 function createOverlay() {
     const overlay = document.createElement('div');
@@ -28,7 +29,7 @@ export function showAlert(message, type = 'error') {
         overlay.innerHTML = `
             <div class="dn-dialog">
                 <div class="dn-dialog-icon dn-dialog-icon--${type}">${icon}</div>
-                <p class="dn-dialog-message">${message}</p>
+                <p class="dn-dialog-message">${escape(message)}</p>
                 <div class="dn-dialog-actions">
                     <button class="dn-dialog-btn dn-dialog-btn--primary">OK</button>
                 </div>
@@ -66,10 +67,10 @@ export function showConfirm(message, confirmLabel = 'Delete') {
                 <div class="dn-dialog-icon dn-dialog-icon--warning">
                     <i class="ph-light ph-trash"></i>
                 </div>
-                <p class="dn-dialog-message">${message}</p>
+                <p class="dn-dialog-message">${escape(message)}</p>
                 <div class="dn-dialog-actions">
                     <button class="dn-dialog-btn dn-dialog-btn--cancel">Cancel</button>
-                    <button class="dn-dialog-btn dn-dialog-btn--danger">${confirmLabel}</button>
+                    <button class="dn-dialog-btn dn-dialog-btn--danger">${escape(confirmLabel)}</button>
                 </div>
             </div>
         `;

@@ -4,6 +4,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from django.db.models import Q
 from .models import Project, Note, Snippet, TODO
 from .serializers import ProjectSerializer, NoteSerializer, SnippetSerializer, TODOSerializer
@@ -136,6 +138,7 @@ class TODOViewSet(viewsets.ModelViewSet):
         logger.info(f"TODO '{todo.title}' (ID: {todo.id}) created in project {project.id} by user {self.request.user.username}")
 
 
+@method_decorator(ratelimit(key='user', rate='30/m', method='GET'), name='get')
 class SearchView(APIView):
     """
     Global search across Notes, Snippets and TODOs
@@ -143,13 +146,27 @@ class SearchView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    MAX_QUERY_LENGTH = 200
+
     def get(self, request):
+        if getattr(request, 'limited', False):
+            return Response(
+                {'error': 'Too many search requests. Please slow down.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
         query = request.query_params.get('q')
         search_type = request.query_params.get('type')
 
         if not query:
             return Response(
                 {'error': 'Search query parameter "q" is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(query) > self.MAX_QUERY_LENGTH:
+            return Response(
+                {'error': f'Query too long (max {self.MAX_QUERY_LENGTH} characters)'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         

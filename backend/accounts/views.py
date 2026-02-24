@@ -4,8 +4,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from .models import User
+
+UserModel = get_user_model()
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from .cookie_utils import set_auth_cookies, delete_auth_cookies, get_token_from_cookie
 from django.utils.decorators import method_decorator
@@ -19,6 +21,7 @@ logger = logging.getLogger('accounts')
 # ============================================
 # ENDPOINT : Register
 # ============================================
+@method_decorator(ratelimit(key='ip', rate='3/m', method='POST'), name='post')
 class RegisterView(generics.CreateAPIView):
     """
     POST /api/auth/register/
@@ -29,6 +32,11 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        if getattr(request, 'limited', False):
+            return Response(
+                {'error': 'Too many registration attempts. Please try again later.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -62,7 +70,7 @@ class LoginView(APIView):
         
         if not serializer.is_valid():
             logger.warning(f"Failed login attempt from IP {request.META.get('REMOTE_ADDR')}: {serializer.errors}")
-            serializer.is_valid(raise_exception=True)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data['user']
 
@@ -161,21 +169,26 @@ class RefreshView(APIView):
 
     def post(self, request):
         try:
-            refresh_token = request.COOKIES.get('refresh_token')
+            refresh_token_str = request.COOKIES.get('refresh_token')
 
-            if not refresh_token:
+            if not refresh_token_str:
                 return Response(
                     {'error': 'Refresh token not found in cookies'},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
-            
-            token = RefreshToken(refresh_token)
 
-            new_access_token = str(token.access_token)
+            # Valider et blacklister l'ancien refresh token
+            old_token = RefreshToken(refresh_token_str)
+            old_token.blacklist()  # ✅ Invalide l'ancien token (empêche la réutilisation)
 
-            token.set_jti()
-            token.set_exp()
-            new_refresh_token = str(token)
+            # Récupérer l'utilisateur depuis le payload du token
+            user_id = old_token.payload.get('user_id')
+            user = UserModel.objects.get(id=user_id)
+
+            # Générer une nouvelle paire de tokens propre
+            new_token = RefreshToken.for_user(user)
+            new_access_token = str(new_token.access_token)
+            new_refresh_token = str(new_token)
 
             response = Response(
                 {'message': 'Token refreshed successfully'},
@@ -183,13 +196,19 @@ class RefreshView(APIView):
             )
 
             set_auth_cookies(response, new_access_token, new_refresh_token)
-
+            logger.info(f'Token refreshed for user {user.email}')
             return response
-        
+
         except TokenError as e:
-            logger.error(f'Token refresh error: {str(e)}')
+            logger.warning(f'Token refresh failed (invalid token): {str(e)}')
             return Response(
                 {'error': 'Invalid or expired refresh token'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except UserModel.DoesNotExist:
+            logger.error('Token refresh failed: user not found')
+            return Response(
+                {'error': 'User not found'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         except Exception as e:

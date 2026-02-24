@@ -1,8 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from workspace.models import Note, Project
+from workspace.serializers import NoteSerializer
 from uuid import UUID
-from django.core.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -21,6 +21,7 @@ class NoteModelTest(TestCase):
             description='A project for note testing.',
             user=self.user
         )
+
     def test_create_note(self):
         """Test creating a note"""
         note = Note.objects.create(
@@ -37,7 +38,7 @@ class NoteModelTest(TestCase):
 
     def test_delete_note_cascade(self):
         """Test that deleting a project cascades to delete its notes"""
-        note = Note.objects.create(
+        Note.objects.create(
             title='Note to be deleted',
             content='This note will be deleted when the project is deleted.',
             project=self.project
@@ -49,14 +50,8 @@ class NoteModelTest(TestCase):
 
     def test_same_note_title(self):
         """Test that notes with the same title can exist under the same project"""
-        note1 = Note.objects.create(
-            title='First Note',
-            project=self.project
-        )
-        note2 = Note.objects.create(
-            title='First Note',
-            project=self.project
-        )
+        note1 = Note.objects.create(title='First Note', project=self.project)
+        note2 = Note.objects.create(title='First Note', project=self.project)
 
         notes = self.project.notes.all()
         self.assertEqual(notes.count(), 2)
@@ -65,13 +60,15 @@ class NoteModelTest(TestCase):
         self.assertNotEqual(note1.id, note2.id)
 
     def test_empty_note_title(self):
-        """Test that creating a note with an empty title raises an error"""
-        note = Note(
-            title='   ',
-            project=self.project
+        """Test that creating a note with a whitespace-only title is rejected by the serializer"""
+        from types import SimpleNamespace
+        mock_request = SimpleNamespace(user=self.user)
+        serializer = NoteSerializer(
+            data={'title': '   ', 'content': ''},
+            context={'request': mock_request}
         )
-        with self.assertRaises(ValidationError):
-            note.full_clean()
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('title', serializer.errors)
 
     def test_str_method(self):
         """Test the __str__ method of the Note model"""
