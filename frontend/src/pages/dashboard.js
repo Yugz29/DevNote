@@ -1,5 +1,6 @@
 import { ModalManager } from '../utils/modalManager.js';
 import { showAlert, showConfirm } from '../utils/dialog.js';
+import { escape } from '../utils/escape.js';
 import NoteManager from '../managers/noteManager.js';
 import SnippetManager from '../managers/snippetManager.js';
 import TodoManager from '../managers/todoManager.js';
@@ -99,7 +100,7 @@ function renderProjectItem(project) {
     return `
         <div class="project-item" data-id="${project.id}">
             <span class="project-icon"><i class="ph-light ph-folder"></i></span>
-            <span class="project-name">${project.title}</span>
+            <span class="project-name">${escape(project.title)}</span>
         </div>
     `;
 }

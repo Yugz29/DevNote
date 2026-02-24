@@ -1,13 +1,5 @@
 import { search } from '../services/searchService.js';
-
-function escape(str) {
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
+import { escape } from '../utils/escape.js';
 
 const ICONS = {
     projects: '<i class="ph-light ph-folder"></i>',

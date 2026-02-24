@@ -1,6 +1,7 @@
 import BaseManager from '../utils/baseManager.js';
 import { getSnippets, createSnippet, updateSnippet, deleteSnippet } from '../services/snippetService.js';
 import { showAlert, showConfirm } from '../utils/dialog.js';
+import { escape } from '../utils/escape.js';
 
 
 const DEVICONS = {
@@ -54,9 +55,9 @@ export default class SnippetManager extends BaseManager {
                         <button class="delete-snippet-btn btn-card-icon-action btn-card-icon-danger" data-id="${snippet.id}" title="Delete"><i class="ph-light ph-trash"></i></button>
                     </div>
                 </div>
-                <h4 class="snippet-title">${snippet.title}</h4>
-                ${snippet.description ? `<p class="snippet-description">${snippet.description}</p>` : ''}
-                <pre class="snippet-preview"><code>${snippet.content.substring(0, 200)}${snippet.content.length > 200 ? '\n...' : ''}</code></pre>
+                <h4 class="snippet-title">${escape(snippet.title)}</h4>
+                ${snippet.description ? `<p class="snippet-description">${escape(snippet.description)}</p>` : ''}
+                <pre class="snippet-preview"><code>${escape(snippet.content.substring(0, 200))}${snippet.content.length > 200 ? '\n...' : ''}</code></pre>
                 <div class="snippet-card-footer">
                     <span class="card-date">${new Date(snippet.created_at).toLocaleDateString()}</span>
                 </div>
@@ -93,18 +94,18 @@ export default class SnippetManager extends BaseManager {
                     class="snippet-editor-title"
                     type="text"
                     placeholder="Title..."
-                    value="${snippet?.title || ''}"
+                    value="${escape(snippet?.title)}"
                 />
                 <input
                     class="snippet-editor-description"
                     type="text"
                     placeholder="Description... (optional)"
-                    value="${snippet?.description || ''}"
+                    value="${escape(snippet?.description)}"
                 />
                 <textarea
                     class="snippet-editor-content"
                     placeholder="Code..."
-                >${snippet?.content || ''}</textarea>
+                >${escape(snippet?.content)}</textarea>
             </div>
         `;
     }

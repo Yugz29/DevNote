@@ -1,6 +1,7 @@
 import BaseManager from '../utils/baseManager.js';
 import { getAllTodos, getTodos, createTodo, updateTodo, deleteTodo } from '../services/todoService.js';
 import { showAlert, showConfirm } from '../utils/dialog.js';
+import { escape } from '../utils/escape.js';
 
 
 const PRIORITY_BADGES = {
@@ -172,13 +173,13 @@ export default class TodoManager extends BaseManager {
                         data-status="${todo.status}"
                         title="Click to change status"
                     >${statusBadge.label}</button>
-                    <span class="todo-title">${todo.title}</span>
+                    <span class="todo-title">${escape(todo.title)}</span>
                     <div class="item-actions">
                         <button class="edit-todo-btn btn-card-icon-action" data-id="${todo.id}" title="Edit"><i class="ph-light ph-pencil-simple"></i></button>
                         <button class="delete-todo-btn btn-card-icon-action btn-card-icon-danger" data-id="${todo.id}" title="Delete"><i class="ph-light ph-trash"></i></button>
                     </div>
                 </div>
-                ${todo.description ? `<p class="todo-description">${todo.description}</p>` : ''}
+                ${todo.description ? `<p class="todo-description">${escape(todo.description)}</p>` : ''}
                 <div class="todo-card-footer">
                     <span class="badge ${priority.class}">${priority.label}</span>
                     <span class="card-date">${new Date(todo.created_at).toLocaleDateString()}</span>
@@ -376,7 +377,7 @@ export default class TodoManager extends BaseManager {
                         class="todo-editor-title"
                         type="text"
                         placeholder="Title..."
-                        value="${todo?.title || ''}"
+                        value="${escape(todo?.title)}"
                     />
                     <div class="item-actions" style="opacity:1; visibility:visible; pointer-events:auto;">
                         <button class="btn-save-todo btn-card-icon-action" title="Save"><i class="ph-light ph-check"></i></button>
@@ -387,7 +388,7 @@ export default class TodoManager extends BaseManager {
                     class="todo-editor-description"
                     type="text"
                     placeholder="Description... (optional)"
-                    value="${todo?.description || ''}"
+                    value="${escape(todo?.description)}"
                 />
                 <div class="todo-editor-footer">
                     <div class="dn-select-wrap">

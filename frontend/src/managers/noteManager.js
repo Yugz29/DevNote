@@ -1,6 +1,7 @@
 import BaseManager from '../utils/baseManager.js';
 import { getNotes, createNote, updateNote, deleteNote } from '../services/noteService.js';
 import { showAlert, showConfirm } from '../utils/dialog.js';
+import { escape } from '../utils/escape.js';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import mermaid from 'mermaid';
@@ -51,7 +52,7 @@ export default class NoteManager extends BaseManager {
                 <div class="note-block-header">
                     <div class="note-block-title-row">
                         <button class="btn-toggle-note" title="Toggle content"><i class="ph-light ph-caret-down"></i></button>
-                        <h3 class="note-block-title">${note.title}</h3>
+                        <h3 class="note-block-title">${escape(note.title)}</h3>
                     </div>
                     <div class="note-block-actions">
                         <button class="btn-card-icon-action btn-edit" data-id="${note.id}" title="Edit"><i class="ph-light ph-pencil-simple"></i></button>
@@ -148,7 +149,7 @@ export default class NoteManager extends BaseManager {
                         class="note-editor-title note-block-title"
                         type="text"
                         placeholder="Title..."
-                        value="${note?.title || ''}"
+                        value="${escape(note?.title)}"
                     />
                     <div class="note-block-actions" style="opacity:1; visibility:visible; pointer-events:auto;">
                         <button class="btn-card-icon-action btn-save-note" title="Save"><i class="ph-light ph-check"></i></button>
@@ -161,7 +162,7 @@ export default class NoteManager extends BaseManager {
                 <textarea
                     class="note-editor-content"
                     placeholder="Content... (Markdown supported)"
-                >${note?.content || ''}</textarea>
+                >${escape(note?.content)}</textarea>
             </div>
         `;
     }
