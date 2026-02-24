@@ -60,7 +60,7 @@ class TODOViewTest(APITestCase):
         self.assertEqual(todos[0]['description'], 'Test D Todo 1')
 
     def test_list_todos_unauthenticated(self):
-        """Test : Unauthenticated request to list todos, return 401"""
+        """Test : Unauthenticated request to list todos returns 401"""
         response = self.client.get('/api/todos/')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -100,21 +100,19 @@ class TODOViewTest(APITestCase):
         self.assertEqual(response.data['project_id'], str(self.project1.id))
         self.assertEqual(TODO.objects.count(), 3)
 
-    def test_create_todo_flat_route(self):
-        """Test : create todo via flat route POST"""
+    def test_create_todo_flat_route_not_supported(self):
+        """Test : POST on flat route /api/todos/ is not supported (no project context)"""
         self.client.force_authenticate(user=self.user1)
 
         data = {
             'title': 'Flat Route Todo',
-            'description': 'New DF Todo List',
-            'project': str(self.project1.id)
+            'description': 'No project context',
         }
 
         response = self.client.post('/api/todos/', data, format='json')
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['title'], 'Flat Route Todo')
-        self.assertEqual(response.data['project_id'], str(self.project1.id))
+        # Flat route requires project_pk from URL — without it, access is denied
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve_todo(self):
         """Test : GET detail of a todo"""
@@ -153,20 +151,18 @@ class TODOViewTest(APITestCase):
     def test_delete_todo(self):
         """Test : DELETE remove a todo"""
         self.client.force_authenticate(user=self.user1)
-        
-        todo_id = self.todo1.id
 
+        todo_id = self.todo1.id
         response = self.client.delete(f'/api/todos/{todo_id}/')
 
         self.assertEqual(response.status_code, 204)
         self.assertFalse(TODO.objects.filter(id=todo_id).exists())
 
     def test_user_isolation(self):
-        """Test : User cannot acces others user's TODOs"""
+        """Test : User cannot access other user's TODOs"""
         self.client.force_authenticate(user=self.user1)
 
         response = self.client.get(f'/api/todos/{self.todo2.id}/')
-        
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_cannot_update_other_user_todo(self):
@@ -187,61 +183,45 @@ class TODOViewTest(APITestCase):
         self.client.force_authenticate(user=self.user1)
 
         response = self.client.delete(f'/api/todos/{self.todo2.id}/')
-        
+
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(TODO.objects.filter(id=self.todo2.id).exists())
 
     def test_filter_by_status(self):
         """Test : Filter TODOs by status"""
         self.client.force_authenticate(user=self.user1)
-    
-        TODO.objects.create(
-            title='Done TODO',
-            project=self.project1,
-            status='done'
-        )
-        TODO.objects.create(
-            title='In Progress TODO',
-            project=self.project1,
-            status='in_progress'
-        )
-        
+
+        TODO.objects.create(title='Done TODO', project=self.project1, status='done')
+        TODO.objects.create(title='In Progress TODO', project=self.project1, status='in_progress')
+
         response = self.client.get('/api/todos/?status=done')
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         if isinstance(response.data, dict) and 'results' in response.data:
             todos = response.data['results']
         else:
             todos = response.data
-        
+
         self.assertEqual(len(todos), 1)
         self.assertEqual(todos[0]['status'], 'done')
 
     def test_filter_by_priority(self):
         """Test : Filter TODOs by priority"""
         self.client.force_authenticate(user=self.user1)
-    
-        TODO.objects.create(
-            title='High Priority',
-            project=self.project1,
-            priority='high'
-        )
-        TODO.objects.create(
-            title='Low Priority',
-            project=self.project1,
-            priority='low'
-        )
-        
+
+        TODO.objects.create(title='High Priority', project=self.project1, priority='high')
+        TODO.objects.create(title='Low Priority', project=self.project1, priority='low')
+
         response = self.client.get('/api/todos/?priority=high')
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         if isinstance(response.data, dict) and 'results' in response.data:
             todos = response.data['results']
         else:
             todos = response.data
-        
+
         self.assertEqual(len(todos), 1)
         self.assertEqual(todos[0]['priority'], 'high')
 
@@ -250,48 +230,48 @@ class TODOViewTest(APITestCase):
         self.client.force_authenticate(user=self.user1)
 
         data = {'description': 'No title'}
-    
+
         response = self.client.post(
             f'/api/projects/{self.project1.id}/todos/',
             data,
             format='json'
         )
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('title', response.data)
 
     def test_create_todo_invalid_status(self):
         """Test : Cannot create Todo with invalid status"""
         self.client.force_authenticate(user=self.user1)
-    
+
         data = {
             'title': 'Invalid Status',
             'status': 'invalid_status'
         }
-        
+
         response = self.client.post(
             f'/api/projects/{self.project1.id}/todos/',
             data,
             format='json'
         )
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('status', response.data)
 
     def test_create_todo_with_invalid_priority(self):
         """Test : Cannot create Todo with invalid priority"""
         self.client.force_authenticate(user=self.user1)
-    
+
         data = {
             'title': 'Invalid Priority',
             'priority': 'invalid_priority'
         }
-        
+
         response = self.client.post(
             f'/api/projects/{self.project1.id}/todos/',
             data,
             format='json'
         )
-        
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('priority', response.data)

@@ -28,27 +28,24 @@ class NoteSerializerTest(TestCase):
             instance=instance,
             context={'request': mock_request}
         )
-    
+
     def test_valid_note_data(self):
         """Test serializer with valid data"""
         data = {
             'title': 'Test Note',
             'content': 'This is a test note.',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save()
+        # Project is injected by the view via save(project=...)
+        note = serializer.save(project=self.project)
         self.assertEqual(note.title, data['title'])
         self.assertEqual(note.content, data['content'])
         self.assertEqual(note.project, self.project)
 
     def test_missing_title(self):
         """Test that title is required"""
-        data = {
-            'content': 'This is a test note.',
-            'project': self.project.id
-        }
+        data = {'content': 'This is a test note.'}
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn('title', serializer.errors)
@@ -58,7 +55,6 @@ class NoteSerializerTest(TestCase):
         data = {
             'title': 'A' * 256,
             'content': 'This is a test note.',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -69,66 +65,28 @@ class NoteSerializerTest(TestCase):
         data = {
             'title': 'Test Note',
             'content': '',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save()
+        note = serializer.save(project=self.project)
         self.assertEqual(note.content, '')
-    
+
     def test_title_trimmed(self):
         """Test that title is trimmed of whitespace"""
         data = {
             'title': '   Trimmed Note Title   ',
             'content': 'Content here.',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save()
+        note = serializer.save(project=self.project)
         self.assertEqual(note.title, 'Trimmed Note Title')
-
-    def test_project_isolation(self):
-        """Test that users cannot create notes in other users projects"""
-        # Créer un AUTRE user
-        other_user = User.objects.create_user(
-            username='otheruser',
-            email='other@test.com',
-            password='OtherPass123!'
-        )
-        
-        # 2. Créer un projet de cet AUTRE user
-        other_project = Project.objects.create(
-            title='Other User Project',
-            user=other_user  # ← Projet d'un autre !
-        )
-        
-        # 3. self.user essaie de créer une note dans other_project
-        data = {
-            'title': 'Hacker Note',
-            'content': 'Trying to hack...',
-            'project': other_project.id  # ← Projet qui n'appartient PAS à self.user
-        }
-        
-        # 4. Le serializer utilise self.user (via get_serializer)
-        serializer = self.get_serializer(data=data)
-        
-        # 5. Vérifier que c'est INVALIDE
-        self.assertFalse(serializer.is_valid())  # ← DOIT échouer
-        self.assertIn('project', serializer.errors)  # ← Erreur sur 'project'
-        
-        # 6. Vérifier le message d'erreur
-        self.assertIn(
-            'You do not have permission',
-            str(serializer.errors['project'][0])
-        )
 
     def test_title_spaces_only(self):
         """Test that title with only spaces is invalid"""
         data = {
             'title': '     ',
             'content': 'Content here.',
-            'project': self.project.id
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -140,14 +98,13 @@ class NoteSerializerTest(TestCase):
         data = {
             'title': 'Test Note',
             'content': 'This is a test note.',
-            'project': self.project.id,
             'id': 666,
             'created_at': fake_date,
             'updated_at': fake_date
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save()
+        note = serializer.save(project=self.project)
         self.assertNotEqual(note.id, 666)
         self.assertNotEqual(str(note.created_at), fake_date)
         self.assertNotEqual(str(note.updated_at), fake_date)
