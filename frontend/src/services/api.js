@@ -35,13 +35,15 @@ api.interceptors.response.use(
             }
         }
 
-        // Log errors for debugging
-        if (error.response) {
-            console.error(`API error ${error.response.status}:`, error.response.data);
-        } else if (error.request) {
-            console.error('No response from server — is the backend running?');
-        } else {
-            console.error('Request error:', error.message);
+        // Log errors only in development
+        if (import.meta.env.DEV) {
+            if (error.response) {
+                console.error(`API error ${error.response.status}:`, error.response.data);
+            } else if (error.request) {
+                console.error('No response from server — is the backend running?');
+            } else {
+                console.error('Request error:', error.message);
+            }
         }
 
         return Promise.reject(error);
