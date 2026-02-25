@@ -78,9 +78,13 @@ source DevNote-env/bin/activate  # macOS/Linux
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
-cp .env.example .env
-# Edit .env: SECRET_KEY, DEBUG=True, ALLOWED_HOSTS=localhost,127.0.0.1
+# Create .env file
+touch .env
+# Add the following variables:
+# SECRET_KEY=your-secret-key-here
+# DEBUG=True
+# ALLOWED_HOSTS=localhost,127.0.0.1
+# CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 # Apply migrations
 python manage.py migrate
@@ -124,7 +128,7 @@ Authentication uses **HTTPOnly cookies** (set automatically on login/register).
 | `/notes/{id}/` | GET, PATCH, DELETE | Note detail |
 | `/snippets/{id}/` | GET, PATCH, DELETE | Snippet detail |
 | `/todos/{id}/` | GET, PATCH, DELETE | TODO detail |
-| `/search/?q=...` | GET | Global search (notes, snippets, TODOs) |
+| `/search/?q=...` | GET | Global search (projects, notes, snippets, TODOs) |
 
 ---
 
