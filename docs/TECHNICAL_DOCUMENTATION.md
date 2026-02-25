@@ -1,7 +1,6 @@
 # DevNote — Technical Documentation (V1)
 
 > **Project:** DevNote  
-> **Author:** Yann Duzelier — Holberton School  
 > **Last updated:** February 2026  
 > **Status:** MVP Stage 4 — Active Development
 
