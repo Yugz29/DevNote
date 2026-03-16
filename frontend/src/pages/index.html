@@ -3,10 +3,1165 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DevNote - Developer Knowledge</title>
+  <title>DevNote — Your dev knowledge</title>
+  <!-- DevNote brand color applied throughout -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/light/style.css">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --text: #e0e0e0;
+      --muted: #555;
+      --secondary: #888;
+      --accent: #58a6ff;
+      --danger: #f85149;
+      --warning: #d29922;
+      --success: #3fb950;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', -apple-system, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px; height: 56px;
+      transition: background .3s, border-color .3s;
+      border-bottom: 1px solid transparent;
+    }
+    nav.solid {
+      background: rgba(10,10,10,.92);
+      backdrop-filter: blur(20px);
+      border-bottom-color: var(--border);
+    }
+    .nav-logo { font-size: 15px; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: -.02em; }
+    .nav-links { display: flex; align-items: center; gap: 4px; list-style: none; }
+    .nav-links a {
+      color: var(--secondary); font-size: 13px; text-decoration: none;
+      padding: 5px 12px; border-radius: 7px; font-weight: 500;
+      transition: color .15s, background .15s;
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+    .nav-cta {
+      background: rgba(88,166,255,.1) !important; color: #58a6ff !important;
+      border: 1px solid rgba(88,166,255,.25) !important; font-weight: 600 !important;
+    }
+    .nav-cta:hover { background: rgba(88,166,255,.18) !important; border-color: rgba(88,166,255,.45) !important; }
+
+    /* HERO */
+    #hero {
+      position: relative; min-height: 100vh; overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 120px 32px 80px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 70% 55% at 20% 40%, rgba(88,166,255,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 60%, rgba(88,166,255,.04) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(248,81,73,.04) 0%, transparent 55%);
+      animation: bgShift 12s ease-in-out infinite alternate;
+    }
+    @keyframes bgShift {
+      0%   { opacity: .7; transform: scale(1) rotate(0deg); }
+      100% { opacity: 1;  transform: scale(1.05) rotate(.8deg); }
+    }
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+    }
+    .spotlight {
+      position: absolute; pointer-events: none; z-index: 1;
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(88,166,255,.07) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+      left: 50%; top: 50%;
+    }
+    .hero-content { position: relative; z-index: 2; width: 100%; }
+    .hero-h1 {
+      font-size: clamp(48px, 7.5vw, 88px);
+      font-weight: 800; line-height: .96; letter-spacing: -.04em;
+      color: #fff; margin-bottom: 20px;
+      animation: riseIn .6s ease both;
+    }
+    .hero-h1 em { font-style: normal; color: var(--accent); }
+    .hero-tagline {
+      font-family: var(--mono); font-size: 13px; color: var(--accent);
+      letter-spacing: .02em; margin-bottom: 24px;
+      animation: riseIn .6s .1s ease both;
+    }
+    .hero-sub {
+      font-size: clamp(15px, 1.8vw, 18px); color: var(--secondary);
+      max-width: 520px; margin: 0 auto 40px; line-height: 1.7; font-weight: 400;
+      animation: riseIn .6s .18s ease both;
+    }
+    .hero-actions {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 72px; animation: riseIn .6s .26s ease both;
+    }
+    .btn-main {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 12px 26px; font-size: 14px; font-weight: 600;
+      background: var(--accent); color: #0a0a0a;
+      border: none; border-radius: 8px; text-decoration: none; cursor: pointer;
+      transition: background .2s, transform .2s, box-shadow .2s;
+    }
+    .btn-main:hover { background: #79bfff; transform: translateY(-2px); box-shadow: 0 12px 36px rgba(88,166,255,.25); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 12px 26px; font-size: 14px; font-weight: 500;
+      background: none; color: var(--secondary);
+      border: 1px solid var(--border); border-radius: 8px; text-decoration: none;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.04); }
+
+    /* App window */
+    .hero-window {
+      width: 100%; max-width: 940px; margin: 0 auto;
+      border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 60px 120px rgba(0,0,0,.8), 0 0 0 1px rgba(88,166,255,.04);
+      animation: riseIn .7s .38s ease both;
+      position: relative; z-index: 2;
+      height: 538px; min-height: 538px; flex-shrink: 0;
+    }
+    .win-bar {
+      background: #161616; border-bottom: 1px solid rgba(255,255,255,.07);
+      padding: 12px 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot.r{background:#ff5f57;} .dot.y{background:#febc2e;} .dot.g{background:#28c840;}
+    .win-url {
+      margin: 0 auto; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 6px; padding: 4px 18px; font-family: var(--mono); font-size: 11px; color: var(--muted);
+    }
+    .win-body { display: flex; height: 480px; min-height: 480px; max-height: 480px; padding: 12px; gap: 12px; background: #0a0a0a; overflow: hidden; }
+    .w-sidebar {
+      width: 210px; flex-shrink: 0;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .w-sb-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: 14px; font-weight: 600; color: #fff;
+    }
+    .w-sb-icons { display: flex; gap: 1px; color: var(--muted); font-size: 13px; }
+    .w-sb-icon { padding: 3px 6px; border-radius: 5px; cursor: pointer; }
+    .w-sb-list { flex: 1; padding: 8px; }
+    .w-sb-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; margin-bottom: 3px;
+      background: rgba(255,255,255,.04); border-radius: 6px;
+      font-size: 13px; font-weight: 500; color: var(--secondary); cursor: pointer;
+    }
+    .w-sb-item i { font-size: 16px; flex-shrink: 0; }
+    .w-sb-item.active { background: rgba(88,166,255,.08); border: 1px solid rgba(88,166,255,.18); color: var(--text); }
+    .w-sb-foot {
+      padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.06);
+      font-size: 12px; color: var(--muted); display: flex; justify-content: space-between;
+    }
+    .w-main {
+      flex: 1; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; text-align: left;
+    }
+    .w-proj-head { padding: 18px 26px 12px; text-align: left; }
+    .w-proj-name { font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .w-proj-desc { font-size: 12px; color: #333; }
+    .w-tabs { display: flex; justify-content: center; padding: 0 26px 12px; }
+    .w-tabs-inner {
+      display: inline-flex; background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 4px; gap: 2px;
+    }
+    .w-tab { background: none; border: none; color: #555; padding: 6px 18px; font-size: 12px; border-radius: 7px; cursor: pointer; font-family: var(--sans); }
+    .w-tab.on { background: rgba(255,255,255,.07); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .w-grid { padding: 0 16px 12px; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 148px; gap: 10px; overflow: hidden; }
+    .w-card { background: #1e1e1e; border: 1px solid #3a3a3a; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+    .w-card.add { border-style: dashed; border-color: #252525; background: transparent; align-items: center; justify-content: center; color: #2a2a2a; font-size: 13px; }
+    .w-lang { font-size: 11px; color: #666; display: flex; align-items: center; gap: 6px; }
+    .w-lang i { font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .w-title { font-size: 13px; font-weight: 600; color: var(--text); text-align: left; margin-top: 2px; }
+    .w-code { background: #141414; border: 1px solid #252525; border-radius: 4px; padding: 6px 8px; font-family: var(--mono); font-size: 9px; color: #444; white-space: pre; line-height: 1.6; flex: 1; overflow: hidden; }
+    .w-date { font-size: 10px; color: #2a2a2a; text-align: right; }
+    /* Hero window — tabs & content transition */
+    .w-content { flex: 1; overflow: hidden; position: relative; min-height: 310px; max-height: 310px; }
+    #heroContent { height: 100%; overflow: hidden; }
+    .w-pane { position: absolute; inset: 0; overflow: hidden; opacity: 0; transform: translateY(6px); transition: opacity .2s ease, transform .2s ease; pointer-events: none; }
+    .w-pane.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    /* Notes pane */
+    .w-note-row { display: flex; align-items: center; gap: 10px; padding: 11px 26px; border-bottom: 1px solid #1a1a1a; cursor: default; }
+    .w-note-arrow { color: #3a3a3a; font-size: 10px; flex-shrink: 0; }
+    .w-note-title { font-size: 12px; font-weight: 600; color: var(--text); }
+    .w-note-date { font-size: 10px; color: #2a2a2a; margin-left: auto; }
+    /* TODOs pane */
+    .w-todo-row { display: flex; align-items: center; gap: 10px; padding: 10px 26px; border-bottom: 1px solid #1a1a1a; }
+    .w-todo-check { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #333; flex-shrink: 0; }
+    .w-todo-check.done { background: var(--success); border-color: var(--success); }
+    .w-todo-title { font-size: 12px; color: var(--text); flex: 1; }
+    .w-todo-title.done { color: var(--muted); text-decoration: line-through; }
+    .w-todo-bdg { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 20px; text-transform: uppercase; }
+    .w-todo-bdg.h { background: #3d0000; color: var(--danger); border: 1px solid #7a0000; }
+    .w-todo-bdg.m { background: #332d00; color: var(--warning); border: 1px solid #6a4f00; }
+    .w-todo-bdg.l { background: #2a2a2a; color: #555; border: 1px solid #333; }
+
+    @keyframes riseIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* PROBLEM */
+    #problem {
+      padding: 120px 40px; border-top: 1px solid var(--border); text-align: center;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(248,81,73,.03) 0%, transparent 60%);
+    }
+    .problem-label { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .14em; margin-bottom: 16px; }
+    .problem-h2 { font-size: clamp(30px, 4.5vw, 52px); font-weight: 800; letter-spacing: -.03em; color: #fff; line-height: 1.05; margin-bottom: 16px; }
+    .problem-sub { font-size: 16px; color: var(--secondary); max-width: 480px; margin: 0 auto 72px; line-height: 1.7; }
+    /*
+      Conteneur 720×300px, centre (50%, 50%) = (360, 150)
+      Ellipse rx=260px, ry=110px
+      Pentagone horaire depuis le haut — chaque chip centré via translate(-50%,-50%)
+      left/top en % de 720×300:
+        1. -90° → (360, 40)    → 50%  / 13.3%
+        2. -18° → (607, 116)   → 84.3%/ 38.7%
+        3.  54° → (513, 239)   → 71.2%/ 79.7%
+        4. 126° → (207, 239)   → 28.8%/ 79.7%
+        5. 198° → (113, 116)   → 15.7%/ 38.7%
+    */
+    .chaos-wrap { position: relative; max-width: 720px; margin: 0 auto; height: 300px; }
+    .tool-chip {
+      position: absolute; display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 500; color: var(--secondary);
+      white-space: nowrap; animation: floatChip 5s ease-in-out infinite;
+      transform: translate(-50%, -50%);
+    }
+    .tool-chip i { font-size: 16px; opacity: .7; }
+    .tool-chip:nth-child(1) { top: 13.3%; left: 50%;   animation-delay: 0s;  }
+    .tool-chip:nth-child(2) { top: 38.7%; left: 84.3%; animation-delay: .3s; }
+    .tool-chip:nth-child(3) { top: 79.7%; left: 71.2%; animation-delay: .6s; }
+    .tool-chip:nth-child(4) { top: 79.7%; left: 28.8%; animation-delay: .4s; }
+    .tool-chip:nth-child(5) { top: 38.7%; left: 15.7%; animation-delay: .2s; }
+    @keyframes floatChip {
+      0%,100% { transform: translate(-50%, -50%) translateY(0); }
+      50%      { transform: translate(-50%, -50%) translateY(-6px); }
+    }
+    .devnote-center {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(88,166,255,.1); border: 1px solid rgba(88,166,255,.3);
+      border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: 700; color: #fff;
+      z-index: 2; white-space: nowrap; box-shadow: 0 0 40px rgba(88,166,255,.15);
+    }
+    .chaos-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+    .chaos-svg line { stroke: rgba(88,166,255,.15); stroke-width: 1; stroke-dasharray: 4 4; animation: dashFlow 2s linear infinite; }
+    @keyframes dashFlow { to { stroke-dashoffset: -16; } }
+
+    /* FEATURES */
+    #features { padding: 0; border-top: 1px solid var(--border); }
+    .feat-row { display: grid; grid-template-columns: 1fr 1fr; min-height: 520px; border-bottom: 1px solid var(--border); }
+    .feat-row:nth-child(even) .feat-visual { order: 1; }
+    .feat-row:nth-child(even) .feat-copy   { order: 2; }
+    .feat-copy {
+      padding: 80px 64px; display: flex; flex-direction: column; justify-content: center;
+      opacity: 0; transform: translateX(-40px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .feat-row:nth-child(even) .feat-copy { transform: translateX(40px); }
+    .feat-copy.visible { opacity: 1; transform: translateX(0); }
+    .feat-num { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 20px; }
+    .feat-h3 { font-size: clamp(26px, 3vw, 38px); font-weight: 800; letter-spacing: -.025em; color: #fff; line-height: 1.1; margin-bottom: 16px; }
+    .feat-h3 em { font-style: normal; color: var(--accent); }
+    .feat-p { font-size: 15px; color: var(--secondary); line-height: 1.75; margin-bottom: 28px; }
+    .feat-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .feat-tag { font-family: var(--mono); font-size: 11px; color: var(--secondary); background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; }
+    .feat-visual {
+      background: rgba(255,255,255,.02); border-left: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px; overflow: hidden; position: relative;
+      opacity: 0; transform: translateX(40px);
+      transition: opacity .7s .12s ease, transform .7s .12s ease;
+    }
+    .feat-row:nth-child(even) .feat-visual { border-left: none; border-right: 1px solid var(--border); transform: translateX(-40px); }
+    .feat-visual.visible { opacity: 1; transform: translateX(0); }
+
+
+    /* Notes visual */
+    .v-notes { width: 100%; max-width: 440px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; overflow: hidden; }
+    .feat-visual .vn-body-inner { background: rgba(0,0,0,.2); }
+    .v-notes-header { padding: 14px 20px 12px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 14px; font-weight: 600; color: var(--secondary); }
+    .vn-row { display: flex; align-items: flex-start; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #1a1a1a; cursor: pointer; user-select: none; transition: background .15s; }
+    .vn-row:hover { background: rgba(255,255,255,.03); }
+    .vn-arrow { color: #3a3a3a; font-size: 10px; margin-top: 3px; flex-shrink: 0; transition: transform .2s ease, color .15s; }
+    .vn-arrow.open { color: var(--secondary); transform: rotate(90deg); }
+    .vn-title { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+    .vn-body { overflow: hidden; max-height: 0; transition: max-height .3s ease, margin .3s ease, opacity .25s ease; margin: 0 20px 0 38px; opacity: 0; }
+    .vn-body.open { max-height: 200px; margin: 0 20px 12px 38px; opacity: 1; }
+    .vn-body-inner { padding: 12px 14px; background: transparent; border-radius: 7px; font-size: 12px; color: var(--secondary); line-height: 1.85; }
+    .vn-body-inner code { font-family: var(--mono); font-size: 10px; background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 3px; padding: 0 5px; color: #aaa; }
+    .vn-dim { color: #3a3a3a; }
+
+    /* Search visual */
+    .v-search { width: 100%; max-width: 440px; background: rgba(30,30,30,.75); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.6); display: flex; flex-direction: column; }
+    .vs-input { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #2a2a2a; }
+    .vs-icon { font-size: 16px; color: var(--secondary); }
+    .vs-text { flex: 1; font-size: 15px; color: var(--text); }
+    .vs-cursor { display: inline-block; width: 2px; height: 16px; background: var(--accent); vertical-align: middle; margin-left: 1px; animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+    .vs-esc { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid #2a2a2a; border-radius: 4px; padding: 2px 6px; }
+    .vs-results { padding: 6px 0; height: 220px; overflow: hidden; }
+    .vs-section-title { font-size: 10px; font-weight: 600; color: #444; text-transform: uppercase; letter-spacing: .08em; padding: 8px 20px 4px; }
+    .vs-item { display: flex; align-items: center; gap: 12px; padding: 10px 20px; cursor: pointer; transition: background .15s; }
+    .vs-item.hi { background: rgba(88,166,255,.07); }
+    .vs-item-icon { font-size: 15px; width: 18px; flex-shrink: 0; color: var(--secondary); }
+    .vs-item-body { flex: 1; min-width: 0; }
+    .vs-item-title { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vs-item-title mark { background: rgba(88,166,255,.25); color: var(--text); border-radius: 2px; }
+    .vs-item-meta { font-size: 11px; color: #444; margin-top: 1px; }
+    .vs-item-type { font-family: var(--mono); font-size: 10px; color: #444; }
+
+    /* Kanban visual */
+    .v-kanban { width: 100%; max-width: none; display: flex; gap: 10px; }
+    .vk-col { flex: 1; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; }
+    .vk-head { font-size: 10px; font-weight: 600; color: #444; padding-bottom: 8px; border-bottom: 1px solid #1a1a1a; }
+    .vk-card { background: #1e1e1e; border: 1px solid #333; border-radius: 7px; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .vk-card.dim { opacity: .35; }
+    .vk-title { font-size: 11px; font-weight: 500; color: var(--text); }
+    .vk-title.done { text-decoration: line-through; color: var(--muted); }
+    .vk-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+    .bdg { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 20px; text-transform: uppercase; letter-spacing: .04em; }
+    .bdg-h { background: #3d0000; color: var(--danger); border: 1px solid #7a0000; }
+    .bdg-m { background: #332d00; color: var(--warning); border: 1px solid #6a4f00; }
+    .bdg-l { background: #2a2a2a; color: #666; border: 1px solid #444; }
+    .bdg-pending     { background: rgba(110,118,129,.08); color: #6e7681; border: 1px solid rgba(110,118,129,.18); cursor: pointer; white-space: nowrap; }
+    .bdg-in-progress { background: rgba(139,148,158,.1);  color: #8b949e; border: 1px solid rgba(139,148,158,.22); cursor: pointer; white-space: nowrap; }
+    .bdg-done        { background: #1a3a1a; color: var(--success); border: 1px solid #1a6a1a; cursor: pointer; white-space: nowrap; }
+    .bdg-status:hover { opacity: .75; }
+    .vk-card.is-done .vk-title { color: var(--muted); }
+    .vk-card.is-done .bdg-h,
+    .vk-card.is-done .bdg-m,
+    .vk-card.is-done .bdg-l { background: #222; color: #444; border-color: #2a2a2a; }
+    .vk-date { font-size: 9px; color: #2a2a2a; }
+
+    /* ABOUT */
+    #about { padding: 120px 40px; border-top: 1px solid var(--border); background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(88,166,255,.03) 0%, transparent 60%); }
+    .about-wrap { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr 340px; gap: 80px; align-items: start; }
+    .about-left .problem-label { text-align: left; margin-bottom: 14px; }
+    .about-h2 { font-size: clamp(28px, 3.5vw, 42px); font-weight: 800; letter-spacing: -.03em; color: #fff; line-height: 1.1; margin-bottom: 32px; }
+    .about-story { font-size: 15px; color: var(--secondary); line-height: 1.85; }
+    .about-story p { margin-bottom: 20px; }
+    .about-story strong { color: var(--text); font-weight: 600; }
+    .about-story a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(88,166,255,.25); transition: border-color .15s; }
+    .about-story a:hover { border-bottom-color: var(--accent); }
+    .about-stats { display: flex; gap: 32px; margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .stat-item { display: flex; flex-direction: column; gap: 4px; }
+    .stat-val { font-size: 28px; font-weight: 800; letter-spacing: -.03em; color: #fff; }
+    .stat-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+    .dev-card { background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 14px; padding: 26px; position: sticky; top: 80px; }
+    .dev-avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; margin-bottom: 14px; display: flex; align-items: center; justify-content: center; }
+    .dev-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .dev-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .dev-role { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 22px; }
+    .dev-divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .dev-socials { display: flex; flex-direction: column; gap: 6px; }
+    .dev-link { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border: 1px solid var(--border); border-radius: 9px; color: var(--secondary); text-decoration: none; font-size: 13px; transition: all .15s; }
+    .dev-link:hover { color: var(--text); border-color: rgba(255,255,255,.16); background: rgba(255,255,255,.04); }
+    .dev-link svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+    .dev-repo { display: flex; align-items: center; justify-content: space-between; padding: 11px 15px; background: rgba(88,166,255,.07); border: 1px solid rgba(88,166,255,.2); border-radius: 9px; color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 600; transition: background .15s; margin-top: 4px; }
+    .dev-repo:hover { background: rgba(88,166,255,.13); }
+
+    /* CTA */
+    #cta { padding: 140px 40px; text-align: center; border-top: 1px solid var(--border); background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(88,166,255,.06) 0%, transparent 65%), radial-gradient(ellipse 80% 40% at 50% 100%, rgba(88,166,255,.03) 0%, transparent 60%); }
+    .cta-h2 { font-size: clamp(32px, 5vw, 60px); font-weight: 800; letter-spacing: -.04em; color: #fff; line-height: 1.05; margin-bottom: 20px; }
+    .cta-sub { font-size: 16px; color: var(--secondary); margin-bottom: 44px; }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--border); padding: 48px 40px 32px; background: rgba(255,255,255,.01); }
+    .footer-inner { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto auto; gap: 48px; align-items: start; }
+    .footer-logo { font-size: 15px; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: -.02em; display: inline-block; margin-bottom: 8px; }
+    .footer-tagline { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 260px; }
+    .footer-bottom { max-width: 1080px; margin: 40px auto 0; padding-top: 24px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); }
+    .footer-nav { display: flex; flex-direction: column; gap: 10px; }
+    .footer-nav-title { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+    .footer-nav a { color: var(--secondary); font-size: 13px; text-decoration: none; transition: color .15s; }
+    .footer-nav a:hover { color: var(--text); }
+    .footer-social { display: flex; flex-direction: column; gap: 10px; }
+    .footer-social-title { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+    .footer-social a { display: flex; align-items: center; gap: 8px; color: var(--secondary); font-size: 13px; text-decoration: none; transition: color .15s; }
+    .footer-social a:hover { color: var(--text); }
+    .footer-social svg { width: 14px; height: 14px; fill: currentColor; flex-shrink: 0; }
+
+    /* RESPONSIVE */
+    @media (max-width: 960px) {
+      .feat-row { grid-template-columns: 1fr; min-height: auto; }
+      .feat-copy { padding: 48px 32px; order: 2 !important; }
+      .feat-visual { min-height: 320px; order: 1 !important; border-left: none !important; border-right: none !important; border-bottom: 1px solid var(--border); }
+      .about-wrap { grid-template-columns: 1fr; gap: 48px; }
+      .dev-card { position: static; }
+      .chaos-wrap { height: 300px; }
+    }
+    @media (max-width: 680px) {
+      nav { padding: 0 20px; }
+      .nav-links a:not(.nav-cta) { display: none; }
+      #hero { padding: 100px 20px 60px; }
+      .win-body { height: 300px; }
+      .w-sidebar { display: none; }
+      .about-stats { flex-wrap: wrap; gap: 20px; }
+      footer { flex-direction: column; gap: 16px; text-align: center; }
+    }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+
+<nav id="nav">
+  <a href="#hero" class="nav-logo">Dev<span style="color:var(--accent)">Note</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="https://github.com/Yugz29/devnote" target="_blank">GitHub</a></li>
+    <!-- ⚠️ Replace with your deployed app URL -->
+    <li><a href="./login.html" class="nav-cta">Open App →</a></li>
+  </ul>
+</nav>
+
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="spotlight" id="spotlight"></div>
+  <div class="hero-content">
+    <h1 class="hero-h1">
+      Stop losing<br>
+      <em>what you know.</em>
+    </h1>
+    <p class="hero-tagline">Your dev knowledge, everywhere, instantly.</p>
+    <p class="hero-sub">
+      Your snippets, notes, and TODOs are scattered across a dozen tools.
+      DevNote brings them together, one workspace, instant search, every device.
+    </p>
+    <div class="hero-actions">
+      <!-- ⚠️ Replace with your deployed app URL -->
+      <a href="./login.html" class="btn-main">Open DevNote →</a>
+      <a href="#problem" class="btn-ghost">See how it works ↓</a>
+    </div>
+    <div class="hero-window">
+      <div class="win-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <div class="win-url">devnote / dashboard</div>
+      </div>
+      <div class="win-body">
+        <div class="w-sidebar">
+          <div class="w-sb-head">Projects <div class="w-sb-icons"><span class="w-sb-icon">⌕</span><span class="w-sb-icon">＋</span></div></div>
+          <div class="w-sb-list">
+            <div class="w-sb-item active" data-project="backend"><i class="ph-light ph-folder"></i> Backend API</div>
+            <div class="w-sb-item" data-project="mobile"><i class="ph-light ph-folder"></i> Mobile App</div>
+          </div>
+          <div class="w-sb-foot"><span>hello@devnote.app</span><i class="ph-light ph-sign-out" style="font-size:18px"></i></div>
+        </div>
+        <div class="w-main">
+          <div class="w-proj-head">
+            <div class="w-proj-name" id="heroProjName">Backend API</div>
+            <div class="w-proj-desc" id="heroProjDesc">REST API — authentication, database, deployment scripts.</div>
+          </div>
+          <div class="w-tabs">
+            <div class="w-tabs-inner">
+              <button class="w-tab" data-tab="notes">Notes</button>
+              <button class="w-tab on" data-tab="snippets">Code Snippets</button>
+              <button class="w-tab" data-tab="todos">TODOs</button>
+            </div>
+          </div>
+          <div class="w-content" id="heroContent">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="problem-label">// the problem</div>
+  <h2 class="problem-h2">Your knowledge is everywhere.<br>That's the problem.</h2>
+  <p class="problem-sub">
+    Notion, sticky notes, bookmarks, local files, GitHub.<br>Your knowledge is scattered
+    across tools that don't talk to each other. DevNote brings it all together.
+  </p>
+  <div class="chaos-wrap" id="chaosWrap">
+    <div class="tool-chip"><i class="ph-light ph-note"></i> Notion</div>
+    <div class="tool-chip"><i class="ph-light ph-git-branch"></i> GitHub</div>
+    <div class="tool-chip"><i class="ph-light ph-note-pencil"></i> Sticky Notes</div>
+    <div class="tool-chip"><i class="ph-light ph-bookmark"></i> Bookmarks</div>
+    <div class="tool-chip"><i class="ph-light ph-folder"></i> Local Files</div>
+    <div class="devnote-center"><i class="ph-light ph-lightning" style="font-size:16px;margin-right:6px"></i>Dev<span style="color:var(--accent)">Note</span></div>
+    <svg class="chaos-svg" id="chaosSvg" viewBox="0 0 720 300" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+</section>
+
+<section id="features">
+
+  <div class="feat-row">
+    <div class="feat-copy" data-reveal>
+      <div class="feat-num">01 / Notes</div>
+      <h3 class="feat-h3">Write once.<br><em>Find instantly.</em></h3>
+      <p class="feat-p">
+        Stop retyping the same explanations. Write in Markdown, embed Mermaid diagrams,
+        collapse what you don't need. Every note is searchable in under a second.
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">Markdown</span>
+        <span class="feat-tag">Mermaid diagrams</span>
+        <span class="feat-tag">Collapsible blocks</span>
+      </div>
+    </div>
+    <div class="feat-visual" data-reveal>
+      <div class="v-notes">
+        <div class="v-notes-header">Notes · Backend API</div>
+        <div class="vn-row" data-note>
+          <span class="vn-arrow open">▶</span>
+          <div style="flex:1"><div class="vn-title">JWT Authentication Flow</div></div>
+        </div>
+        <div class="vn-body open">
+          <div class="vn-body-inner">
+            <strong style="color:#aaa;font-size:12px">Token lifecycle</strong><br>
+            Access token expires after 15min.<br>
+            Refresh via <code>POST /api/token/refresh/</code><br>
+            Stored in HttpOnly cookie — never localStorage.
+          </div>
+        </div>
+        <div class="vn-row" data-note><span class="vn-arrow">▶</span><div class="vn-title">Docker &amp; Compose setup</div></div>
+        <div class="vn-body">
+          <div class="vn-body-inner">
+            <strong style="color:#aaa;font-size:12px">Docker Compose</strong><br>
+            Services: <code>api</code>, <code>db</code>, <code>nginx</code><br>
+            Run: <code>docker compose up -d --build</code>
+          </div>
+        </div>
+        <div class="vn-row" data-note><span class="vn-arrow">▶</span><div class="vn-title">PostgreSQL migration notes</div></div>
+        <div class="vn-body">
+          <div class="vn-body-inner">
+            Always run <code>makemigrations</code> before <code>migrate</code>.<br>
+            Never edit migration files manually.
+          </div>
+        </div>
+        <div class="vn-row" data-note><span class="vn-arrow">▶</span><div class="vn-title">OWASP security checklist</div></div>
+        <div class="vn-body">
+          <div class="vn-body-inner">
+            SQL injection, XSS, CSRF — covered.<br>
+            JWT stored in HttpOnly cookie only.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feat-row">
+    <div class="feat-copy" data-reveal>
+      <div class="feat-num">02 / Code Snippets</div>
+      <h3 class="feat-h3">Your code,<br><em>always at hand.</em></h3>
+      <p class="feat-p">
+        Stop Googling the same commands. Save your snippets with syntax highlighting,
+        organized by language and project. One click to copy, instantly searchable.
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">Syntax highlighting</span>
+        <span class="feat-tag">Multi-language</span>
+        <span class="feat-tag">One-click copy</span>
+      </div>
+    </div>
+    <div class="feat-visual" data-reveal>
+      <div style="width:100%;max-width:440px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="w-card">
+          <div class="w-lang"><i class="devicon-bash-plain"></i> Bash</div>
+          <div class="w-title">Docker Run</div>
+          <div class="w-code">docker run -d -p 8000:8000 \
+  --env-file .env api</div>
+        </div>
+        <div class="w-card">
+          <div class="w-lang"><i class="devicon-python-plain"></i> Python</div>
+          <div class="w-title">DB Migrate</div>
+          <div class="w-code">python manage.py makemigrations
+python manage.py migrate</div>
+        </div>
+        <div class="w-card">
+          <div class="w-lang"><i class="devicon-bash-plain"></i> Bash</div>
+          <div class="w-title">Deploy Prod</div>
+          <div class="w-code">git push heroku main
+heroku run migrate</div>
+        </div>
+        <div class="w-card">
+          <div class="w-lang"><i class="devicon-python-plain"></i> Python</div>
+          <div class="w-title">Run Tests</div>
+          <div class="w-code">pytest --cov=. \
+  --cov-report=html</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feat-row">
+    <div class="feat-copy" data-reveal>
+      <div class="feat-num">03 / TODOs</div>
+      <h3 class="feat-h3">Ship without<br><em>dropping the ball.</em></h3>
+      <p class="feat-p">
+        Keep your project tasks inside the project, not in a separate app.
+        Prioritize with HIGH, MEDIUM, LOW labels. Switch between Kanban and list view
+        depending on what your brain needs.
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">Kanban board</span>
+        <span class="feat-tag">Priority levels</span>
+        <span class="feat-tag">Linked to projects</span>
+      </div>
+    </div>
+    <div class="feat-visual" data-reveal>
+      <div class="v-kanban">
+        <div class="vk-col">
+          <div class="vk-head" id="vk-head-pending">PENDING · 3</div>
+          <div class="vk-card" data-status="pending"><div class="vk-title">Rate limiting on API</div><div class="vk-foot"><span class="bdg bdg-pending bdg-status">Pending</span><span class="bdg bdg-h" style="margin-left:4px">HIGH</span></div></div>
+          <div class="vk-card" data-status="pending"><div class="vk-title">S3 file uploads</div><div class="vk-foot"><span class="bdg bdg-pending bdg-status">Pending</span><span class="bdg bdg-h" style="margin-left:4px">HIGH</span></div></div>
+          <div class="vk-card" data-status="pending"><div class="vk-title">Email notifications</div><div class="vk-foot"><span class="bdg bdg-pending bdg-status">Pending</span><span class="bdg bdg-m" style="margin-left:4px">MEDIUM</span></div></div>
+        </div>
+        <div class="vk-col">
+          <div class="vk-head">IN PROGRESS</div>
+          <div class="vk-card" data-status="in_progress"><div class="vk-title">WebSocket support</div><div class="vk-foot"><span class="bdg bdg-in-progress bdg-status">In Progress</span><span class="bdg bdg-m" style="margin-left:4px">MEDIUM</span></div></div>
+          <div class="vk-card" data-status="in_progress"><div class="vk-title">Dashboard redesign</div><div class="vk-foot"><span class="bdg bdg-in-progress bdg-status">In Progress</span><span class="bdg bdg-m" style="margin-left:4px">MEDIUM</span></div></div>
+        </div>
+        <div class="vk-col">
+          <div class="vk-head">DONE</div>
+          <div class="vk-card is-done" data-status="done"><div class="vk-title">JWT Auth flow</div><div class="vk-foot"><span class="bdg bdg-done bdg-status">Done</span><span class="bdg bdg-h" style="margin-left:4px">HIGH</span></div></div>
+          <div class="vk-card is-done" data-status="done"><div class="vk-title">Docker deploy</div><div class="vk-foot"><span class="bdg bdg-done bdg-status">Done</span><span class="bdg bdg-h" style="margin-left:4px">HIGH</span></div></div>
+          <div class="vk-card is-done" data-status="done"><div class="vk-title">CI/CD pipeline</div><div class="vk-foot"><span class="bdg bdg-done bdg-status">Done</span><span class="bdg bdg-m" style="margin-left:4px">MEDIUM</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feat-row">
+    <div class="feat-copy" data-reveal>
+      <div class="feat-num">04 / Search</div>
+      <h3 class="feat-h3">Everything,<br><em>one keystroke away.</em></h3>
+      <p class="feat-p">
+        Hit <kbd style="font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:4px;padding:2px 6px">⌘K</kbd> anywhere.
+        DevNote searches across all your notes, snippets, and TODOs in real time,
+        across every project, in milliseconds.
+      </p>
+      <div class="feat-tags">
+        <span class="feat-tag">⌘K shortcut</span>
+        <span class="feat-tag">Cross-project</span>
+        <span class="feat-tag">Notes + Snippets + TODOs</span>
+      </div>
+    </div>
+    <div class="feat-visual" data-reveal>
+      <div class="v-search">
+        <div class="vs-input">
+          <span class="vs-icon">⌕</span>
+          <span class="vs-text" id="searchDemo">auth<span class="vs-cursor"></span></span>
+          <span class="vs-esc">Esc</span>
+        </div>
+        <div class="vs-results" id="vsResults">
+          <div class="vs-section-title">Notes</div>
+          <div class="vs-item hi">
+            <i class="ph-light ph-article vs-item-icon"></i>
+            <div class="vs-item-body">
+              <div class="vs-item-title">JWT <mark>Auth</mark>entication Flow</div>
+              <div class="vs-item-meta">Backend API</div>
+            </div>
+            <span class="vs-item-type">note</span>
+          </div>
+          <div class="vs-section-title">Snippets</div>
+          <div class="vs-item">
+            <i class="ph-light ph-code vs-item-icon"></i>
+            <div class="vs-item-body">
+              <div class="vs-item-title">Docker Run</div>
+              <div class="vs-item-meta">Backend API · Bash</div>
+            </div>
+            <span class="vs-item-type">snippet</span>
+          </div>
+          <div class="vs-item">
+            <i class="ph-light ph-code vs-item-icon"></i>
+            <div class="vs-item-body">
+              <div class="vs-item-title">DB Migrate</div>
+              <div class="vs-item-meta">Backend API · Python</div>
+            </div>
+            <span class="vs-item-type">snippet</span>
+          </div>
+          <div class="vs-section-title">TODOs</div>
+          <div class="vs-item">
+            <i class="ph-light ph-check-square vs-item-icon"></i>
+            <div class="vs-item-body">
+              <div class="vs-item-title">Rate limiting on API</div>
+              <div class="vs-item-meta">Backend API</div>
+            </div>
+            <span class="vs-item-type">todo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<section id="about">
+  <div class="about-wrap">
+    <div class="about-left">
+      <div class="problem-label">// the builder</div>
+      <h2 class="about-h2">Built from<br>real frustration.</h2>
+      <div class="about-story">
+        <p>
+          Every developer has this moment: you fixed that exact bug six weeks ago.
+          You know you wrote it down. But <strong style="color:var(--accent)">where?</strong>
+          Notion? A Gist? That Slack thread you'll never find again?
+        </p>
+        <p>
+          I lived this daily. I even built a <strong>Swift prototype for macOS</strong>
+          to solve it, but it was stuck on one machine.
+          I needed something that worked <strong style="color:var(--accent)">anywhere.</strong>
+          <strong>Dev<span style="color:var(--accent)">Note</span> is the web version of that idea.</strong>
+        </p>
+
+      </div>
+
+    </div>
+    <div>
+      <div class="dev-card">
+        <div class="dev-avatar">
+          <img src="/avatar.jpeg" alt="Yann Duzelier"/><!--<img src="data:image/jpeg;base64,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" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="Yann Duzelier"/>-->
+        </div>
+        <div class="dev-name">Yann Duzelier</div>
+        <div class="dev-role">// Full-Stack Developer</div>
+        <div class="dev-socials">
+          <!-- ⚠️ Replace href="#" with your actual profile URLs -->
+          <a href="https://www.linkedin.com/in/yann-duzelier/" class="dev-link" target="_blank">
+            <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            LinkedIn
+          </a>
+          <a href="https://github.com/Yugz29" class="dev-link" target="_blank">
+            <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+            GitHub
+          </a>
+          <a href="https://www.instagram.com/yugz_" class="dev-link" target="_blank">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            Instagram
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cta">
+  <h2 class="cta-h2">Your knowledge<br>deserves better.</h2>
+  <p class="cta-sub">Everything you've learned, built, and fixed, in one place.</p>
+  <a href="./login.html" class="btn-main" style="font-size:16px;padding:14px 32px;">Start using DevNote →</a>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <a href="#hero" class="footer-logo">Dev<span style="color:var(--accent)">Note</span></a>
+      <p class="footer-tagline">Your dev knowledge, everywhere, instantly.</p>
+    </div>
+    <div class="footer-nav">
+      <div class="footer-nav-title">// navigation</div>
+      <a href="#features">Features</a>
+      <a href="#about">About</a>
+      <a href="./login.html">Open App</a>
+    </div>
+    <div class="footer-social">
+      <div class="footer-social-title">// source</div>
+      <a href="https://github.com/Yugz29/DevNote" target="_blank">
+        <svg viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+        Yugz29/DevNote
+      </a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Yann Duzelier</span>
+    <span style="font-family:var(--mono);font-size:11px">// developed by one obsessed developer</span>
+  </div>
+</footer>
+
+<script>
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => nav.classList.toggle('solid', scrollY > 50), {passive:true});
+
+  const spotlight = document.getElementById('spotlight');
+  const hero = document.getElementById('hero');
+  let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+  let curX = mouseX, curY = mouseY;
+
+  hero.addEventListener('mousemove', e => {
+    const r = hero.getBoundingClientRect();
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
+  });
+
+  (function lerp() {
+    curX += (mouseX - curX) * 0.08;
+    curY += (mouseY - curY) * 0.08;
+    spotlight.style.left = curX + 'px';
+    spotlight.style.top  = curY + 'px';
+    requestAnimationFrame(lerp);
+  })();
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('[data-reveal]').forEach(el => io.observe(el));
+
+  function drawArrows() {
+    const wrap = document.getElementById('chaosWrap');
+    const svg  = document.getElementById('chaosSvg');
+    const dn   = wrap.querySelector('.devnote-center');
+    if (!dn) return;
+    const wR  = wrap.getBoundingClientRect();
+    const dnR = dn.getBoundingClientRect();
+    const cx  = dnR.left - wR.left + dnR.width / 2;
+    const cy  = dnR.top  - wR.top  + dnR.height / 2;
+    const chips = wrap.querySelectorAll('.tool-chip');
+    let html = '';
+    chips.forEach(chip => {
+      const cR = chip.getBoundingClientRect();
+      const x  = cR.left - wR.left + cR.width  / 2;
+      const y  = cR.top  - wR.top  + cR.height / 2;
+      html += `<line x1="${x}" y1="${y}" x2="${cx}" y2="${cy}" />`;
+    });
+    svg.innerHTML = html;
+  }
+  window.addEventListener('load', drawArrows);
+  window.addEventListener('resize', drawArrows);
+
+  const searchData = [
+    {
+      q: 'docker',
+      results: `
+        <div class="vs-section-title">Notes</div>
+        <div class="vs-item hi">
+          <i class="ph-light ph-article vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>Docker</mark> &amp; Compose setup</div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">note</span>
+        </div>
+        <div class="vs-section-title">Snippets</div>
+        <div class="vs-item">
+          <i class="ph-light ph-code vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>Docker</mark> Run</div>
+            <div class="vs-item-meta">Backend API &middot; Bash</div>
+          </div>
+          <span class="vs-item-type">snippet</span>
+        </div>
+        <div class="vs-section-title">TODOs</div>
+        <div class="vs-item">
+          <i class="ph-light ph-check-square vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>Docker</mark> deploy</div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">todo</span>
+        </div>`
+    },
+    {
+      q: 'jwt',
+      results: `
+        <div class="vs-section-title">Notes</div>
+        <div class="vs-item hi">
+          <i class="ph-light ph-article vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>JWT</mark> Authentication Flow</div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">note</span>
+        </div>
+        <div class="vs-section-title">TODOs</div>
+        <div class="vs-item">
+          <i class="ph-light ph-check-square vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>JWT</mark> Auth flow</div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">todo</span>
+        </div>`
+    },
+    {
+      q: 'migrate',
+      results: `
+        <div class="vs-section-title">Notes</div>
+        <div class="vs-item hi">
+          <i class="ph-light ph-article vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title">PostgreSQL <mark>migrate</mark> notes</div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">note</span>
+        </div>
+        <div class="vs-section-title">Snippets</div>
+        <div class="vs-item">
+          <i class="ph-light ph-code vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title">DB <mark>Migrate</mark></div>
+            <div class="vs-item-meta">Backend API &middot; Python</div>
+          </div>
+          <span class="vs-item-type">snippet</span>
+        </div>`
+    },
+    {
+      q: 'deploy',
+      results: `
+        <div class="vs-section-title">Snippets</div>
+        <div class="vs-item hi">
+          <i class="ph-light ph-code vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>Deploy</mark> Prod</div>
+            <div class="vs-item-meta">Backend API &middot; Bash</div>
+          </div>
+          <span class="vs-item-type">snippet</span>
+        </div>
+        <div class="vs-section-title">TODOs</div>
+        <div class="vs-item">
+          <i class="ph-light ph-check-square vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title">Docker <mark>deploy</mark></div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">todo</span>
+        </div>`
+    },
+    {
+      q: 'rate',
+      results: `
+        <div class="vs-section-title">TODOs</div>
+        <div class="vs-item hi">
+          <i class="ph-light ph-check-square vs-item-icon"></i>
+          <div class="vs-item-body">
+            <div class="vs-item-title"><mark>Rate</mark> limiting on API</div>
+            <div class="vs-item-meta">Backend API</div>
+          </div>
+          <span class="vs-item-type">todo</span>
+        </div>`
+    }
+  ];
+
+  let qi = 0, ci = 0, del = false;
+  const searchEl  = document.getElementById('searchDemo');
+  const vsResults = document.getElementById('vsResults');
+
+  function updateResults(idx) {
+    vsResults.innerHTML = searchData[idx].results;
+  }
+
+  updateResults(0);
+
+  function tickSearch() {
+    const entry = searchData[qi];
+    const word  = entry.q;
+    const cursor = '<span class="vs-cursor"></span>';
+    if (!del) {
+      ci++;
+      searchEl.innerHTML = word.slice(0, ci) + cursor;
+      if (ci >= word.length) {
+        updateResults(qi);
+        del = true;
+        setTimeout(tickSearch, 2000);
+        return;
+      }
+    } else {
+      ci--;
+      searchEl.innerHTML = word.slice(0, ci) + cursor;
+      if (ci <= 0) {
+        del = false;
+        qi  = (qi + 1) % searchData.length;
+      }
+    }
+    setTimeout(tickSearch, del ? 40 : 70);
+  }
+  tickSearch();
+
+  /* TODOs interactive status cycle — cards move between columns */
+  const NEXT_STATUS  = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
+  const STATUS_LABEL = { pending: 'Pending', in_progress: 'In Progress', done: 'Done' };
+  const STATUS_CLASS = { pending: 'bdg-pending', in_progress: 'bdg-in-progress', done: 'bdg-done' };
+  const STATUS_COL   = { pending: 0, in_progress: 1, done: 2 };
+
+  function getColumns() {
+    return document.querySelectorAll('.v-kanban .vk-col');
+  }
+
+  function bindStatusBadges() {
+    document.querySelectorAll('.bdg-status').forEach(badge => {
+      badge.onclick = () => {
+        const card  = badge.closest('.vk-card');
+        const cur   = card.dataset.status;
+        const next  = NEXT_STATUS[cur];
+        const cols  = getColumns();
+
+        // Update badge + card state
+        card.dataset.status = next;
+        badge.className     = `bdg ${STATUS_CLASS[next]} bdg-status`;
+        badge.textContent   = STATUS_LABEL[next];
+        card.classList.toggle('is-done', next === 'done');
+
+        // Move card to the right column (append before last child if add-card exists)
+        const targetCol = cols[STATUS_COL[next]];
+        targetCol.appendChild(card);
+      };
+    });
+  }
+
+  bindStatusBadges();
+
+  /* ========= HERO WINDOW — Interactive tabs & projects ========= */
+  const HERO_DATA = {
+    backend: {
+      name: 'Backend API',
+      desc: 'REST API — authentication, database, deployment scripts.',
+      notes: [
+        { title: 'JWT Authentication Flow',    date: '12/03', content: '<strong style="color:#aaa;font-size:12px">Token lifecycle</strong><br>Access token expires after 15min.<br>Refresh via <code>POST /api/token/refresh/</code><br>Stored in HttpOnly cookie — never localStorage.' },
+        { title: 'Docker &amp; Compose setup', date: '08/03', content: '<strong style="color:#aaa;font-size:12px">Docker Compose</strong><br>Services: <code>api</code>, <code>db</code>, <code>nginx</code><br>Run: <code>docker compose up -d --build</code>' },
+        { title: 'PostgreSQL migration notes', date: '01/03', content: 'Always run <code>makemigrations</code> before <code>migrate</code>.<br>Never edit migration files manually.' },
+        { title: 'OWASP security checklist',   date: '20/02', content: 'SQL injection, XSS, CSRF — covered.<br>JWT stored in HttpOnly cookie only.' },
+      ],
+      snippets: [
+        { lang: 'devicon-bash-plain',   label: 'Bash',   title: 'Docker Run',    code: 'docker run -d -p 8000:8000 \\\n  --env-file .env api' },
+        { lang: 'devicon-python-plain', label: 'Python', title: 'DB Migrate',    code: 'python manage.py makemigrations\npython manage.py migrate' },
+        { lang: 'devicon-bash-plain',   label: 'Bash',   title: 'Deploy Prod',   code: 'git push heroku main\nheroku run migrate' },
+        { lang: 'devicon-python-plain', label: 'Python', title: 'Run Tests',     code: 'pytest --cov=. --cov-report=html' },
+        { lang: 'devicon-bash-plain',   label: 'Bash',   title: 'Health Check',  code: 'curl -s https://api.app.io/health' },
+      ],
+      todos: [
+        { title: 'Rate limiting on API',   priority: 'h', status: 'pending' },
+        { title: 'S3 file uploads',        priority: 'h', status: 'pending' },
+        { title: 'Email notifications',    priority: 'm', status: 'pending' },
+        { title: 'WebSocket support',      priority: 'm', status: 'in_progress' },
+        { title: 'Dashboard redesign',     priority: 'm', status: 'in_progress' },
+        { title: 'JWT Auth flow',          priority: 'h', status: 'done' },
+        { title: 'Docker deploy',          priority: 'h', status: 'done' },
+        { title: 'CI/CD pipeline',         priority: 'm', status: 'done' },
+      ]
+    },
+    mobile: {
+      name: 'Mobile App',
+      desc: 'React Native — iOS & Android cross-platform client.',
+      notes: [
+        { title: 'Navigation architecture',  date: '13/03' },
+        { title: 'AsyncStorage strategy',    date: '09/03' },
+        { title: 'Push notifications setup', date: '03/03' },
+        { title: 'App Store guidelines',     date: '18/02' },
+      ],
+      snippets: [
+        { lang: 'devicon-javascript-plain', label: 'JS',     title: 'API Client',    code: 'const api = axios.create({\n  baseURL: API_URL,\n  withCredentials: true\n})' },
+        { lang: 'devicon-javascript-plain', label: 'JS',     title: 'Auth Headers',  code: 'api.interceptors.request.use(\n  cfg => ({ ...cfg,\n    headers: getAuthHeaders()\n  })\n)' },
+        { lang: 'devicon-bash-plain',       label: 'Bash',   title: 'Run iOS',       code: 'npx react-native run-ios\n  --simulator="iPhone 15"' },
+        { lang: 'devicon-bash-plain',       label: 'Bash',   title: 'Build Android', code: 'cd android && ./gradlew\n  assembleRelease' },
+        { lang: 'devicon-javascript-plain', label: 'JS',     title: 'Deep Link',     code: 'Linking.getInitialURL()\n  .then(url => handleDeepLink(url))' },
+      ],
+      todos: [
+        { title: 'Offline mode',            priority: 'h', status: 'pending' },
+        { title: 'Dark mode support',       priority: 'm', status: 'pending' },
+        { title: 'Biometric auth',          priority: 'h', status: 'in_progress' },
+        { title: 'Push notifications',      priority: 'm', status: 'in_progress' },
+        { title: 'Auth screens',            priority: 'h', status: 'done' },
+        { title: 'API integration',         priority: 'h', status: 'done' },
+      ]
+    }
+  };
+
+  let heroProject = 'backend';
+  let heroTab     = 'snippets';
+
+  function renderHero() {
+    const data = HERO_DATA[heroProject];
+    document.getElementById('heroProjName').textContent = data.name;
+    document.getElementById('heroProjDesc').textContent = data.desc;
+
+    let html = '';
+
+    if (heroTab === 'snippets') {
+      const cards = [
+        `<div class="w-card add">+ New snippet...</div>`,
+        ...data.snippets.map(s => `<div class="w-card">
+          <div class="w-lang"><i class="${s.lang}"></i> ${s.label}</div>
+          <div class="w-title">${s.title}</div>
+          <div class="w-code">${s.code}</div>
+        </div>`)
+      ];
+      html = `<div class="w-grid">${cards.join('')}</div>`;
+
+    } else if (heroTab === 'notes') {
+      const rows = data.notes.map((n, i) => `
+        <div class="vn-row">
+          <span class="vn-arrow${i === 0 ? ' open' : ''}">&#9654;</span>
+          <div style="flex:1"><div class="vn-title">${n.title}</div></div>
+          <span style="font-size:10px;color:#2a2a2a">${n.date}</span>
+        </div>
+        <div class="vn-body${i === 0 ? ' open' : ''}">
+          <div class="vn-body-inner">${n.content || '...'}</div>
+        </div>`).join('');
+      html = `<div class="v-notes" style="max-width:none;border:none;border-radius:0;background:transparent">${rows}</div>`;
+
+    } else if (heroTab === 'todos') {
+      const pending     = data.todos.filter(t => t.status === 'pending');
+      const in_progress = data.todos.filter(t => t.status === 'in_progress');
+      const done        = data.todos.filter(t => t.status === 'done');
+      const pBadge = p => `<span class="bdg bdg-${p === 'h' ? 'h' : p === 'm' ? 'm' : 'l'}">${p === 'h' ? 'HIGH' : p === 'm' ? 'MED' : 'LOW'}</span>`;
+      const sBadge = s => `<span class="bdg ${s === 'pending' ? 'bdg-pending' : s === 'in_progress' ? 'bdg-in-progress' : 'bdg-done'}">${s === 'pending' ? 'Pending' : s === 'in_progress' ? 'In Progress' : 'Done'}</span>`;
+      const mkCard = t => `<div class="vk-card${t.status === 'done' ? ' is-done' : ''}">
+        <div class="vk-title">${t.title}</div>
+        <div class="vk-foot">${sBadge(t.status)} ${pBadge(t.priority)}</div>
+      </div>`;
+      html = `<div class="v-kanban" style="padding:0 16px 16px">
+        <div class="vk-col"><div class="vk-head">PENDING &middot; ${pending.length}</div>${pending.map(mkCard).join('')}</div>
+        <div class="vk-col"><div class="vk-head">IN PROGRESS &middot; ${in_progress.length}</div>${in_progress.map(mkCard).join('')}</div>
+        <div class="vk-col"><div class="vk-head">DONE &middot; ${done.length}</div>${done.map(mkCard).join('')}</div>
+      </div>`;
+    }
+
+    document.getElementById('heroContent').innerHTML = html;
+  }
+
+  // Tab clicks
+  document.querySelectorAll('.w-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.w-tab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      heroTab = btn.dataset.tab;
+      renderHero();
+    });
+  });
+
+  // Project clicks
+  document.querySelectorAll('.w-sb-item[data-project]').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.w-sb-item[data-project]').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      heroProject = item.dataset.project;
+      renderHero();
+    });
+  });
+
+  renderHero();
+
+  /* Notes interactive toggle */
+  document.querySelectorAll('.vn-row[data-note]').forEach(row => {
+    row.addEventListener('click', () => {
+      const arrow = row.querySelector('.vn-arrow');
+      const body  = row.nextElementSibling;
+      const isOpen = body.classList.contains('open');
+      arrow.classList.toggle('open', !isOpen);
+      body.classList.toggle('open', !isOpen);
+    });
+  });
+</script>
 </body>
 </html>

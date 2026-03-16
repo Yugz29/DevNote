@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await logout();
         } finally {
-            window.location.href = '/src/pages/login.html';
+            window.location.href = '/src/pages/index.html';
         }
     });
 

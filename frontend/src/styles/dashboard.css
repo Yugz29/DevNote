@@ -27,6 +27,44 @@
     padding: 12px;
     gap: 12px;
     background: #0a0a0a;
+    position: relative;
+}
+
+.layout::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 70% 55% at 20% 40%, rgba(88,166,255,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 60%, rgba(88,166,255,.04) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 40% at 50% 0%, rgba(248,81,73,.04) 0%, transparent 55%);
+    animation: dashBgShift 12s ease-in-out infinite alternate;
+}
+
+.layout::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+}
+
+@keyframes dashBgShift {
+    0%   { opacity: .7; transform: scale(1); }
+    100% { opacity: 1;  transform: scale(1.05); }
+}
+
+.layout > * {
+    position: relative;
+    z-index: 1;
 }
 
 
