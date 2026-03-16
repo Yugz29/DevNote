@@ -103,7 +103,7 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`.
+The app will be available at `http://localhost:5173/src/pages/login.html`.
 
 ---
 
@@ -152,10 +152,3 @@ python manage.py test
 - Subresource Integrity (SRI) on all CDN resources
 - User data fully isolated — no cross-user data access possible
 
----
-
-## 👤 Author
-
-**Yann Duzelier**  
-Holberton School Student Developer  
-📧 yann.duzelier@holbertonstudents.com
