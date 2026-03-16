@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevNote - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/styles/reset.css">
     <link rel="stylesheet" href="/src/styles/variables.css">
     <link rel="stylesheet" href="/src/styles/main.css">
@@ -15,13 +16,13 @@
 
         <!-- Brand -->
         <div class="auth-brand">
-            <h1 class="auth-title">DevNote</h1>
+            <a href="/src/pages/index.html" class="auth-title" style="text-decoration:none">Dev<span style="color:#58a6ff">Note</span></a>
             <p class="auth-subtitle">Your dev knowledge, everywhere, instantly</p>
         </div>
 
         <!-- Card -->
         <div class="auth-card">
-            <h2 class="auth-card-title">Sign in</h2>
+            <h2 class="auth-card-title">Connexion</h2>
 
             <form id="login-form" class="auth-form" novalidate>
 
@@ -50,7 +51,7 @@
                 <p id="error-message" class="auth-error"></p>
 
                 <button type="submit" id="submit-btn" class="btn-auth">
-                    Sign in
+                    Connexion
                 </button>
 
             </form>
