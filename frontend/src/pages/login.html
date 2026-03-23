@@ -7,8 +7,16 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/styles/reset.css">
     <link rel="stylesheet" href="/src/styles/variables.css">
+    <link rel="stylesheet" href="/src/styles/light.css">
     <link rel="stylesheet" href="/src/styles/main.css">
     <link rel="stylesheet" href="/src/styles/auth.css">
+    <!-- Apply saved theme before render to avoid flash -->
+    <script>
+      (function() {
+        const t = localStorage.getItem('devnote-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
 </head>
 <body class="auth-page">
 
@@ -16,7 +24,7 @@
 
         <!-- Brand -->
         <div class="auth-brand">
-            <a href="/src/pages/index.html" class="auth-title" style="text-decoration:none">Dev<span style="color:#58a6ff">Note</span></a>
+            <a href="/src/pages/index.html" class="auth-title" style="text-decoration:none">Dev<span style="color:var(--accent-primary)">Note</span></a>
             <p class="auth-subtitle">Your dev knowledge, everywhere, instantly</p>
         </div>
 
@@ -64,6 +72,7 @@
 
     </div>
 
+    <script src="/src/utils/theme-toggle.js"></script>
     <script type="module" src="/src/pages/login.js"></script>
 </body>
 </html>

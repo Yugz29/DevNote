@@ -1,10 +1,12 @@
 @import './reset.css';
 @import './variables.css';
+@import './light.css';
 
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
 }
 
 #app {
