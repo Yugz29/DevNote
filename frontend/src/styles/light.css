@@ -1,0 +1,29 @@
+/* ==========================================
+   LIGHT THEME — DevNote
+   Applied via [data-theme="light"] on <html>
+   ========================================== */
+
+[data-theme="light"] {
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eef1f6;
+
+  --text-primary: #1a1a2e;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --border-default: rgba(0,0,0,0.1);
+  --border-muted: rgba(0,0,0,0.06);
+
+  --accent-primary: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-emphasis: #1e40af;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
