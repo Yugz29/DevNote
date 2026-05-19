@@ -6,8 +6,7 @@ import SnippetManager from '../managers/snippetManager.js';
 import TodoManager from '../managers/todoManager.js';
 import SearchManager from '../managers/searchManager.js';
 import { createProject, getProjects, getProject, updateProject, deleteProject } from '../services/projectService.js';
-import { getCurrentUser, logout } from '../services/authService.js';
-
+import { ensureCsrfCookie, getCurrentUser, logout } from '../services/authService.js';
 
 // ==========================================
 // STATE
@@ -532,6 +531,7 @@ function setupSidebarToggle() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     await checkAuth();
+    await ensureCsrfCookie();
 
     projectModal = new ModalManager({
         modalId: 'project-modal',

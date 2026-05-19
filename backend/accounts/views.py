@@ -11,12 +11,28 @@ UserModel = get_user_model()
 from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from .cookie_utils import set_auth_cookies, delete_auth_cookies, get_token_from_cookie
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 import logging
 
 logger = logging.getLogger('accounts')
 
+# ============================================
+# ENDPOINT : CSRF Token
+# ============================================
+class CSRFTokenView(APIView):
+    """
+    Set the CSRF cookie for browser clients
+    
+    This endpoint is used by the frontend before authenticated cookie-based
+    requests so Axios can send the CSRF token in the X-CSRFToken header
+    """
+    permission_classes = [AllowAny]
+
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request):
+        return Response({'message': 'CSRF cookie set'})
 
 # ============================================
 # ENDPOINT : Register

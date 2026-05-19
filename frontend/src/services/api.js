@@ -8,6 +8,31 @@ const api = axios.create({
     }
 });
 
+function getCookie(name) {
+    const cookies = document.cookie ? document.cookie.split("; ") : [];
+    const cookie = cookies.find((row) => row.startsWith(`${name}=`));
+
+    if (!cookie) {
+        return null;
+    }
+
+    return decodeURIComponent(cookie.split("=")[1]);
+}
+
+api.interceptors.request.use((config) => {
+    const method = config.method?.toUpperCase();
+
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        const csrfToken = getCookie("csrftoken");
+
+        if (csrfToken) {
+            config.headers["X-CSRFToken"] = csrfToken;
+        }
+    }
+
+    return config;
+});
+
 let isRefreshing = false;
 
 api.interceptors.response.use(

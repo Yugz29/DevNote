@@ -1,7 +1,20 @@
 import api from './api.js';
 
+let csrfPromise = null;
+
+export const ensureCsrfCookie = async () => {
+    if (!csrfPromise) {
+        csrfPromise = api.get('/auth/csrf/').catch((error) => {
+            csrfPromise = null;
+            throw error;
+        });
+    }
+
+    await csrfPromise;
+};
 
 export const login = async (email, password) => {
+    await ensureCsrfCookie();
     const response = await api.post('/auth/login/', {
         email,
         password
@@ -22,11 +35,13 @@ export const register = async (email, password, password2, firstName, lastName, 
         data.username = username;
     }
 
+    await ensureCsrfCookie();
     const response = await api.post('/auth/register/', data);
     return response.data;
 };
 
 export const logout = async () => {
+    await ensureCsrfCookie();
     const response = await api.post('/auth/logout/');
     return response.data;
 };
