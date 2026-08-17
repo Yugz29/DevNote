@@ -22,6 +22,13 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@blocknote/code-block": "^0.54.0",
+    "@blocknote/core": "^0.54.0",
+    "@blocknote/diagram-block": "^0.54.0",
+    "@blocknote/mantine": "^0.54.0",
+    "@blocknote/react": "^0.54.0",
+    "@mantine/core": "^9.5.1",
+    "@mantine/hooks": "^9.5.1",
     "axios": "^1.13.5",
     "dompurify": "^3.3.3",
     "marked": "^17.0.2",
@@ -29,5 +36,10 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"
+  },
+  "overrides": {
+    "@y/protocols": {
+      "@y/y": "14.0.0-rc.24"
+    }
   }
 }

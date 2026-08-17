@@ -1006,6 +1006,25 @@
     height: auto;
 }
 
+/* BlockNote read-only rendering */
+.note-block-view {
+    background: transparent;
+}
+
+.note-block-view .bn-editor {
+    padding-inline: 0;
+    background: transparent;
+}
+
+.note-block-view .bn-default-styles {
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+.note-block-view .bn-block-outer:first-child > .bn-block > .bn-block-content {
+    padding-top: 0;
+}
+
 
 /* Note editor inline */
 .note-editor {

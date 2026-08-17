@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import NoteBlock from "./NoteBlock.jsx";
 import NoteEditor from "./NoteEditor.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
-import { runMermaid } from "../lib/markdown.js";
 import {
   createNote,
   deleteNote,
@@ -53,10 +52,6 @@ export default function NotesPanel({
   const notes = useMemo(() => sortNotes(items, sort), [items, sort]);
 
   useSearchTarget(containerRef, searchItemId, !isLoading && notes.length > 0);
-
-  useEffect(() => {
-    runMermaid(containerRef.current);
-  }, [notes, searchQuery]);
 
   const toggleCollapse = (noteId) => {
     const next = new Set(collapsedIds);

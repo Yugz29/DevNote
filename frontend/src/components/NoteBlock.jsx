@@ -1,6 +1,13 @@
 import { useMemo } from "react";
+import { BlockNoteView } from "@blocknote/mantine";
+import { useCreateBlockNote } from "@blocknote/react";
 import HighlightText from "./HighlightText.jsx";
-import { renderMarkdown } from "../lib/markdown.js";
+import { useTheme } from "../contexts/ThemeContext.js";
+import {
+  markdownToBlocks,
+  noteExtensions,
+  noteSchema,
+} from "../lib/blocknote.js";
 
 export default function NoteBlock({
   note,
@@ -10,9 +17,20 @@ export default function NoteBlock({
   onEdit,
   onDelete,
 }) {
-  const html = useMemo(
-    () => (note.content ? renderMarkdown(note.content, searchQuery) : null),
-    [note.content, searchQuery],
+  const { theme } = useTheme();
+
+  const initialContent = useMemo(
+    () => markdownToBlocks(note.content),
+    [note.content],
+  );
+
+  const editor = useCreateBlockNote(
+    {
+      schema: noteSchema,
+      extensions: noteExtensions,
+      initialContent: initialContent ?? undefined,
+    },
+    [initialContent],
   );
 
   return (
@@ -62,18 +80,18 @@ export default function NoteBlock({
         </span>
       </div>
 
-      {html ? (
-        <div
-          className={`note-block-content markdown${isCollapsed ? " collapsed" : ""}`}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      ) : (
-        <div
-          className={`note-block-content markdown${isCollapsed ? " collapsed" : ""}`}
-        >
+      <div className={`note-block-content${isCollapsed ? " collapsed" : ""}`}>
+        {initialContent ? (
+          <BlockNoteView
+            editor={editor}
+            editable={false}
+            theme={theme === "light" ? "light" : "dark"}
+            className="note-block-view"
+          />
+        ) : (
           <em>No content</em>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
