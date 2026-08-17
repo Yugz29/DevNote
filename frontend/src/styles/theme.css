@@ -1,0 +1,7 @@
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: background 0.7s ease, background-color 0.7s ease,
+              color 0.7s ease, border-color 0.7s ease,
+              box-shadow 0.7s ease !important;
+}
