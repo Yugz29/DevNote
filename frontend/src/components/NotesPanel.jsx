@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from "react";
 import NoteBlock from "./NoteBlock.jsx";
-import NoteEditor from "./NoteEditor.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
@@ -38,12 +37,12 @@ export default function NotesPanel({
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
 
-  const [editingId, setEditingId] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const [collapsedIds, setCollapsedIds] = useState(() =>
     readCollapsedState(projectId),
   );
 
-  const { items, isLoading, error, reload } = useResourceList({
+  const { items, isLoading, error, reload, setItems } = useResourceList({
     projectId,
     fetchPage: getNotes,
     scrollRef,
@@ -74,26 +73,26 @@ export default function NotesPanel({
 
     if (!trimmedTitle) {
       await showAlert("Title is required", "info");
-      return;
+      return false;
     }
 
     try {
       if (noteId) {
-        await updateNote(noteId, trimmedTitle, content);
+        const updated = await updateNote(noteId, trimmedTitle, content);
+        setItems((current) =>
+          current.map((item) => (item.id === noteId ? updated : item)),
+        );
       } else {
-        await createNote(projectId, trimmedTitle, content);
+        const created = await createNote(projectId, trimmedTitle, content);
+        setItems((current) => [created, ...current]);
       }
 
-      setEditingId(null);
-      await reload();
+      return true;
     } catch (saveError) {
       console.error("Error saving note:", saveError);
       await showAlert("Unable to save the note");
+      return false;
     }
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
   };
 
   const handleDelete = async (noteId) => {
@@ -120,46 +119,38 @@ export default function NotesPanel({
           <div
             className="note-add-line"
             id="note-add-line"
-            onClick={() => {
-              if (editingId === null) setEditingId("new");
-            }}
+            onClick={() => setIsCreating(true)}
           >
             <span className="note-add-icon">+</span>
             <span className="note-add-text">New note...</span>
           </div>
 
-          {editingId === "new" && (
-            <NoteEditor
+          {isCreating && (
+            <NoteBlock
               note={null}
-              onSave={(title, content) => handleSave(null, title, content)}
-              onCancel={handleCancel}
+              searchQuery={null}
+              isCollapsed={false}
+              onToggleCollapse={() => {}}
+              onSave={handleSave}
+              onDiscard={() => setIsCreating(false)}
+              onDelete={() => {}}
             />
           )}
 
           {notes.length === 0 && <p className="empty">No notes yet</p>}
 
-          {notes.map((note) =>
-            editingId === note.id ? (
-              <NoteEditor
-                key={note.id}
-                note={note}
-                onSave={(title, content) => handleSave(note.id, title, content)}
-                onCancel={handleCancel}
-              />
-            ) : (
-              <NoteBlock
-                key={note.id}
-                note={note}
-                searchQuery={searchQuery}
-                isCollapsed={collapsedIds.has(note.id)}
-                onToggleCollapse={() => toggleCollapse(note.id)}
-                onEdit={() => {
-                  if (editingId === null) setEditingId(note.id);
-                }}
-                onDelete={() => handleDelete(note.id)}
-              />
-            ),
-          )}
+          {notes.map((note) => (
+            <NoteBlock
+              key={note.id}
+              note={note}
+              searchQuery={searchQuery}
+              isCollapsed={collapsedIds.has(note.id)}
+              onToggleCollapse={() => toggleCollapse(note.id)}
+              onSave={handleSave}
+              onDiscard={() => {}}
+              onDelete={() => handleDelete(note.id)}
+            />
+          ))}
         </>
       )}
     </div>
