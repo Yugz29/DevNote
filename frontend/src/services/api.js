@@ -34,6 +34,11 @@ api.interceptors.request.use((config) => {
 });
 
 let isRefreshing = false;
+let unauthorizedHandler = null;
+
+export const setUnauthorizedHandler = (handler) => {
+    unauthorizedHandler = handler;
+};
 
 api.interceptors.response.use(
     response => response,
@@ -77,9 +82,16 @@ api.interceptors.response.use(
 
 function redirectToLogin() {
     const current = window.location.pathname;
-    if (!current.includes('login') && !current.includes('register')) {
-        window.location.href = '/src/pages/login.html';
+    if (current.includes('login') || current.includes('register')) {
+        return;
     }
+
+    if (unauthorizedHandler) {
+        unauthorizedHandler();
+        return;
+    }
+
+    window.location.href = '/login';
 }
 
 export default api;
