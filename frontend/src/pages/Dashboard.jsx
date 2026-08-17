@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ProjectHeader from "../components/ProjectHeader.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import ProjectTabs from "../components/ProjectTabs.jsx";
@@ -6,6 +13,8 @@ import SearchOverlay from "../components/SearchOverlay.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import { useAuth } from "../contexts/AuthContext.js";
 import { useDialog } from "../contexts/DialogContext.js";
+import { useTheme } from "../contexts/ThemeContext.js";
+import { applyMermaidTheme } from "../lib/blocknote.js";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 import { ensureCsrfCookie } from "../services/authService.js";
 import {
@@ -65,18 +74,14 @@ export default function Dashboard() {
     "created_desc",
   );
 
+  const { theme } = useTheme();
+
+  useLayoutEffect(() => {
+    applyMermaidTheme(theme);
+  }, [theme]);
+
   const nextProjectsUrlRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const previousTheme = root.getAttribute("data-theme");
-    root.setAttribute("data-theme", "dark");
-
-    return () => {
-      if (previousTheme) root.setAttribute("data-theme", previousTheme);
-    };
-  }, []);
 
   const loadProjects = useCallback(async () => {
     try {

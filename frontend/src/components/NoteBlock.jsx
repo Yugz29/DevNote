@@ -8,6 +8,7 @@ import {
   useCreateBlockNote,
 } from "@blocknote/react";
 import HighlightText from "./HighlightText.jsx";
+import { useTheme } from "../contexts/ThemeContext.js";
 import {
   markdownToBlocks,
   noteExtensions,
@@ -27,6 +28,7 @@ export default function NoteBlock({
   onDelete,
 }) {
   const isNewNote = !note;
+  const { theme } = useTheme();
   const blockRef = useRef(null);
   const titleRef = useRef(null);
   const baselineRef = useRef(null);
@@ -307,9 +309,10 @@ export default function NoteBlock({
         onMouseDown={handleContentMouseDown}
       >
         <BlockNoteView
+          key={theme}
           editor={editor}
           editable={isEditing}
-          theme="dark"
+          theme={theme === "light" ? "light" : "dark"}
           className={`note-block-view${isEditing ? " editing" : ""}`}
           slashMenu={false}
         >

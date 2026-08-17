@@ -26,4 +26,105 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* Dashboard — text */
+  --dash-text-strong: #0f172a;
+  --dash-text: #1a1a2e;
+  --dash-text-em: #334155;
+  --dash-text-body: #3f4a5c;
+  --dash-text-code: #475569;
+  --dash-text-muted: #64748b;
+  --dash-text-quote: #6b7a8d;
+  --dash-text-subtle: #7b8798;
+  --dash-text-dim: #8a94a3;
+  --dash-text-faint: #a3adba;
+  --dash-text-ghost: #b6bfc9;
+  --dash-text-disabled: #c2c9d2;
+
+  /* Dashboard — surfaces */
+  --dash-ground: #f5f7fa;
+  --dash-panel-solid: #fcfdfe;
+  --dash-panel-solid-fade: rgba(252, 253, 254, 0);
+  --dash-surface-sunken: #eef2f7;
+  --dash-surface-sunken-alt: #edf1f6;
+  --dash-surface-deep: #eff3f8;
+  --dash-surface: #ffffff;
+  --dash-surface-raised: #eef1f6;
+  --dash-surface-muted: #e9edf3;
+  --dash-surface-line: #e4e9f0;
+  --dash-surface-hover: #e2e8f0;
+  --dash-surface-strong: #d8dfe8;
+  --dash-surface-stronger: #cbd5e1;
+  --dash-popover: rgba(255, 255, 255, 0.85);
+  --dash-popover-strong: rgba(255, 255, 255, 0.92);
+
+  /* Dashboard — glass surfaces */
+  --dash-glass-subtle: rgba(255, 255, 255, 0.5);
+  --dash-glass-panel: rgba(255, 255, 255, 0.75);
+  --dash-glass: rgba(255, 255, 255, 0.68);
+  --dash-glass-hover: rgba(255, 255, 255, 0.78);
+  --dash-glass-raised: rgba(255, 255, 255, 0.85);
+  --dash-glass-raised-hover: rgba(255, 255, 255, 0.92);
+  --dash-glass-strong: rgba(255, 255, 255, 0.95);
+  --dash-glass-stronger: rgba(255, 255, 255, 1);
+  --dash-glass-active: rgba(226, 232, 240, 0.9);
+  --dash-glass-max: rgba(226, 232, 240, 1);
+
+  /* Dashboard — borders */
+  --dash-border-subtle: rgba(0, 0, 0, 0.05);
+  --dash-border-faint: rgba(0, 0, 0, 0.06);
+  --dash-border: rgba(0, 0, 0, 0.1);
+  --dash-border-muted: rgba(0, 0, 0, 0.08);
+  --dash-border-strong: rgba(0, 0, 0, 0.14);
+  --dash-border-emphasis: rgba(0, 0, 0, 0.2);
+  --dash-border-hover: rgba(0, 0, 0, 0.32);
+  --dash-glass-border-subtle: rgba(0, 0, 0, 0.05);
+  --dash-glass-border-soft: rgba(0, 0, 0, 0.06);
+  --dash-glass-border: rgba(0, 0, 0, 0.09);
+  --dash-glass-border-hover: rgba(0, 0, 0, 0.14);
+  --dash-glass-border-active: rgba(0, 0, 0, 0.16);
+  --dash-glass-border-warm: rgba(0, 0, 0, 0.12);
+  --dash-glass-border-strong: rgba(0, 0, 0, 0.18);
+  --dash-glass-border-stronger: rgba(0, 0, 0, 0.22);
+  --dash-glass-border-max: rgba(0, 0, 0, 0.26);
+  --dash-glass-border-focus: rgba(0, 0, 0, 0.32);
+
+  /* Dashboard — scrims & shadows */
+  --dash-scrim-soft: rgba(15, 23, 42, 0.12);
+  --dash-scrim: rgba(15, 23, 42, 0.28);
+  --dash-scrim-strong: rgba(15, 23, 42, 0.35);
+  --dash-shadow-soft: rgba(15, 23, 42, 0.08);
+  --dash-shadow: rgba(15, 23, 42, 0.12);
+  --dash-shadow-strong: rgba(15, 23, 42, 0.16);
+  --dash-shadow-deep: rgba(15, 23, 42, 0.2);
+  --dash-shadow-inset: rgba(255, 255, 255, 0.8);
+
+  /* Dashboard — accent & status tints */
+  --dash-accent-tint: rgba(37, 99, 235, 0.08);
+  --dash-accent-tint-strong: rgba(37, 99, 235, 0.16);
+  --dash-accent-border-soft: rgba(37, 99, 235, 0.22);
+  --dash-accent-border: rgba(37, 99, 235, 0.45);
+  --dash-accent-glow: rgba(37, 99, 235, 0.4);
+  --dash-accent-glow-soft: rgba(37, 99, 235, 0.2);
+  --dash-accent-glow-none: rgba(37, 99, 235, 0);
+  --dash-danger-dim: #d19a9a;
+  --dash-danger-tint: rgba(220, 38, 38, 0.07);
+  --dash-danger-tint-hover: rgba(220, 38, 38, 0.1);
+  --dash-danger-tint-strong: rgba(220, 38, 38, 0.12);
+  --dash-danger-tint-stronger: rgba(220, 38, 38, 0.16);
+  --dash-danger-border-soft: rgba(220, 38, 38, 0.18);
+  --dash-danger-border: rgba(220, 38, 38, 0.25);
+  --dash-danger-border-strong: rgba(220, 38, 38, 0.45);
+
+  /* Dashboard — badges */
+  --dash-badge-warning-bg: rgba(217, 119, 6, 0.12);
+  --dash-badge-warning-border: rgba(217, 119, 6, 0.35);
+  --dash-badge-danger-bg: rgba(220, 38, 38, 0.1);
+  --dash-badge-danger-border: rgba(220, 38, 38, 0.32);
+  --dash-badge-success-bg: rgba(22, 163, 74, 0.1);
+  --dash-badge-success-border: rgba(22, 163, 74, 0.32);
+  --dash-badge-pending-bg: rgba(100, 116, 139, 0.1);
+  --dash-badge-pending-border: rgba(100, 116, 139, 0.24);
+  --dash-badge-progress-bg: rgba(71, 85, 105, 0.1);
+  --dash-badge-progress-border: rgba(71, 85, 105, 0.24);
 }

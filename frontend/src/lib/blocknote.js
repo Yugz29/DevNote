@@ -14,12 +14,23 @@ import { searchHighlight } from "./searchHighlight.js";
 const FALLBACK_LANGUAGE = "text";
 
 initializeMermaid();
-mermaid.initialize({
-  startOnLoad: false,
-  suppressErrorRendering: true,
-  theme: "dark",
-  darkMode: true,
-});
+
+let mermaidTheme = null;
+
+export function applyMermaidTheme(theme) {
+  const isLight = theme === "light";
+  if (mermaidTheme === isLight) return;
+
+  mermaidTheme = isLight;
+  mermaid.initialize({
+    startOnLoad: false,
+    suppressErrorRendering: true,
+    theme: isLight ? "default" : "dark",
+    darkMode: !isLight,
+  });
+}
+
+applyMermaidTheme("dark");
 
 export const noteSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
