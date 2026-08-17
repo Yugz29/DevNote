@@ -9,6 +9,7 @@ import {
   initializeMermaid,
 } from "@blocknote/diagram-block";
 import mermaid from "mermaid";
+import { searchHighlight } from "./searchHighlight.js";
 
 const FALLBACK_LANGUAGE = "text";
 
@@ -30,7 +31,7 @@ export const noteSchema = BlockNoteSchema.create().extend({
   },
 });
 
-export const noteExtensions = [syntaxHighlighter];
+export const noteExtensions = [syntaxHighlighter, searchHighlight];
 
 const languageIds = new Map();
 

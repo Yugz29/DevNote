@@ -13,6 +13,7 @@ import {
   noteExtensions,
   noteSchema,
 } from "../lib/blocknote.js";
+import { applySearchHighlight } from "../lib/searchHighlight.js";
 
 const EMPTY_DOCUMENT = [{ type: "paragraph" }];
 
@@ -237,6 +238,16 @@ export default function NoteBlock({
     hasAutoFocused.current = true;
     startTitleEdit();
   });
+
+  useEffect(() => {
+    if (applySearchHighlight(editor, searchQuery)) return;
+
+    const frame = requestAnimationFrame(() =>
+      applySearchHighlight(editor, searchQuery),
+    );
+
+    return () => cancelAnimationFrame(frame);
+  }, [editor, searchQuery]);
 
   return (
     <div
