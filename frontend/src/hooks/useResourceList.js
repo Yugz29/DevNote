@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useResourceList({ projectId, fetchPage, scrollRef }) {
+export function useResourceList({ projectId, fetchPage, scrollRef, resetKey }) {
+  const requestKey = `${projectId ?? ""}|${resetKey ?? ""}`;
+
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(Boolean(projectId));
+  const [loadedKey, setLoadedKey] = useState(null);
   const [error, setError] = useState(null);
 
   const nextPageUrlRef = useRef(null);
@@ -31,8 +34,9 @@ export function useResourceList({ projectId, fetchPage, scrollRef }) {
     } finally {
       isLoadingRef.current = false;
       setIsLoading(false);
+      setLoadedKey(requestKey);
     }
-  }, [projectId]);
+  }, [projectId, requestKey]);
 
   const reload = useCallback(async () => {
     setIsLoading(true);
@@ -77,5 +81,12 @@ export function useResourceList({ projectId, fetchPage, scrollRef }) {
     return () => scrollContainer.removeEventListener("scroll", onScroll);
   }, [scrollRef, loadMore]);
 
-  return { items, isLoading, error, reload, loadMore, setItems };
+  return {
+    items,
+    isLoading: isLoading || loadedKey !== requestKey,
+    error,
+    reload,
+    loadMore,
+    setItems,
+  };
 }
