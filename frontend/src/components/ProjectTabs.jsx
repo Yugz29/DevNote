@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
+import NotesPanel from "./NotesPanel.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 
 const TABS = [
@@ -22,7 +23,7 @@ const TODO_SORT_OPTIONS = [
   { value: "updated", label: "Updated" },
 ];
 
-export default function ProjectTabs({ currentTab, onTabChange }) {
+export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
   const tabContentRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -152,7 +153,14 @@ export default function ProjectTabs({ currentTab, onTabChange }) {
           id="tab-notes"
           className={`tab-pane${currentTab === "notes" ? " active" : ""}`}
         >
-          <div id="notes-list" className="notes-list" />
+          {currentTab === "notes" && (
+            <NotesPanel
+              key={projectId}
+              projectId={projectId}
+              sort={noteSort}
+              scrollRef={tabContentRef}
+            />
+          )}
         </div>
 
         <div

@@ -288,6 +288,7 @@ export default function Dashboard() {
                 />
 
                 <ProjectTabs
+                  projectId={currentProject.id}
                   currentTab={currentTab}
                   onTabChange={setCurrentTab}
                 />
