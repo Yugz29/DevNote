@@ -7,8 +7,21 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
   const [description, setDescription] = useState(snippet?.description ?? "");
   const [content, setContent] = useState(snippet?.content ?? "");
   const [language, setLanguage] = useState(snippet?.language || "text");
+  const [isSaving, setIsSaving] = useState(false);
 
   const textareaRef = useRef(null);
+
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+
+    try {
+      await onSave({ title, language, content, description });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -44,7 +57,8 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
           <button
             className="btn-save-snippet btn-card-icon-action"
             title="Save"
-            onClick={() => onSave({ title, language, content, description })}
+            disabled={isSaving}
+            onClick={handleSave}
           >
             <i className="ph-light ph-check" />
           </button>

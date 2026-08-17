@@ -4,7 +4,20 @@ export default function NoteEditor({ note, onSave, onCancel }) {
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
   const [createdAt] = useState(() => note?.created_at ?? Date.now());
+  const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef(null);
+
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+
+    try {
+      await onSave(title, content);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -40,7 +53,8 @@ export default function NoteEditor({ note, onSave, onCancel }) {
           <button
             className="btn-card-icon-action btn-save-note"
             title="Save"
-            onClick={() => onSave(title, content)}
+            disabled={isSaving}
+            onClick={handleSave}
           >
             <i className="ph-light ph-check" />
           </button>

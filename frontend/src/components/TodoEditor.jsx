@@ -7,6 +7,19 @@ export default function TodoEditor({ todo, usePortal, onSave, onCancel }) {
   const [description, setDescription] = useState(todo?.description ?? "");
   const [status, setStatus] = useState(todo?.status || "pending");
   const [priority, setPriority] = useState(todo?.priority || "medium");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+
+    try {
+      await onSave({ title, description, status, priority });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="todo-card todo-editor" data-id={todo?.id || ""}>
@@ -26,7 +39,8 @@ export default function TodoEditor({ todo, usePortal, onSave, onCancel }) {
           <button
             className="btn-save-todo btn-card-icon-action"
             title="Save"
-            onClick={() => onSave({ title, description, status, priority })}
+            disabled={isSaving}
+            onClick={handleSave}
           >
             <i className="ph-light ph-check" />
           </button>
