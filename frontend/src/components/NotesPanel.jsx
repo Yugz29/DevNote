@@ -3,6 +3,7 @@ import NoteBlock from "./NoteBlock.jsx";
 import NoteEditor from "./NoteEditor.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
+import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import { runMermaid } from "../lib/markdown.js";
 import {
   createNote,
@@ -28,7 +29,13 @@ function readCollapsedState(projectId) {
   return new Set(stored ? JSON.parse(stored) : []);
 }
 
-export default function NotesPanel({ projectId, sort, scrollRef }) {
+export default function NotesPanel({
+  projectId,
+  sort,
+  scrollRef,
+  searchQuery,
+  searchItemId,
+}) {
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
 
@@ -45,9 +52,11 @@ export default function NotesPanel({ projectId, sort, scrollRef }) {
 
   const notes = useMemo(() => sortNotes(items, sort), [items, sort]);
 
+  useSearchTarget(containerRef, searchItemId, !isLoading && notes.length > 0);
+
   useEffect(() => {
     runMermaid(containerRef.current);
-  }, [notes]);
+  }, [notes, searchQuery]);
 
   const toggleCollapse = (noteId) => {
     const next = new Set(collapsedIds);
@@ -146,6 +155,7 @@ export default function NotesPanel({ projectId, sort, scrollRef }) {
               <NoteBlock
                 key={note.id}
                 note={note}
+                searchQuery={searchQuery}
                 isCollapsed={collapsedIds.has(note.id)}
                 onToggleCollapse={() => toggleCollapse(note.id)}
                 onEdit={() => {

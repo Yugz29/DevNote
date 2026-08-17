@@ -1,6 +1,12 @@
+import HighlightText from "./HighlightText.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
 
-export default function SnippetCard({ snippet, onEdit, onDelete }) {
+export default function SnippetCard({
+  snippet,
+  searchQuery,
+  onEdit,
+  onDelete,
+}) {
   return (
     <div className="snippet-card" data-id={snippet.id}>
       <div className="snippet-card-header">
@@ -31,10 +37,14 @@ export default function SnippetCard({ snippet, onEdit, onDelete }) {
         </div>
       </div>
 
-      <h4 className="snippet-title">{snippet.title}</h4>
+      <h4 className="snippet-title">
+        <HighlightText text={snippet.title} query={searchQuery} />
+      </h4>
 
       {snippet.description && (
-        <p className="snippet-description">{snippet.description}</p>
+        <p className="snippet-description">
+          <HighlightText text={snippet.description} query={searchQuery} />
+        </p>
       )}
 
       <pre className="snippet-preview">

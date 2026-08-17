@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import SnippetCard from "./SnippetCard.jsx";
 import SnippetEditor from "./SnippetEditor.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
+import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
   createSnippet,
   deleteSnippet,
@@ -40,8 +41,16 @@ function readCollapsedGroups(projectId) {
   return new Set(stored ? JSON.parse(stored) : []);
 }
 
-export default function SnippetsPanel({ projectId, sort, view, scrollRef }) {
+export default function SnippetsPanel({
+  projectId,
+  sort,
+  view,
+  scrollRef,
+  searchQuery,
+  searchItemId,
+}) {
   const { showAlert, showConfirm } = useDialog();
+  const containerRef = useRef(null);
 
   const [editingId, setEditingId] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
@@ -56,6 +65,12 @@ export default function SnippetsPanel({ projectId, sort, view, scrollRef }) {
 
   const snippets = useMemo(() => sortSnippets(items, sort), [items, sort]);
   const groups = useMemo(() => groupByLanguage(snippets), [snippets]);
+
+  useSearchTarget(
+    containerRef,
+    searchItemId,
+    !isLoading && snippets.length > 0,
+  );
 
   const toggleGroup = (language) => {
     const next = new Set(collapsedGroups);
@@ -129,6 +144,7 @@ export default function SnippetsPanel({ projectId, sort, view, scrollRef }) {
       <SnippetCard
         key={snippet.id}
         snippet={snippet}
+        searchQuery={searchQuery}
         onEdit={() => {
           if (editingId === null) setEditingId(snippet.id);
         }}
@@ -137,7 +153,7 @@ export default function SnippetsPanel({ projectId, sort, view, scrollRef }) {
     );
 
   return (
-    <div id="snippets-list" className="snippets-list">
+    <div id="snippets-list" className="snippets-list" ref={containerRef}>
       {isLoading && <p className="loading">Loading...</p>}
 
       {!isLoading && error && <p className="error">{error}</p>}

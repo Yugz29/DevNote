@@ -1,6 +1,13 @@
+import HighlightText from "./HighlightText.jsx";
 import { PRIORITY_BADGES, STATUS_BADGES } from "../lib/todos.js";
 
-export default function TodoCard({ todo, onToggleStatus, onEdit, onDelete }) {
+export default function TodoCard({
+  todo,
+  searchQuery,
+  onToggleStatus,
+  onEdit,
+  onDelete,
+}) {
   const priority = PRIORITY_BADGES[todo.priority] || PRIORITY_BADGES.medium;
   const status = STATUS_BADGES[todo.status] || STATUS_BADGES.pending;
 
@@ -20,7 +27,9 @@ export default function TodoCard({ todo, onToggleStatus, onEdit, onDelete }) {
           {status.label}
         </button>
 
-        <span className="todo-title">{todo.title}</span>
+        <span className="todo-title">
+          <HighlightText text={todo.title} query={searchQuery} />
+        </span>
 
         <div className="item-actions">
           <button
@@ -43,7 +52,9 @@ export default function TodoCard({ todo, onToggleStatus, onEdit, onDelete }) {
       </div>
 
       {todo.description && (
-        <p className="todo-description">{todo.description}</p>
+        <p className="todo-description">
+          <HighlightText text={todo.description} query={searchQuery} />
+        </p>
       )}
 
       <div className="todo-card-footer">

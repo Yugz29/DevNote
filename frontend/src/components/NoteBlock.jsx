@@ -1,12 +1,20 @@
+import { useMemo } from "react";
+import HighlightText from "./HighlightText.jsx";
 import { renderMarkdown } from "../lib/markdown.js";
 
 export default function NoteBlock({
   note,
+  searchQuery,
   isCollapsed,
   onToggleCollapse,
   onEdit,
   onDelete,
 }) {
+  const html = useMemo(
+    () => (note.content ? renderMarkdown(note.content, searchQuery) : null),
+    [note.content, searchQuery],
+  );
+
   return (
     <div className="note-block" data-id={note.id}>
       <div className="note-block-header">
@@ -20,7 +28,9 @@ export default function NoteBlock({
               className={`ph-light ph-caret-down${isCollapsed ? " rotated" : ""}`}
             />
           </button>
-          <h3 className="note-block-title">{note.title}</h3>
+          <h3 className="note-block-title">
+            <HighlightText text={note.title} query={searchQuery} />
+          </h3>
         </div>
 
         <div className="note-block-actions">
@@ -52,10 +62,10 @@ export default function NoteBlock({
         </span>
       </div>
 
-      {note.content ? (
+      {html ? (
         <div
           className={`note-block-content markdown${isCollapsed ? " collapsed" : ""}`}
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content) }}
+          dangerouslySetInnerHTML={{ __html: html }}
         />
       ) : (
         <div

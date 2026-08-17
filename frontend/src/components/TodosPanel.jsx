@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import TodoCard from "./TodoCard.jsx";
 import TodoEditor from "./TodoEditor.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
+import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
   NEXT_STATUS,
   PRIORITY_ORDER,
@@ -40,8 +41,15 @@ function readCollapsedGroups(projectId) {
   return new Set(stored ? JSON.parse(stored) : []);
 }
 
-export default function TodosPanel({ projectId, sort, view }) {
+export default function TodosPanel({
+  projectId,
+  sort,
+  view,
+  searchQuery,
+  searchItemId,
+}) {
   const { showAlert, showConfirm } = useDialog();
+  const containerRef = useRef(null);
 
   const [editingId, setEditingId] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
@@ -54,6 +62,8 @@ export default function TodosPanel({ projectId, sort, view }) {
   });
 
   const todos = useMemo(() => sortTodos(items, sort), [items, sort]);
+
+  useSearchTarget(containerRef, searchItemId, !isLoading && todos.length > 0);
 
   const groups = useMemo(
     () =>
@@ -180,6 +190,7 @@ export default function TodosPanel({ projectId, sort, view }) {
       <TodoCard
         key={todo.id}
         todo={todo}
+        searchQuery={searchQuery}
         onToggleStatus={() => handleToggleStatus(todo)}
         onEdit={() => {
           if (editingId === null) setEditingId(todo.id);
@@ -211,7 +222,7 @@ export default function TodosPanel({ projectId, sort, view }) {
   };
 
   return (
-    <div id="todos-list" className="todos-list">
+    <div id="todos-list" className="todos-list" ref={containerRef}>
       {isLoading && <p className="loading">Loading...</p>}
 
       {!isLoading && error && <p className="error">{error}</p>}

@@ -25,7 +25,13 @@ const TODO_SORT_OPTIONS = [
   { value: "updated", label: "Updated" },
 ];
 
-export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
+export default function ProjectTabs({
+  projectId,
+  currentTab,
+  onTabChange,
+  searchQuery,
+  searchItemId,
+}) {
   const tabContentRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
 
@@ -161,6 +167,8 @@ export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
               projectId={projectId}
               sort={noteSort}
               scrollRef={tabContentRef}
+              searchQuery={searchQuery}
+              searchItemId={searchItemId}
             />
           )}
         </div>
@@ -176,6 +184,8 @@ export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
               sort={snippetSort}
               view={snippetView}
               scrollRef={tabContentRef}
+              searchQuery={searchQuery}
+              searchItemId={searchItemId}
             />
           )}
         </div>
@@ -190,6 +200,8 @@ export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
               projectId={projectId}
               sort={todoSort}
               view={todoView}
+              searchQuery={searchQuery}
+              searchItemId={searchItemId}
             />
           )}
         </div>

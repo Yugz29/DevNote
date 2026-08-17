@@ -55,6 +55,7 @@ export default function Dashboard() {
   const [currentTab, setCurrentTab] = useState("notes");
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTarget, setSearchTarget] = useState(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(
     () =>
@@ -155,11 +156,14 @@ export default function Dashboard() {
   );
 
   const selectProject = useCallback(
-    async (projectId, tab = null) => {
+    async (projectId, tab = null, searchQuery = null, searchItemId = null) => {
       try {
         const project = await getProject(projectId);
         setCurrentProject(project);
         if (tab) setCurrentTab(tab);
+        setSearchTarget(
+          searchQuery ? { query: searchQuery, itemId: searchItemId } : null,
+        );
       } catch (error) {
         console.error("Error loading project:", error);
         await showAlert("Failed to load project");
@@ -167,6 +171,13 @@ export default function Dashboard() {
     },
     [showAlert],
   );
+
+  const handleTabChange = useCallback((tab) => {
+    setCurrentTab(tab);
+    setSearchTarget(null);
+  }, []);
+
+  const closeSearch = useCallback(() => setIsSearchOpen(false), []);
 
   const handleProjectUpdated = useCallback((updated) => {
     setCurrentProject(updated);
@@ -290,7 +301,9 @@ export default function Dashboard() {
                 <ProjectTabs
                   projectId={currentProject.id}
                   currentTab={currentTab}
-                  onTabChange={setCurrentTab}
+                  onTabChange={handleTabChange}
+                  searchQuery={searchTarget?.query ?? null}
+                  searchItemId={searchTarget?.itemId ?? null}
                 />
               </>
             )}
@@ -309,7 +322,8 @@ export default function Dashboard() {
 
       <SearchOverlay
         isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
+        onClose={closeSearch}
+        onSelectResult={selectProject}
       />
     </>
   );
