@@ -1055,39 +1055,10 @@
     gap: 8px;
 }
 
-.btn-toggle-note {
-    background: none;
-    border: none;
-    color: var(--dash-text-dim);
-    cursor: pointer;
-    padding: 0;
-    flex-shrink: 0;
-    transition: color 0.15s;
-    display: flex;
-    align-items: center;
-}
-
-.btn-toggle-note:hover {
-    color: var(--dash-text-muted);
-}
-
-.btn-toggle-note i {
-    font-size: 16px;
-    transition: transform 0.2s ease;
-}
-
-.btn-toggle-note i.rotated {
-    transform: rotate(-90deg);
-}
-
 .note-block-title {
     font-size: 18px;
     font-weight: 600;
     color: var(--dash-text);
-}
-
-.note-block-content.collapsed {
-    display: none;
 }
 
 .note-block-actions {

@@ -21,8 +21,6 @@ const EMPTY_DOCUMENT = [{ type: "paragraph" }];
 export default function NoteBlock({
   note,
   searchQuery,
-  isCollapsed,
-  onToggleCollapse,
   onSave,
   onDiscard,
   onDelete,
@@ -177,23 +175,12 @@ export default function NoteBlock({
   };
 
   const handleContentMouseDown = (event) => {
-    if (isEditing || isCollapsed) return;
+    if (isEditing) return;
 
     const coords = { left: event.clientX, top: event.clientY };
 
     setIsEditing(true);
     requestAnimationFrame(() => placeCaretAt(coords));
-  };
-
-  const handleToggleCollapse = () => {
-    const wasExpanded = !isCollapsed;
-    onToggleCollapse();
-
-    if (wasExpanded) {
-      requestAnimationFrame(() =>
-        blockRef.current?.scrollIntoView({ block: "nearest" }),
-      );
-    }
   };
 
   const startTitleEdit = () => {
@@ -267,15 +254,6 @@ export default function NoteBlock({
     >
       <div className={`note-block-header${isEditing ? " editing" : ""}`}>
         <div className="note-block-title-row">
-          <button
-            className="btn-toggle-note"
-            title="Toggle content"
-            onClick={handleToggleCollapse}
-          >
-            <i
-              className={`ph-light ph-caret-down${isCollapsed ? " rotated" : ""}`}
-            />
-          </button>
           <h3
             className="note-block-title"
             ref={titleRef}
@@ -300,19 +278,13 @@ export default function NoteBlock({
         </div>
       </div>
 
-      <div
-        className="note-block-meta"
-        style={{ display: isCollapsed ? "none" : undefined }}
-      >
+      <div className="note-block-meta">
         <span className="card-date">
           {new Date(createdAt).toLocaleDateString()}
         </span>
       </div>
 
-      <div
-        className={`note-block-content${isCollapsed ? " collapsed" : ""}`}
-        onMouseDown={handleContentMouseDown}
-      >
+      <div className="note-block-content" onMouseDown={handleContentMouseDown}>
         <BlockNoteView
           key={theme}
           editor={editor}

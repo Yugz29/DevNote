@@ -246,8 +246,6 @@ export default function NotesPanel({
           ref={detailRef}
           note={detailNote}
           searchQuery={searchQuery}
-          isCollapsed={false}
-          onToggleCollapse={() => {}}
           onSave={handleSave}
           onDiscard={leaveDetail}
           onDelete={() => detailNote && handleDeleteNote(detailNote)}
