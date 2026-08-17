@@ -1,14 +1,17 @@
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from django.db.models import Q
-from .models import Project, Note, Snippet, TODO
-from .serializers import ProjectSerializer, NoteSerializer, SnippetSerializer, TODOSerializer
+from django.core.exceptions import ValidationError as DjangoValidationError
+from uuid import UUID
+from .models import Project, Folder, Note, Snippet, TODO
+from .serializers import ProjectSerializer, FolderSerializer, NoteSerializer, SnippetSerializer, TODOSerializer
 import logging
 
 logger = logging.getLogger('workspace')
@@ -28,9 +31,195 @@ class ProjectViewSet(viewsets.ModelViewSet):
         logger.info(f"Project '{project.title}' (ID: {project.id}) created by user {self.request.user.username}")
 
 
-class NoteViewSet(viewsets.ModelViewSet):
-    serializer_class = NoteSerializer
+class ChainedQuerysets:
+    """
+    Presents several querysets as one sliceable sequence, so the standard
+    paginator can page across them while only fetching the rows of the
+    requested page.
+    """
+
+    def __init__(self, *querysets):
+        self.querysets = querysets
+        self._counts = None
+
+    @property
+    def counts(self):
+        if self._counts is None:
+            self._counts = [queryset.count() for queryset in self.querysets]
+        return self._counts
+
+    def count(self):
+        return sum(self.counts)
+
+    def __len__(self):
+        return self.count()
+
+    def __getitem__(self, window):
+        start = window.start or 0
+        stop = window.stop
+        offset = 0
+        items = []
+
+        for queryset, count in zip(self.querysets, self.counts):
+            if stop is not None and offset >= stop:
+                break
+
+            local_start = max(0, start - offset)
+
+            if local_start < count:
+                local_stop = None if stop is None else stop - offset
+                items.extend(queryset[local_start:local_stop])
+
+            offset += count
+
+        return items
+
+
+class ProjectScopedViewSet(viewsets.ModelViewSet):
+    """Shared plumbing for resources nested under a project."""
     permission_classes = [IsAuthenticated]
+
+    def get_project(self):
+        project_pk = self.kwargs.get('project_pk')
+
+        if not project_pk:
+            return None
+
+        try:
+            return Project.objects.get(id=project_pk, user=self.request.user)
+        except (Project.DoesNotExist, ValueError, DjangoValidationError):
+            raise PermissionDenied("Project not found or access denied.")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+
+        if getattr(self, 'swagger_fake_view', False):
+            return context
+
+        if self.kwargs.get('project_pk'):
+            context['project'] = self.get_project()
+        elif self.detail and self.kwargs.get('pk'):
+            instance = self.get_queryset().filter(pk=self.kwargs['pk']).first()
+            if instance is not None:
+                context['project'] = instance.project
+
+        return context
+
+    def filter_by_relation(self, queryset, param, field):
+        """Apply ?<param>=<uuid|null> as a filter on <field>."""
+        value = self.request.query_params.get(param)
+
+        if value is None:
+            return queryset
+
+        if value == 'null':
+            return queryset.filter(**{f'{field}__isnull': True})
+
+        try:
+            UUID(value)
+        except ValueError:
+            raise ValidationError({param: f"Invalid {param} id."})
+
+        return queryset.filter(**{f'{field}__id': value})
+
+
+class FolderViewSet(ProjectScopedViewSet):
+    """
+    ViewSet for Folder CRUD operations
+    - Nested under /api/projects/{id}/folders/
+    - ?parent=<uuid> or ?parent=null narrows the listing to one level
+    """
+    serializer_class = FolderSerializer
+
+    def get_queryset(self):
+        """Returns only the folders of the logged-in user"""
+        project_pk = self.kwargs.get('project_pk')
+        queryset = Folder.objects.filter(project__user=self.request.user)
+
+        if project_pk:
+            queryset = queryset.filter(project__id=project_pk)
+
+        queryset = self.filter_by_relation(queryset, 'parent', 'parent')
+
+        return queryset.select_related('project', 'parent')
+
+    def perform_create(self, serializer):
+        """Assign project from URL and verify ownership"""
+        project = self.get_project()
+
+        if project is None:
+            raise PermissionDenied("Project not found or access denied.")
+
+        folder = serializer.save(project=project)
+        logger.info(
+            f"Folder '{folder.name}' (ID: {folder.id}) created in project {project.id} "
+            f"by user {self.request.user.username}"
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Deleting a folder cascades to its subfolders and their notes, so a
+        non-empty folder requires ?confirm=true and reports what would go.
+        """
+        folder = self.get_object()
+        counts = folder.cascade_counts()
+        confirmed = request.query_params.get('confirm') == 'true'
+
+        if not confirmed and (counts['folders'] or counts['notes']):
+            return Response(
+                {
+                    'detail': (
+                        "This folder is not empty. Deleting it will also delete "
+                        f"{counts['folders']} subfolder(s) and {counts['notes']} note(s). "
+                        "Repeat the request with ?confirm=true to proceed."
+                    ),
+                    'code': 'folder_not_empty',
+                    'folders': counts['folders'],
+                    'notes': counts['notes'],
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
+        logger.info(
+            f"Folder '{folder.name}' (ID: {folder.id}) deleted with "
+            f"{counts['folders']} subfolder(s) and {counts['notes']} note(s) "
+            f"by user {request.user.username}"
+        )
+
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'])
+    def contents(self, request, *args, **kwargs):
+        """
+        Direct subfolders then direct notes of a folder, as one paginated
+        stream; every entry carries a 'type' telling the two apart.
+        """
+        folder = self.get_object()
+        context = self.get_serializer_context()
+
+        entries = ChainedQuerysets(
+            folder.children.all(),
+            folder.notes.all().select_related('project', 'folder'),
+        )
+
+        def represent(entry):
+            if isinstance(entry, Folder):
+                serialized = FolderSerializer(entry, context=context).data
+                return {'type': 'folder', **serialized}
+
+            serialized = NoteSerializer(entry, context=context).data
+            return {'type': 'note', **serialized}
+
+        page = self.paginate_queryset(entries)
+
+        if page is not None:
+            return self.get_paginated_response([represent(e) for e in page])
+
+        return Response([represent(e) for e in entries[0:None]])
+
+
+class NoteViewSet(ProjectScopedViewSet):
+    serializer_class = NoteSerializer
 
     def get_queryset(self):
         """Returns only the notes of the logged-in user"""
@@ -39,21 +228,18 @@ class NoteViewSet(viewsets.ModelViewSet):
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
-        
-        return queryset.select_related('project')
-    
+
+        queryset = self.filter_by_relation(queryset, 'folder', 'folder')
+
+        return queryset.select_related('project', 'folder')
+
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
-        project_pk = self.kwargs.get('project_pk')
-        
-        try:
-            project = Project.objects.get(
-                id=project_pk,
-                user=self.request.user
-            )
-        except Project.DoesNotExist:
+        project = self.get_project()
+
+        if project is None:
             raise PermissionDenied("Project not found or access denied.")
-        
+
         serializer.save(project=project)
 
 

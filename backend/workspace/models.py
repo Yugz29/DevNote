@@ -66,6 +66,144 @@ class Project(models.Model):
         return self.title
 
 
+class Folder(models.Model):
+    """
+    Folder model represents a folder holding notes inside a project.
+    Folders nest without depth limit; a null parent means project root.
+    """
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid7,
+        editable=False,
+        help_text="Unique identifier UUIDv7"
+    )
+
+    name = models.CharField(
+        max_length=255,
+        help_text="Name of the folder"
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='folders',
+        help_text="Folder associated to project"
+    )
+
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        help_text="Parent folder, null for a folder at the project root"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Folder creation date"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Date of last modification"
+    )
+
+    class Meta:
+        db_table = 'devnote_folders'
+        verbose_name = 'Folder'
+        verbose_name_plural = 'Folders'
+        ordering = ['name']
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'parent', 'name'],
+                condition=models.Q(parent__isnull=False),
+                name='unique_folder_name_in_parent'
+            ),
+            models.UniqueConstraint(
+                fields=['project', 'name'],
+                condition=models.Q(parent__isnull=True),
+                name='unique_folder_name_at_root'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['project', 'parent']),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def ancestor_ids(self):
+        """Ids of every ancestor, closest first."""
+        ids = []
+        seen = set()
+        node = self.parent
+
+        while node is not None and node.id not in seen:
+            ids.append(node.id)
+            seen.add(node.id)
+            node = node.parent
+
+        return ids
+
+    def descendant_ids(self):
+        """Ids of every nested folder below this one."""
+        ids = []
+        frontier = [self.id]
+
+        while frontier:
+            frontier = list(
+                Folder.objects
+                .filter(parent_id__in=frontier)
+                .exclude(id__in=ids)
+                .values_list('id', flat=True)
+            )
+            ids.extend(frontier)
+
+        return ids
+
+    def cascade_counts(self):
+        """What a recursive delete of this folder would remove."""
+        folder_ids = self.descendant_ids()
+
+        return {
+            'folders': len(folder_ids),
+            'notes': Note.objects.filter(
+                folder_id__in=[self.id, *folder_ids]
+            ).count(),
+        }
+
+    def is_empty(self):
+        counts = self.cascade_counts()
+        return counts['folders'] == 0 and counts['notes'] == 0
+
+    def clean(self):
+        super().clean()
+
+        if self.parent_id is None:
+            return
+
+        if self.parent_id == self.id:
+            raise ValidationError(
+                {'parent': "A folder cannot be its own parent."}
+            )
+
+        if self.parent.project_id != self.project_id:
+            raise ValidationError(
+                {'parent': "Parent folder must belong to the same project."}
+            )
+
+        if self.id in self.parent.ancestor_ids():
+            raise ValidationError(
+                {'parent': "A folder cannot be its own ancestor."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class Note(models.Model):
     """
     Note model represents a note linked to a project.
@@ -96,6 +234,15 @@ class Note(models.Model):
         help_text="Note associated to project"
     )
 
+    folder = models.ForeignKey(
+        Folder,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notes',
+        help_text="Folder holding the note, null for a note at the project root"
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text="Note creation date"
@@ -113,6 +260,7 @@ class Note(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['project', '-created_at']),
+            models.Index(fields=['folder', '-created_at']),
         ]
 
     def __str__(self):

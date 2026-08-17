@@ -1,5 +1,17 @@
 from rest_framework import serializers
-from .models import Project, Note, Snippet, TODO
+from .models import Project, Folder, Note, Snippet, TODO
+
+
+class ScopedFolderField(serializers.PrimaryKeyRelatedField):
+    """Folder reference restricted to the folders of the requesting user."""
+
+    def get_queryset(self):
+        request = self.context.get('request')
+
+        if request is None or not request.user.is_authenticated:
+            return Folder.objects.none()
+
+        return Folder.objects.filter(project__user=request.user)
 
 class ProjectSerializer(serializers.ModelSerializer):
     """Serializer for Project model"""
@@ -42,9 +54,82 @@ class ProjectSerializer(serializers.ModelSerializer):
         return data
 
 
+class FolderSerializer(serializers.ModelSerializer):
+    """Serializer for Folder model"""
+    project_id = serializers.UUIDField(read_only=True, source='project.id')
+    parent = ScopedFolderField(allow_null=True, required=False)
+
+    class Meta:
+        model = Folder
+        fields = [
+            'id',
+            'name',
+            'project_id',
+            'parent',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'project_id', 'created_at', 'updated_at']
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Folder name cannot be empty.")
+        return value
+
+    def validate(self, data):
+        project = (
+            self.instance.project if self.instance
+            else self.context.get('project')
+        )
+        parent = data.get(
+            'parent',
+            self.instance.parent if self.instance else None
+        )
+        name = data.get(
+            'name',
+            self.instance.name if self.instance else None
+        )
+
+        if parent is not None:
+            if project is not None and parent.project_id != project.id:
+                raise serializers.ValidationError(
+                    {'parent': "Parent folder must belong to the same project."}
+                )
+
+            if self.instance is not None:
+                if parent.id == self.instance.id:
+                    raise serializers.ValidationError(
+                        {'parent': "A folder cannot be its own parent."}
+                    )
+
+                if self.instance.id in parent.ancestor_ids():
+                    raise serializers.ValidationError(
+                        {'parent': "A folder cannot be its own ancestor."}
+                    )
+
+        if project is not None and name:
+            siblings = Folder.objects.filter(
+                project=project,
+                parent=parent,
+                name=name
+            )
+
+            if self.instance is not None:
+                siblings = siblings.exclude(id=self.instance.id)
+
+            if siblings.exists():
+                raise serializers.ValidationError(
+                    {'name': f"A folder named '{name}' already exists here."}
+                )
+
+        return data
+
+
 class NoteSerializer(serializers.ModelSerializer):
     """Serializer for Note model"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
+    folder = ScopedFolderField(allow_null=True, required=False)
 
     class Meta:
         model = Note
@@ -53,6 +138,7 @@ class NoteSerializer(serializers.ModelSerializer):
             'title',
             'content',
             'project_id',
+            'folder',
             'created_at',
             'updated_at',
         ]
@@ -63,6 +149,23 @@ class NoteSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Note title cannot be empty.")
         return value
+
+    def validate(self, data):
+        project = (
+            self.instance.project if self.instance
+            else self.context.get('project')
+        )
+        folder = data.get(
+            'folder',
+            self.instance.folder if self.instance else None
+        )
+
+        if folder is not None and project is not None and folder.project_id != project.id:
+            raise serializers.ValidationError(
+                {'folder': "Folder must belong to the same project as the note."}
+            )
+
+        return data
 
 
 class SnippetSerializer(serializers.ModelSerializer):
