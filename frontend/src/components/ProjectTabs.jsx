@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
 import NotesPanel from "./NotesPanel.jsx";
 import SnippetsPanel from "./SnippetsPanel.jsx";
+import TodosPanel from "./TodosPanel.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 
 const TABS = [
@@ -183,7 +184,14 @@ export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
           id="tab-todos"
           className={`tab-pane${currentTab === "todos" ? " active" : ""}`}
         >
-          <div id="todos-list" className="todos-list" />
+          {currentTab === "todos" && (
+            <TodosPanel
+              key={projectId}
+              projectId={projectId}
+              sort={todoSort}
+              view={todoView}
+            />
+          )}
         </div>
       </div>
     </>

@@ -1,19 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useClickOutside } from "../hooks/useClickOutside.js";
-import { SNIPPET_LANGUAGES } from "../lib/languages.js";
+import { useEffect, useRef, useState } from "react";
+import DnSelect from "./DnSelect.jsx";
+import { SNIPPET_LANGUAGE_OPTIONS } from "../lib/languages.js";
 
 export default function SnippetEditor({ snippet, onSave, onCancel }) {
   const [title, setTitle] = useState(snippet?.title ?? "");
   const [description, setDescription] = useState(snippet?.description ?? "");
   const [content, setContent] = useState(snippet?.content ?? "");
   const [language, setLanguage] = useState(snippet?.language || "text");
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
-  const selectRef = useRef(null);
   const textareaRef = useRef(null);
-
-  const closeSelect = useCallback(() => setIsSelectOpen(false), []);
-  useClickOutside(selectRef, closeSelect, isSelectOpen);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -35,36 +30,11 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
     <div className="snippet-card snippet-editor" data-id={snippet?.id || ""}>
       <div className="snippet-card-header">
         <div className="snippet-lang-badge">
-          <div className="dn-select-wrap" ref={selectRef}>
-            <button
-              className="dn-select-btn"
-              type="button"
-              onClick={() => setIsSelectOpen((current) => !current)}
-            >
-              <span className="dn-select-value">{language}</span>
-              <i
-                className="ph-light ph-caret-down dn-select-chevron"
-                style={{ transform: isSelectOpen ? "rotate(180deg)" : "" }}
-              />
-            </button>
-
-            <div className={`dn-select-dropdown${isSelectOpen ? " open" : ""}`}>
-              {SNIPPET_LANGUAGES.map((option) => (
-                <button
-                  key={option}
-                  className={`dn-select-option ${option === language ? "active" : ""}`}
-                  data-value={option}
-                  type="button"
-                  onClick={() => {
-                    setLanguage(option);
-                    setIsSelectOpen(false);
-                  }}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </div>
+          <DnSelect
+            value={language}
+            options={SNIPPET_LANGUAGE_OPTIONS}
+            onChange={setLanguage}
+          />
         </div>
 
         <div

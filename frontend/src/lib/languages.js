@@ -15,3 +15,8 @@ export const DEVICONS = {
 };
 
 export const SNIPPET_LANGUAGES = ["text", ...Object.keys(DEVICONS)];
+
+export const SNIPPET_LANGUAGE_OPTIONS = SNIPPET_LANGUAGES.map((language) => ({
+  value: language,
+  label: language,
+}));
