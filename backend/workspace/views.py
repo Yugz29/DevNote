@@ -7,11 +7,18 @@ from rest_framework.views import APIView
 from rest_framework import status
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from uuid import UUID
 from .models import Project, Folder, Note, Snippet, TODO
-from .serializers import ProjectSerializer, FolderSerializer, NoteSerializer, SnippetSerializer, TODOSerializer
+from .serializers import (
+    ProjectSerializer,
+    FolderSerializer,
+    NoteSerializer,
+    NoteCardSerializer,
+    SnippetSerializer,
+    TODOSerializer,
+)
 import logging
 
 logger = logging.getLogger('workspace')
@@ -29,6 +36,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Automatically associate the project with the logged-in user"""
         project = serializer.save(user=self.request.user)
         logger.info(f"Project '{project.title}' (ID: {project.id}) created by user {self.request.user.username}")
+
+    @action(detail=True, methods=['get'])
+    def contents(self, request, *args, **kwargs):
+        """Folders then notes sitting at the root of a project"""
+        project = self.get_object()
+
+        return paginated_contents(
+            self,
+            project.folders.filter(parent__isnull=True),
+            project.notes.filter(folder__isnull=True),
+        )
 
 
 class ChainedQuerysets:
@@ -73,6 +91,39 @@ class ChainedQuerysets:
             offset += count
 
         return items
+
+
+def folders_with_counts(queryset):
+    """Annotate direct children and note counts, for the gallery cards."""
+    return queryset.annotate(
+        folder_count=Count('children', distinct=True),
+        note_count=Count('notes', distinct=True),
+    ).order_by('name')
+
+
+def paginated_contents(view, folders, notes):
+    """
+    Serialize direct subfolders then direct notes as one paginated stream;
+    every entry carries a 'type' telling the two apart.
+    """
+    context = view.get_serializer_context()
+    entries = ChainedQuerysets(
+        folders_with_counts(folders).select_related('project', 'parent'),
+        notes.select_related('project', 'folder'),
+    )
+
+    def represent(entry):
+        if isinstance(entry, Folder):
+            return {'type': 'folder', **FolderSerializer(entry, context=context).data}
+
+        return {'type': 'note', **NoteCardSerializer(entry, context=context).data}
+
+    page = view.paginate_queryset(entries)
+
+    if page is not None:
+        return view.get_paginated_response([represent(entry) for entry in page])
+
+    return Response([represent(entry) for entry in entries[0:None]])
 
 
 class ProjectScopedViewSet(viewsets.ModelViewSet):
@@ -141,7 +192,7 @@ class FolderViewSet(ProjectScopedViewSet):
 
         queryset = self.filter_by_relation(queryset, 'parent', 'parent')
 
-        return queryset.select_related('project', 'parent')
+        return folders_with_counts(queryset).select_related('project', 'parent')
 
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
@@ -190,32 +241,10 @@ class FolderViewSet(ProjectScopedViewSet):
 
     @action(detail=True, methods=['get'])
     def contents(self, request, *args, **kwargs):
-        """
-        Direct subfolders then direct notes of a folder, as one paginated
-        stream; every entry carries a 'type' telling the two apart.
-        """
+        """Direct subfolders then direct notes of a folder"""
         folder = self.get_object()
-        context = self.get_serializer_context()
 
-        entries = ChainedQuerysets(
-            folder.children.all(),
-            folder.notes.all().select_related('project', 'folder'),
-        )
-
-        def represent(entry):
-            if isinstance(entry, Folder):
-                serialized = FolderSerializer(entry, context=context).data
-                return {'type': 'folder', **serialized}
-
-            serialized = NoteSerializer(entry, context=context).data
-            return {'type': 'note', **serialized}
-
-        page = self.paginate_queryset(entries)
-
-        if page is not None:
-            return self.get_paginated_response([represent(e) for e in page])
-
-        return Response([represent(e) for e in entries[0:None]])
+        return paginated_contents(self, folder.children.all(), folder.notes.all())
 
 
 class NoteViewSet(ProjectScopedViewSet):

@@ -88,7 +88,10 @@ class FolderSerializerTest(TestCase):
 
         self.assertEqual(
             set(data.keys()),
-            {'id', 'name', 'project_id', 'parent', 'created_at', 'updated_at'}
+            {
+                'id', 'name', 'project_id', 'parent',
+                'folder_count', 'note_count', 'created_at', 'updated_at',
+            }
         )
         self.assertEqual(data['project_id'], str(self.project.id))
         self.assertIsNone(data['parent'])

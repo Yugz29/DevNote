@@ -1,25 +1,31 @@
 import { useMemo, useRef, useState } from "react";
 import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
-import FolderRow from "./FolderRow.jsx";
+import FolderCard from "./FolderCard.jsx";
 import NoteBlock from "./NoteBlock.jsx";
+import NoteCard from "./NoteCard.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
-import { useFolderLevel } from "../hooks/useFolderLevel.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
   createFolder,
   deleteFolder,
+  getLevelContents,
   updateFolder,
 } from "../services/folderService.js";
 import {
   createNote,
   deleteNote,
-  getNotes,
+  getNote,
   updateNote,
 } from "../services/noteService.js";
 
-function sortNotes(notes, sort) {
-  return [...notes].sort((a, b) => {
+function sortEntries(entries, sort) {
+  const folders = entries.filter((entry) => entry.type === "folder");
+  const notes = entries.filter((entry) => entry.type !== "folder");
+
+  folders.sort((a, b) => a.name.localeCompare(b.name));
+
+  notes.sort((a, b) => {
     if (sort === "updated") {
       return new Date(b.updated_at) - new Date(a.updated_at);
     }
@@ -28,11 +34,8 @@ function sortNotes(notes, sort) {
     }
     return new Date(b.created_at) - new Date(a.created_at);
   });
-}
 
-function readCollapsedState(projectId) {
-  const stored = localStorage.getItem(`devnote_collapsed_${projectId}`);
-  return new Set(stored ? JSON.parse(stored) : []);
+  return [...folders, ...notes];
 }
 
 export default function NotesPanel({
@@ -44,66 +47,62 @@ export default function NotesPanel({
 }) {
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
+  const detailRef = useRef(null);
 
-  const [isCreating, setIsCreating] = useState(false);
+  const [path, setPath] = useState([]);
+  const [openNote, setOpenNote] = useState(null);
+  const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
-  const [path, setPath] = useState([]);
-  const [collapsedIds, setCollapsedIds] = useState(() =>
-    readCollapsedState(projectId),
-  );
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
 
-  const {
-    folders,
-    isLoading: isLoadingFolders,
-    error: foldersError,
-    setFolders,
-  } = useFolderLevel(projectId, currentFolderId);
-
-  const fetchNotes = useMemo(
-    () => (id, url) => getNotes(id, url, currentFolderId),
-    [currentFolderId],
+  const fetchContents = useMemo(
+    () => (id, url) => getLevelContents(projectId, currentFolderId, url),
+    [projectId, currentFolderId],
   );
 
   const { items, isLoading, error, reload, setItems } = useResourceList({
     projectId,
-    fetchPage: fetchNotes,
+    fetchPage: fetchContents,
     scrollRef,
     resetKey: currentFolderId,
   });
 
-  const notes = useMemo(() => sortNotes(items, sort), [items, sort]);
+  const entries = useMemo(() => sortEntries(items, sort), [items, sort]);
 
-  useSearchTarget(containerRef, searchItemId, !isLoading && notes.length > 0);
+  useSearchTarget(containerRef, searchItemId, !isLoading && entries.length > 0);
 
-  const toggleCollapse = (noteId) => {
-    const next = new Set(collapsedIds);
-
-    if (next.has(noteId)) {
-      next.delete(noteId);
-    } else {
-      next.add(noteId);
-    }
-
-    localStorage.setItem(
-      `devnote_collapsed_${projectId}`,
-      JSON.stringify([...next]),
-    );
-    setCollapsedIds(next);
+  const flushDetail = async () => {
+    await detailRef.current?.flush();
   };
 
-  const openFolder = (folder) => {
-    setIsCreating(false);
+  const openNoteCard = async (card) => {
+    try {
+      setOpenNote(await getNote(card.id));
+    } catch (openError) {
+      console.error("Error opening note:", openError);
+      await showAlert("Unable to open the note");
+    }
+  };
+
+  const leaveDetail = async () => {
+    await flushDetail();
+    setOpenNote(null);
+    setIsCreatingNote(false);
+    await reload();
+  };
+
+  const openFolder = async (folder) => {
+    await leaveDetail();
     setIsCreatingFolder(false);
     setRenamingFolderId(null);
     setPath((current) => [...current, { id: folder.id, name: folder.name }]);
   };
 
-  const navigateTo = (index) => {
-    setIsCreating(false);
+  const navigateTo = async (index) => {
+    await leaveDetail();
     setIsCreatingFolder(false);
     setRenamingFolderId(null);
     setPath((current) => current.slice(0, index + 1));
@@ -117,9 +116,7 @@ export default function NotesPanel({
 
     try {
       const created = await createFolder(projectId, trimmed, currentFolderId);
-      setFolders((current) =>
-        [...current, created].sort((a, b) => a.name.localeCompare(b.name)),
-      );
+      setItems((current) => [{ type: "folder", ...created }, ...current]);
     } catch (createError) {
       console.error("Error creating folder:", createError);
       await showAlert(
@@ -133,10 +130,12 @@ export default function NotesPanel({
 
     try {
       const updated = await updateFolder(folder.id, { name });
-      setFolders((current) =>
-        current
-          .map((item) => (item.id === folder.id ? updated : item))
-          .sort((a, b) => a.name.localeCompare(b.name)),
+      setItems((current) =>
+        current.map((entry) =>
+          entry.type === "folder" && entry.id === folder.id
+            ? { ...entry, ...updated }
+            : entry,
+        ),
       );
     } catch (renameError) {
       console.error("Error renaming folder:", renameError);
@@ -146,10 +145,13 @@ export default function NotesPanel({
     }
   };
 
+  const dropEntry = (id) =>
+    setItems((current) => current.filter((entry) => entry.id !== id));
+
   const handleDeleteFolder = async (folder) => {
     try {
       await deleteFolder(folder.id);
-      setFolders((current) => current.filter((item) => item.id !== folder.id));
+      dropEntry(folder.id);
       return;
     } catch (deleteError) {
       const data = deleteError.response?.data;
@@ -177,9 +179,7 @@ export default function NotesPanel({
 
       try {
         await deleteFolder(folder.id, { confirm: true });
-        setFolders((current) =>
-          current.filter((item) => item.id !== folder.id),
-        );
+        dropEntry(folder.id);
       } catch (forcedError) {
         console.error("Error deleting folder:", forcedError);
         await showAlert("Unable to delete the folder");
@@ -198,17 +198,13 @@ export default function NotesPanel({
     try {
       if (noteId) {
         const updated = await updateNote(noteId, trimmedTitle, content);
-        setItems((current) =>
-          current.map((item) => (item.id === noteId ? updated : item)),
+        setOpenNote((current) =>
+          current && current.id === noteId
+            ? { ...current, ...updated }
+            : current,
         );
       } else {
-        const created = await createNote(
-          projectId,
-          trimmedTitle,
-          content,
-          currentFolderId,
-        );
-        setItems((current) => [created, ...current]);
+        await createNote(projectId, trimmedTitle, content, currentFolderId);
       }
 
       return true;
@@ -219,108 +215,112 @@ export default function NotesPanel({
     }
   };
 
-  const handleDelete = async (noteId) => {
-    const confirmed = await showConfirm("Delete this note?");
+  const handleDeleteNote = async (note) => {
+    const confirmed = await showConfirm(`Delete "${note.title}"?`);
     if (!confirmed) return;
 
     try {
-      await deleteNote(noteId);
-      await reload();
+      await deleteNote(note.id);
+      dropEntry(note.id);
+      if (openNote?.id === note.id) setOpenNote(null);
     } catch (deleteError) {
       console.error("Error deleting note:", deleteError);
       await showAlert("Unable to delete the note");
     }
   };
 
-  const isBusy = isLoading || isLoadingFolders;
+  const detailNote = isCreatingNote ? null : openNote;
+  const isDetail = isCreatingNote || Boolean(openNote);
 
   return (
     <div id="notes-list" className="notes-list" ref={containerRef}>
-      <FolderBreadcrumb path={path} onNavigate={navigateTo} />
+      <FolderBreadcrumb
+        path={path}
+        isDetail={isDetail}
+        onNavigate={navigateTo}
+      />
 
-      {isBusy && <p className="loading">Loading...</p>}
-
-      {!isBusy && (error || foldersError) && (
-        <p className="error">{error ?? foldersError}</p>
-      )}
-
-      {!isBusy && !error && !foldersError && (
+      {isDetail ? (
+        <NoteBlock
+          key={openNote?.id ?? "new"}
+          ref={detailRef}
+          note={detailNote}
+          searchQuery={searchQuery}
+          isCollapsed={false}
+          onToggleCollapse={() => {}}
+          onSave={handleSave}
+          onDiscard={leaveDetail}
+          onDelete={() => detailNote && handleDeleteNote(detailNote)}
+        />
+      ) : (
         <>
-          <div className="folder-list">
-            {folders.map((folder) => (
-              <FolderRow
-                key={`${folder.id}:${folder.name}`}
-                folder={folder}
-                searchQuery={searchQuery}
-                isRenaming={renamingFolderId === folder.id}
-                onOpen={openFolder}
-                onStartRename={setRenamingFolderId}
-                onRename={handleRenameFolder}
-                onCancelRename={() => setRenamingFolderId(null)}
-                onDelete={handleDeleteFolder}
-              />
-            ))}
-
-            {isCreatingFolder ? (
-              <FolderRow
-                folder={{ id: "new", name: "" }}
-                searchQuery={null}
-                isRenaming
-                onOpen={() => {}}
-                onStartRename={() => {}}
-                onRename={(_, name) => handleCreateFolder(name)}
-                onCancelRename={() => setIsCreatingFolder(false)}
-                onDelete={() => {}}
-              />
-            ) : (
-              <button
-                type="button"
-                className="folder-add-line"
-                onClick={() => setIsCreatingFolder(true)}
-              >
-                <i className="ph-light ph-folder-plus" />
-                <span>New folder...</span>
-              </button>
-            )}
+          <div className="gallery-toolbar">
+            <button
+              type="button"
+              className="gallery-action"
+              onClick={() => setIsCreatingFolder(true)}
+            >
+              <i className="ph-light ph-folder-plus" />
+              <span>New folder</span>
+            </button>
+            <button
+              type="button"
+              className="gallery-action"
+              onClick={() => setIsCreatingNote(true)}
+            >
+              <i className="ph-light ph-plus" />
+              <span>New note</span>
+            </button>
           </div>
 
-          <div
-            className="note-add-line"
-            id="note-add-line"
-            onClick={() => setIsCreating(true)}
-          >
-            <span className="note-add-icon">+</span>
-            <span className="note-add-text">New note...</span>
-          </div>
+          {isLoading && <p className="loading">Loading...</p>}
 
-          {isCreating && (
-            <NoteBlock
-              note={null}
-              searchQuery={null}
-              isCollapsed={false}
-              onToggleCollapse={() => {}}
-              onSave={handleSave}
-              onDiscard={() => setIsCreating(false)}
-              onDelete={() => {}}
-            />
+          {!isLoading && error && <p className="error">{error}</p>}
+
+          {!isLoading && !error && (
+            <div className="gallery-grid">
+              {isCreatingFolder && (
+                <FolderCard
+                  folder={{ id: "new", name: "" }}
+                  searchQuery={null}
+                  isRenaming
+                  onOpen={() => {}}
+                  onStartRename={() => {}}
+                  onRename={(_, name) => handleCreateFolder(name)}
+                  onCancelRename={() => setIsCreatingFolder(false)}
+                  onDelete={() => {}}
+                />
+              )}
+
+              {entries.map((entry) =>
+                entry.type === "folder" ? (
+                  <FolderCard
+                    key={`folder:${entry.id}:${entry.name}`}
+                    folder={entry}
+                    searchQuery={searchQuery}
+                    isRenaming={renamingFolderId === entry.id}
+                    onOpen={openFolder}
+                    onStartRename={setRenamingFolderId}
+                    onRename={handleRenameFolder}
+                    onCancelRename={() => setRenamingFolderId(null)}
+                    onDelete={handleDeleteFolder}
+                  />
+                ) : (
+                  <NoteCard
+                    key={`note:${entry.id}`}
+                    note={entry}
+                    searchQuery={searchQuery}
+                    onOpen={openNoteCard}
+                    onDelete={handleDeleteNote}
+                  />
+                ),
+              )}
+
+              {entries.length === 0 && !isCreatingFolder && (
+                <p className="empty">This folder is empty</p>
+              )}
+            </div>
           )}
-
-          {notes.length === 0 && folders.length === 0 && (
-            <p className="empty">This folder is empty</p>
-          )}
-
-          {notes.map((note) => (
-            <NoteBlock
-              key={note.id}
-              note={note}
-              searchQuery={searchQuery}
-              isCollapsed={collapsedIds.has(note.id)}
-              onToggleCollapse={() => toggleCollapse(note.id)}
-              onSave={handleSave}
-              onDiscard={() => {}}
-              onDelete={() => handleDelete(note.id)}
-            />
-          ))}
         </>
       )}
     </div>

@@ -1,10 +1,16 @@
-export default function FolderBreadcrumb({ path, onNavigate }) {
+export default function FolderBreadcrumb({
+  path,
+  isDetail = false,
+  onNavigate,
+}) {
+  const lastIndex = path.length - 1;
+
   return (
     <nav className="folder-breadcrumb" aria-label="Folder path">
       <button
         type="button"
         className="folder-crumb"
-        disabled={path.length === 0}
+        disabled={path.length === 0 && !isDetail}
         onClick={() => onNavigate(-1)}
       >
         <i className="ph-light ph-house" />
@@ -17,7 +23,7 @@ export default function FolderBreadcrumb({ path, onNavigate }) {
           <button
             type="button"
             className="folder-crumb"
-            disabled={index === path.length - 1}
+            disabled={index === lastIndex && !isDetail}
             onClick={() => onNavigate(index)}
           >
             {folder.name}

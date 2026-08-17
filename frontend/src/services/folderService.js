@@ -1,17 +1,5 @@
 import api from "./api.js";
 
-export const getFolders = async (projectId, parentId = null, url = null) => {
-  if (url) {
-    const response = await api.get(url);
-    return response.data;
-  }
-
-  const response = await api.get(`/projects/${projectId}/folders/`, {
-    params: { parent: parentId ?? "null" },
-  });
-  return response.data;
-};
-
 export const createFolder = async (projectId, name, parentId = null) => {
   const response = await api.post(`/projects/${projectId}/folders/`, {
     name,
@@ -32,9 +20,14 @@ export const deleteFolder = async (folderId, { confirm = false } = {}) => {
   return response.data;
 };
 
-export const getFolderContents = async (folderId, url = null) => {
-  const response = url
-    ? await api.get(url)
-    : await api.get(`/folders/${folderId}/contents/`);
+export const getLevelContents = async (projectId, folderId, url = null) => {
+  if (url) {
+    const response = await api.get(url);
+    return response.data;
+  }
+
+  const response = folderId
+    ? await api.get(`/folders/${folderId}/contents/`)
+    : await api.get(`/projects/${projectId}/contents/`);
   return response.data;
 };

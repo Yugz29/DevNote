@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Project, Folder, Note, Snippet, TODO
+from .preview import note_preview
 
 
 class ScopedFolderField(serializers.PrimaryKeyRelatedField):
@@ -58,6 +59,8 @@ class FolderSerializer(serializers.ModelSerializer):
     """Serializer for Folder model"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
     parent = ScopedFolderField(allow_null=True, required=False)
+    folder_count = serializers.SerializerMethodField()
+    note_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Folder
@@ -66,10 +69,20 @@ class FolderSerializer(serializers.ModelSerializer):
             'name',
             'project_id',
             'parent',
+            'folder_count',
+            'note_count',
             'created_at',
             'updated_at',
         ]
         read_only_fields = ['id', 'project_id', 'created_at', 'updated_at']
+
+    def get_folder_count(self, obj):
+        count = getattr(obj, 'folder_count', None)
+        return obj.children.count() if count is None else count
+
+    def get_note_count(self, obj):
+        count = getattr(obj, 'note_count', None)
+        return obj.notes.count() if count is None else count
 
     def validate_name(self, value):
         value = value.strip()
@@ -166,6 +179,32 @@ class NoteSerializer(serializers.ModelSerializer):
             )
 
         return data
+
+
+class NoteCardSerializer(serializers.ModelSerializer):
+    """
+    Note as shown in the gallery: carries a plain-text excerpt instead of the
+    whole Markdown, which a listing never renders.
+    """
+    project_id = serializers.UUIDField(read_only=True, source='project.id')
+    folder = serializers.PrimaryKeyRelatedField(read_only=True)
+    preview = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Note
+        fields = [
+            'id',
+            'title',
+            'preview',
+            'project_id',
+            'folder',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = fields
+
+    def get_preview(self, obj):
+        return note_preview(obj.content)
 
 
 class SnippetSerializer(serializers.ModelSerializer):

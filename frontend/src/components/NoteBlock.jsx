@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { combineByGroup, filterSuggestionItems } from "@blocknote/core";
 import { getDiagramSlashMenuItems } from "@blocknote/diagram-block";
@@ -26,6 +26,7 @@ export default function NoteBlock({
   onSave,
   onDiscard,
   onDelete,
+  ref,
 }) {
   const isNewNote = !note;
   const { theme } = useTheme();
@@ -99,6 +100,10 @@ export default function NoteBlock({
       isSavingRef.current = false;
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    flush: () => (baselineRef.current ? commit() : Promise.resolve()),
+  }));
 
   const handleFocusIn = () => {
     skipCommitRef.current = false;
