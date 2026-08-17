@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
 import NotesPanel from "./NotesPanel.jsx";
+import SnippetsPanel from "./SnippetsPanel.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 
 const TABS = [
@@ -167,7 +168,15 @@ export default function ProjectTabs({ projectId, currentTab, onTabChange }) {
           id="tab-snippets"
           className={`tab-pane${currentTab === "snippets" ? " active" : ""}`}
         >
-          <div id="snippets-list" className="snippets-list" />
+          {currentTab === "snippets" && (
+            <SnippetsPanel
+              key={projectId}
+              projectId={projectId}
+              sort={snippetSort}
+              view={snippetView}
+              scrollRef={tabContentRef}
+            />
+          )}
         </div>
 
         <div
