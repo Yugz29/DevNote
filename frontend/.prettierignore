@@ -3,10 +3,4 @@ node_modules
 .vite
 package-lock.json
 
-src/main.js
-src/managers
-src/utils
-src/pages/*.js
-src/pages/*.html
-
 src/styles
