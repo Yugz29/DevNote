@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import ProjectHeader from "../components/ProjectHeader.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import ProjectTabs from "../components/ProjectTabs.jsx";
@@ -44,9 +43,8 @@ function sortProjects(projects, sort) {
 }
 
 export default function Dashboard() {
-  const { user, isChecking, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { showAlert, showConfirm } = useDialog();
-  const navigate = useNavigate();
 
   const [projects, setProjects] = useState([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
@@ -80,10 +78,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isChecking && !user) navigate("/login", { replace: true });
-  }, [isChecking, user, navigate]);
-
   const loadProjects = useCallback(async () => {
     try {
       const data = await getProjects();
@@ -115,15 +109,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (isChecking || !user) return;
-
     const init = async () => {
       await ensureCsrfCookie();
       await loadProjects();
     };
 
     init();
-  }, [isChecking, user, loadProjects]);
+  }, [loadProjects]);
 
   useEffect(() => {
     const onResize = () => {
@@ -221,14 +213,8 @@ export default function Dashboard() {
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-    } finally {
-      navigate("/login", { replace: true });
-    }
+    await signOut();
   };
-
-  if (isChecking || !user) return null;
 
   const layoutClassName = [
     "layout",
