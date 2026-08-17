@@ -1,29 +1,29 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import ThemeToggle from '../components/ThemeToggle.jsx'
-import { useAuth } from '../contexts/AuthContext.js'
-import '../styles/auth.css'
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import ThemeToggle from "../components/ThemeToggle.jsx";
+import { useAuth } from "../contexts/AuthContext.js";
+import "../styles/auth.css";
 
 export default function Register() {
-  const { user, signUp } = useAuth()
-  const navigate = useNavigate()
+  const { user, signUp } = useAuth();
+  const navigate = useNavigate();
 
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [password2, setPassword2] = useState('')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) navigate('/dashboard', { replace: true })
-  }, [user, navigate])
+    if (user) navigate("/dashboard", { replace: true });
+  }, [user, navigate]);
 
   const handleSubmit = async (event) => {
-    event.preventDefault()
-    setErrorMessage('')
+    event.preventDefault();
+    setErrorMessage("");
 
     if (
       !firstName.trim() ||
@@ -32,16 +32,16 @@ export default function Register() {
       !password ||
       !password2
     ) {
-      setErrorMessage('Please fill in all required fields')
-      return
+      setErrorMessage("Please fill in all required fields");
+      return;
     }
 
     if (password !== password2) {
-      setErrorMessage('Passwords do not match')
-      return
+      setErrorMessage("Passwords do not match");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
       await signUp({
@@ -51,31 +51,37 @@ export default function Register() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         username: username.trim(),
-      })
-      navigate('/dashboard', { replace: true })
+      });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
-      const data = error.response?.data
+      const data = error.response?.data;
 
       setErrorMessage(
         data?.email?.[0] ||
           data?.password?.[0] ||
           data?.username?.[0] ||
           data?.non_field_errors?.[0] ||
-          'Registration failed. Please try again',
-      )
+          "Registration failed. Please try again",
+      );
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-brand">
-          <Link to="/" className="auth-title" style={{ textDecoration: 'none' }}>
-            Dev<span style={{ color: 'var(--accent-primary)' }}>Note</span>
+          <Link
+            to="/"
+            className="auth-title"
+            style={{ textDecoration: "none" }}
+          >
+            Dev<span style={{ color: "var(--accent-primary)" }}>Note</span>
           </Link>
-          <p className="auth-subtitle">Your dev knowledge, everywhere, instantly</p>
+          <p className="auth-subtitle">
+            Your dev knowledge, everywhere, instantly
+          </p>
         </div>
 
         <div className="auth-card">
@@ -167,7 +173,7 @@ export default function Register() {
             <p className="auth-error">{errorMessage}</p>
 
             <button type="submit" className="btn-auth" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating account...' : 'Create account'}
+              {isSubmitting ? "Creating account..." : "Create account"}
             </button>
           </form>
         </div>
@@ -179,5 +185,5 @@ export default function Register() {
 
       <ThemeToggle />
     </div>
-  )
+  );
 }

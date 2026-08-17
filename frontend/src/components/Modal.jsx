@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect } from "react";
 
 export default function Modal({
   isOpen,
@@ -8,21 +8,21 @@ export default function Modal({
   children,
 }) {
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     const onKeyDown = (event) => {
-      if (event.key === 'Escape') onClose()
-    }
+      if (event.key === "Escape") onClose();
+    };
 
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [isOpen, onClose])
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
 
   return (
     <div
-      className={`modal${isOpen ? ' active' : ''}`}
+      className={`modal${isOpen ? " active" : ""}`}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose()
+        if (event.target === event.currentTarget) onClose();
       }}
     >
       <div className="modal-content">
@@ -35,5 +35,5 @@ export default function Modal({
         {children}
       </div>
     </div>
-  )
+  );
 }

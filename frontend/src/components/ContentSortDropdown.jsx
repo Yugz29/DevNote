@@ -25,7 +25,9 @@ export default function ContentSortDropdown({
         onClick={() => onToggle(!isOpen)}
       >
         <i className="ph-light ph-sort-ascending" />
-        <span id={`${id}-sort-label`}>{activeOption ? activeOption.label : ""}</span>
+        <span id={`${id}-sort-label`}>
+          {activeOption ? activeOption.label : ""}
+        </span>
         <i
           className="ph-light ph-caret-down sort-chevron"
           style={{ transform: isOpen ? "rotate(180deg)" : "" }}

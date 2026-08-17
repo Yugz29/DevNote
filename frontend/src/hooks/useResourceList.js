@@ -1,81 +1,81 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useResourceList({ projectId, fetchPage, scrollRef }) {
-  const [items, setItems] = useState([])
-  const [isLoading, setIsLoading] = useState(Boolean(projectId))
-  const [error, setError] = useState(null)
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(Boolean(projectId));
+  const [error, setError] = useState(null);
 
-  const nextPageUrlRef = useRef(null)
-  const isLoadingRef = useRef(false)
-  const fetchPageRef = useRef(fetchPage)
+  const nextPageUrlRef = useRef(null);
+  const isLoadingRef = useRef(false);
+  const fetchPageRef = useRef(fetchPage);
 
   useEffect(() => {
-    fetchPageRef.current = fetchPage
-  })
+    fetchPageRef.current = fetchPage;
+  });
 
   const fetchFirstPage = useCallback(async () => {
-    if (!projectId) return
+    if (!projectId) return;
 
-    nextPageUrlRef.current = null
-    isLoadingRef.current = true
+    nextPageUrlRef.current = null;
+    isLoadingRef.current = true;
 
     try {
-      const data = await fetchPageRef.current(projectId, null)
-      nextPageUrlRef.current = data.next ?? null
-      setItems(data.results ?? data)
-      setError(null)
+      const data = await fetchPageRef.current(projectId, null);
+      nextPageUrlRef.current = data.next ?? null;
+      setItems(data.results ?? data);
+      setError(null);
     } catch (loadError) {
-      console.error('Error loading content', loadError)
-      setItems([])
-      setError('Unable to load content')
+      console.error("Error loading content", loadError);
+      setItems([]);
+      setError("Unable to load content");
     } finally {
-      isLoadingRef.current = false
-      setIsLoading(false)
+      isLoadingRef.current = false;
+      setIsLoading(false);
     }
-  }, [projectId])
+  }, [projectId]);
 
   const reload = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    await fetchFirstPage()
-  }, [fetchFirstPage])
+    setIsLoading(true);
+    setError(null);
+    await fetchFirstPage();
+  }, [fetchFirstPage]);
 
   const loadMore = useCallback(async () => {
-    if (isLoadingRef.current || !nextPageUrlRef.current || !projectId) return
+    if (isLoadingRef.current || !nextPageUrlRef.current || !projectId) return;
 
-    isLoadingRef.current = true
+    isLoadingRef.current = true;
 
     try {
-      const data = await fetchPageRef.current(null, nextPageUrlRef.current)
-      nextPageUrlRef.current = data.next ?? null
-      setItems((current) => [...current, ...(data.results ?? data)])
+      const data = await fetchPageRef.current(null, nextPageUrlRef.current);
+      nextPageUrlRef.current = data.next ?? null;
+      setItems((current) => [...current, ...(data.results ?? data)]);
     } catch (loadMoreError) {
-      console.error('Error loading more content:', loadMoreError)
+      console.error("Error loading more content:", loadMoreError);
     } finally {
-      isLoadingRef.current = false
+      isLoadingRef.current = false;
     }
-  }, [projectId])
+  }, [projectId]);
 
   useEffect(() => {
-    fetchFirstPage()
-  }, [fetchFirstPage])
+    fetchFirstPage();
+  }, [fetchFirstPage]);
 
   useEffect(() => {
-    const scrollContainer = scrollRef?.current
-    if (!scrollContainer) return
+    const scrollContainer = scrollRef?.current;
+    if (!scrollContainer) return;
 
     const onScroll = () => {
       const distanceFromBottom =
         scrollContainer.scrollHeight -
         scrollContainer.scrollTop -
-        scrollContainer.clientHeight
+        scrollContainer.clientHeight;
 
-      if (distanceFromBottom < 100) loadMore()
-    }
+      if (distanceFromBottom < 100) loadMore();
+    };
 
-    scrollContainer.addEventListener('scroll', onScroll)
-    return () => scrollContainer.removeEventListener('scroll', onScroll)
-  }, [scrollRef, loadMore])
+    scrollContainer.addEventListener("scroll", onScroll);
+    return () => scrollContainer.removeEventListener("scroll", onScroll);
+  }, [scrollRef, loadMore]);
 
-  return { items, isLoading, error, reload, loadMore, setItems }
+  return { items, isLoading, error, reload, loadMore, setItems };
 }
