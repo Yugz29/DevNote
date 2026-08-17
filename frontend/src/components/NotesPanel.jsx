@@ -88,9 +88,8 @@ export default function NotesPanel({ projectId, sort, scrollRef }) {
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     setEditingId(null);
-    await reload();
   };
 
   const handleDelete = async (noteId) => {
