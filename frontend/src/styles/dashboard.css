@@ -1025,6 +1025,21 @@
     padding-top: 0;
 }
 
+/* BlockNote editing */
+.note-editor-view {
+    background: transparent;
+}
+
+.note-editor-view .bn-editor {
+    padding-inline: 54px 0;
+    background: transparent;
+}
+
+.note-editor-view .bn-default-styles {
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
 
 /* Note editor inline */
 .note-editor {
