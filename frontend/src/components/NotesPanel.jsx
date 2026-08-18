@@ -13,6 +13,11 @@ import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import { applyMermaidTheme } from "../lib/blocknote.js";
 import { downloadTextFile, toFilename } from "../lib/download.js";
 import {
+  EMPTY_LOCATION,
+  readLocation,
+  writeLocation,
+} from "../lib/notesLocation.js";
+import {
   createFolder,
   deleteFolder,
   getLevelContents,
@@ -65,8 +70,13 @@ export default function NotesPanel({
   const printKeyRef = useRef(0);
   const themeRef = useRef(theme);
 
-  const [path, setPath] = useState([]);
+  const [initialLocation] = useState(() =>
+    searchItemId ? EMPTY_LOCATION : readLocation(projectId),
+  );
+  const [path, setPath] = useState(initialLocation.path);
   const [openNote, setOpenNote] = useState(null);
+  const [pendingNoteId, setPendingNoteId] = useState(initialLocation.noteId);
+  const [unreachableFolderId, setUnreachableFolderId] = useState(null);
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
@@ -88,6 +98,18 @@ export default function NotesPanel({
     scrollRef,
     resetKey: currentFolderId,
   });
+
+  const restoredFolderId = initialLocation.path.at(-1)?.id ?? null;
+
+  if (
+    error &&
+    currentFolderId &&
+    currentFolderId === restoredFolderId &&
+    unreachableFolderId !== currentFolderId
+  ) {
+    setUnreachableFolderId(currentFolderId);
+    setPath([]);
+  }
 
   const entries = useMemo(() => sortEntries(items, sort), [items, sort]);
 
@@ -119,6 +141,33 @@ export default function NotesPanel({
   useEffect(() => {
     loadPinned();
   }, [loadPinned]);
+
+  useEffect(() => {
+    if (!pendingNoteId) return;
+
+    let isStale = false;
+
+    getNote(pendingNoteId)
+      .then((note) => {
+        if (isStale) return;
+        setOpenNote(note);
+        setPendingNoteId(null);
+      })
+      .catch(() => {
+        if (!isStale) setPendingNoteId(null);
+      });
+
+    return () => {
+      isStale = true;
+    };
+  }, [pendingNoteId]);
+
+  useEffect(() => {
+    writeLocation(projectId, {
+      path,
+      noteId: openNote?.id ?? pendingNoteId,
+    });
+  }, [projectId, path, openNote, pendingNoteId]);
 
   const flushDetail = async () => {
     await detailRef.current?.flush();
