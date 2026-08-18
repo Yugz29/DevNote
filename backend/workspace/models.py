@@ -286,6 +286,7 @@ class Snippet(models.Model):
         related_name='snippets',
         help_text="Snippet associated to project"
     )
+    is_pinned = models.BooleanField(default=False, help_text="Whether the snippet is pinned for quick access")
     created_at = models.DateTimeField(auto_now_add=True, help_text="Date creation of snippet")
     updated_at = models.DateTimeField(auto_now=True, help_text="Date of last modification")
 
@@ -294,6 +295,7 @@ class Snippet(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['project', '-created_at']),
+            models.Index(fields=['project', 'is_pinned']),
         ]
 
     def __str__(self):

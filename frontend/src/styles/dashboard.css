@@ -1711,6 +1711,17 @@
     margin-bottom: 0;
 }
 
+.snippets-list .gallery-pinned {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+
+.snippet-pinned-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
 .snippet-card {
     background: var(--dash-surface-raised);
     border: 1px solid var(--dash-border-strong);
@@ -2545,6 +2556,10 @@
     color: var(--dash-text);
     border-color: var(--dash-border-emphasis);
     background: var(--dash-glass-raised);
+}
+
+.btn-card-icon-action.is-active {
+    color: var(--accent-primary);
 }
 
 .btn-card-icon-danger:hover {

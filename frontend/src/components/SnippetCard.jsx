@@ -11,6 +11,7 @@ export default function SnippetCard({
   searchQuery,
   onOpen,
   onDuplicate,
+  onTogglePin,
   onDelete,
 }) {
   const preview =
@@ -39,6 +40,11 @@ export default function SnippetCard({
                 label: "Duplicate",
                 icon: "ph-files",
                 onSelect: onDuplicate,
+              },
+              {
+                label: snippet.is_pinned ? "Unpin" : "Pin",
+                icon: snippet.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
+                onSelect: onTogglePin,
               },
               {
                 label: "Delete",
@@ -80,6 +86,9 @@ export default function SnippetCard({
 
       <div className="snippet-card-footer">
         <span className="card-date">
+          {snippet.is_pinned && (
+            <i className="ph-light ph-push-pin gallery-card-pin" />
+          )}
           {new Date(snippet.created_at).toLocaleDateString()}
         </span>
       </div>

@@ -13,6 +13,7 @@ export default function SnippetModal({
   onCancelEdit,
   onSave,
   onDuplicate,
+  onTogglePin,
   onDelete,
   onClose,
 }) {
@@ -84,6 +85,18 @@ export default function SnippetModal({
                 >
                   <i className="ph-light ph-files" />
                 </button>
+                {onTogglePin && (
+                  <button
+                    type="button"
+                    className={`btn-card-icon-action${snippet.is_pinned ? " is-active" : ""}`}
+                    title={snippet.is_pinned ? "Unpin" : "Pin"}
+                    onClick={onTogglePin}
+                  >
+                    <i
+                      className={`ph-light ${snippet.is_pinned ? "ph-push-pin-slash" : "ph-push-pin"}`}
+                    />
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn-card-icon-action btn-card-icon-danger"

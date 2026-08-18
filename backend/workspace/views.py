@@ -367,6 +367,20 @@ class SnippetViewSet(viewsets.ModelViewSet):
         snippet = serializer.save(project=project)
         logger.info(f"Snippet '{snippet.title}' (ID: {snippet.id}) created in project {project.id} by user {self.request.user.username}")
 
+    @action(detail=False, methods=['get'])
+    def pinned(self, request, *args, **kwargs):
+        """
+        Pinned snippets of a project, in the same shape as the plain listing so
+        they render like any other snippet.
+        """
+        queryset = self.filter_queryset(self.get_queryset().filter(is_pinned=True))
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            return self.get_paginated_response(self.get_serializer(page, many=True).data)
+
+        return Response(self.get_serializer(queryset, many=True).data)
+
     @action(detail=True, methods=['post'])
     def duplicate(self, request, *args, **kwargs):
         """Copy a snippet, code included, into the project holding it"""

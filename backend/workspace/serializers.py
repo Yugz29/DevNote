@@ -222,6 +222,7 @@ class SnippetSerializer(serializers.ModelSerializer):
             'language',
             'description',
             'project_id',
+            'is_pinned',
             'created_at',
             'updated_at',
         ]

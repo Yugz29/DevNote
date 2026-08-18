@@ -44,6 +44,18 @@ export const updateSnippet = async (
   return response.data;
 };
 
+export const getPinnedSnippets = async (projectId) => {
+  const response = await api.get(`/projects/${projectId}/snippets/pinned/`);
+  return response.data;
+};
+
+export const setSnippetPinned = async (snippetId, isPinned) => {
+  const response = await api.patch(`/snippets/${snippetId}/`, {
+    is_pinned: isPinned,
+  });
+  return response.data;
+};
+
 export const duplicateSnippet = async (snippetId) => {
   const response = await api.post(`/snippets/${snippetId}/duplicate/`);
   return response.data;
