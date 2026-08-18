@@ -56,6 +56,50 @@ for (const [id, { aliases }] of Object.entries(
   }
 }
 
+const MARKDOWN_FENCE = /^([ \t]*)(`{3,}|~{3,})([^\s`~]+)/gm;
+const HTML_LANGUAGE_CLASS = /\b(language|lang)-([A-Za-z0-9_+#.-]+)/g;
+
+function resolveLanguage(name) {
+  return languageIds.get(name.toLowerCase()) ?? FALLBACK_LANGUAGE;
+}
+
+export function normalizeMarkdownLanguages(markdown) {
+  return markdown.replace(
+    MARKDOWN_FENCE,
+    (_match, indent, fence, info) =>
+      `${indent}${fence}${resolveLanguage(info)}`,
+  );
+}
+
+export function normalizeHtmlLanguages(html) {
+  return html.replace(
+    HTML_LANGUAGE_CLASS,
+    (_match, prefix, name) => `${prefix}-${resolveLanguage(name)}`,
+  );
+}
+
+export function pasteHandler({ event, editor, defaultPasteHandler }) {
+  const clipboard = event.clipboardData;
+
+  const text = clipboard?.getData("text/plain") ?? "";
+  const markdown = normalizeMarkdownLanguages(text);
+
+  if (markdown !== text) {
+    editor.pasteMarkdown(markdown);
+    return true;
+  }
+
+  const rich = clipboard?.getData("text/html") ?? "";
+  const html = normalizeHtmlLanguages(rich);
+
+  if (html !== rich) {
+    editor.pasteHTML(html);
+    return true;
+  }
+
+  return defaultPasteHandler();
+}
+
 function normalizeCodeLanguages(blocks) {
   for (const block of blocks) {
     if (block.type === "codeBlock") {
