@@ -1058,6 +1058,37 @@
     color: var(--danger);
 }
 
+.card-menu-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-menu-item.is-open {
+    background: var(--dash-glass-raised);
+    color: var(--dash-text);
+}
+
+.card-menu-caret {
+    margin-left: auto;
+    padding-left: 10px;
+    font-size: 13px;
+    color: var(--dash-text-faint);
+}
+
+.card-menu-submenu {
+    display: flex;
+    position: fixed;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 152px;
+    padding: 4px;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px var(--dash-shadow);
+    z-index: 1100;
+}
+
 /* Move dialog */
 .move-dialog {
     display: flex;

@@ -30,19 +30,29 @@ export default function NoteCard({
     });
   }
 
+  const exportItems = [];
+
   if (onExportMarkdown) {
-    menuItems.push({
-      label: "Export as Markdown",
+    exportItems.push({
+      label: "Markdown",
       icon: "ph-file-md",
       onSelect: () => onExportMarkdown(note),
     });
   }
 
   if (onExportPdf) {
-    menuItems.push({
-      label: "Export as PDF",
+    exportItems.push({
+      label: "PDF",
       icon: "ph-file-pdf",
       onSelect: () => onExportPdf(note),
+    });
+  }
+
+  if (exportItems.length > 0) {
+    menuItems.push({
+      label: "Export",
+      icon: "ph-export",
+      items: exportItems,
     });
   }
 

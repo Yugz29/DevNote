@@ -429,20 +429,26 @@ export default function NoteBlock({
             label={`Actions for ${note.title}`}
             items={[
               {
-                label: "Export as Markdown",
-                icon: "ph-file-md",
-                onSelect: () =>
-                  runHeaderAction(() =>
-                    onExportMarkdown(readTitle(), readContent()),
-                  ),
-              },
-              {
-                label: "Export as PDF",
-                icon: "ph-file-pdf",
-                onSelect: () =>
-                  runHeaderAction(() =>
-                    onExportPdf(readTitle(), readContent()),
-                  ),
+                label: "Export",
+                icon: "ph-export",
+                items: [
+                  {
+                    label: "Markdown",
+                    icon: "ph-file-md",
+                    onSelect: () =>
+                      runHeaderAction(() =>
+                        onExportMarkdown(readTitle(), readContent()),
+                      ),
+                  },
+                  {
+                    label: "PDF",
+                    icon: "ph-file-pdf",
+                    onSelect: () =>
+                      runHeaderAction(() =>
+                        onExportPdf(readTitle(), readContent()),
+                      ),
+                  },
+                ],
               },
               {
                 label: "Delete",
