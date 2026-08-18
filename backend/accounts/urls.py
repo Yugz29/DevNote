@@ -6,6 +6,7 @@ from .views import (
     UserDetailView, 
     LogoutView, 
     RefreshView,
+    ChangePasswordView,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('me/', UserDetailView.as_view(), name='user-detail'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('refresh/', RefreshView.as_view(), name='refresh'),
+    path('password/', ChangePasswordView.as_view(), name='change-password'),
 ]

@@ -3717,6 +3717,118 @@ mark.search-highlight {
     border-color: var(--dash-border-emphasis);
 }
 
+.settings-value {
+    font-size: 14px;
+    color: var(--dash-text-muted);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.settings-block {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px 20px;
+    background: var(--dash-glass-subtle);
+    border: 1px solid var(--dash-glass-border-subtle);
+    border-radius: 10px;
+}
+
+.settings-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 380px;
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.settings-field label {
+    font-size: 13px;
+    color: var(--dash-text-muted);
+}
+
+.settings-field input {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--dash-surface-sunken);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--dash-text);
+    transition: border-color 0.15s;
+}
+
+.settings-field input:focus {
+    outline: none;
+    border-color: var(--dash-border-hover);
+}
+
+.settings-field input[aria-invalid="true"] {
+    border-color: var(--danger);
+}
+
+.settings-field-error {
+    margin: 0;
+    font-size: 12px;
+    color: var(--danger);
+}
+
+.settings-field-success {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 13px;
+    color: var(--success);
+}
+
+.settings-field-success i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.settings-block-actions {
+    display: flex;
+}
+
+.settings-block-actions .btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.settings-signout {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    background: none;
+    border: 1px solid var(--dash-glass-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--dash-text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.settings-signout i {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.settings-signout:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--dash-glass-raised);
+}
+
 .settings-placeholder {
     display: flex;
     flex-direction: column;
@@ -3758,5 +3870,9 @@ mark.search-highlight {
         flex-direction: column;
         align-items: flex-start;
         gap: 14px;
+    }
+
+    .settings-fields {
+        max-width: none;
     }
 }

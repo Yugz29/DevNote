@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.test import override_settings
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -165,3 +166,157 @@ class AuthViewsTest(APITestCase):
         response = self.client.get(self.user_url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class ChangePasswordViewTest(APITestCase):
+    """Tests for the POST /api/auth/password/ endpoint"""
+
+    def setUp(self):
+        """Set up an authenticated user and the payload it would send"""
+        self.url = '/api/auth/password/'
+        self.login_url = '/api/auth/login/'
+        self.current_password = 'SecureP@ss123'
+        self.user = User.objects.create_user(
+            username='johndoe',
+            email='john@example.com',
+            first_name='John',
+            last_name='Doe',
+            password=self.current_password
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.valid_payload = {
+            'current_password': self.current_password,
+            'new_password': 'BrandN3w@Pass',
+            'new_password2': 'BrandN3w@Pass'
+        }
+
+    def test_change_password_success(self):
+        """Test: a valid payload replaces the password"""
+        response = self.client.post(self.url, self.valid_payload)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('BrandN3w@Pass'))
+        self.assertFalse(self.user.check_password(self.current_password))
+
+    def test_change_password_issues_fresh_cookies(self):
+        """Test: the response re-authenticates the browser it came from"""
+        response = self.client.post(self.url, self.valid_payload)
+
+        self.assertIn('access_token', response.cookies)
+        self.assertIn('refresh_token', response.cookies)
+        self.assertTrue(response.cookies['access_token'].value)
+        self.assertTrue(response.cookies['refresh_token'].value)
+
+    def test_change_password_blacklists_previous_refresh_tokens(self):
+        """Test: refresh tokens issued before the change stop working"""
+        old_refresh = str(RefreshToken.for_user(self.user))
+
+        self.client.post(self.url, self.valid_payload)
+
+        self.client.force_authenticate(user=None)
+        self.client.cookies['refresh_token'] = old_refresh
+        response = self.client.post('/api/auth/refresh/')
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_change_password_wrong_current_password(self):
+        """Test: the change is refused without the current password"""
+        payload = self.valid_payload.copy()
+        payload['current_password'] = 'NotMyP@ssw0rd'
+
+        response = self.client.post(self.url, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('current_password', response.data)
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.current_password))
+
+    def test_change_password_confirmation_mismatch(self):
+        """Test: the two new password fields have to match"""
+        payload = self.valid_payload.copy()
+        payload['new_password2'] = 'SomethingElse@1'
+
+        response = self.client.post(self.url, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password', response.data)
+
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password(self.current_password))
+
+    def test_change_password_rejects_weak_password(self):
+        """Test: the project password validators apply to the new password"""
+        payload = self.valid_payload.copy()
+        payload['new_password'] = '123'
+        payload['new_password2'] = '123'
+
+        response = self.client.post(self.url, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password', response.data)
+
+    def test_change_password_rejects_reusing_the_current_one(self):
+        """Test: a change has to actually change something"""
+        payload = {
+            'current_password': self.current_password,
+            'new_password': self.current_password,
+            'new_password2': self.current_password
+        }
+
+        response = self.client.post(self.url, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('new_password', response.data)
+
+    def test_change_password_missing_fields(self):
+        """Test: all three fields are required"""
+        response = self.client.post(self.url, {})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        for field in ['current_password', 'new_password', 'new_password2']:
+            self.assertIn(field, response.data)
+
+    def test_change_password_unauthenticated(self):
+        """Test: POST /api/auth/password/ returns 401 without authentication"""
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(self.url, self.valid_payload)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_change_password_leaves_other_users_alone(self):
+        """Test: only the caller's password moves"""
+        other = User.objects.create_user(
+            username='janedoe',
+            email='jane@example.com',
+            first_name='Jane',
+            last_name='Doe',
+            password='OtherP@ss123'
+        )
+
+        self.client.post(self.url, self.valid_payload)
+
+        other.refresh_from_db()
+        self.assertTrue(other.check_password('OtherP@ss123'))
+
+    def test_login_works_with_the_new_password(self):
+        """Test: the new password is the one that signs you back in"""
+        self.client.post(self.url, self.valid_payload)
+        self.client.force_authenticate(user=None)
+
+        refused = self.client.post(self.login_url, {
+            'email': 'john@example.com',
+            'password': self.current_password
+        })
+        accepted = self.client.post(self.login_url, {
+            'email': 'john@example.com',
+            'password': 'BrandN3w@Pass'
+        })
+
+        self.assertEqual(refused.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(accepted.status_code, status.HTTP_200_OK)

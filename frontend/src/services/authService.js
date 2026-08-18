@@ -57,3 +57,17 @@ export const getCurrentUser = async () => {
   const response = await api.get("/auth/me/");
   return response.data;
 };
+
+export const changePassword = async (
+  currentPassword,
+  newPassword,
+  newPassword2,
+) => {
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/password/", {
+    current_password: currentPassword,
+    new_password: newPassword,
+    new_password2: newPassword2,
+  });
+  return response.data;
+};

@@ -1,8 +1,10 @@
+import AccountSettings from "./AccountSettings.jsx";
 import AppearanceSettings from "./AppearanceSettings.jsx";
 import { findSettingsSection } from "../lib/settingsSections.js";
 
 const SECTION_COMPONENTS = {
   appearance: AppearanceSettings,
+  account: AccountSettings,
 };
 
 function SectionPlaceholder({ label }) {
