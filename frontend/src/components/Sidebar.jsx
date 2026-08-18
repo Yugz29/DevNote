@@ -15,6 +15,7 @@ export default function Sidebar({
   onNewProject,
   onOpenSearch,
   onCloseSidebar,
+  onOpenSettings,
   onLogout,
 }) {
   const canSort = !isLoading && !hasError && projects.length > 1;
@@ -126,14 +127,25 @@ export default function Sidebar({
         <span id="sidebar-user-name" className="sidebar-user">
           {user?.email ?? "..."}
         </span>
-        <button
-          id="logout-btn"
-          className="btn-logout"
-          title="Logout"
-          onClick={onLogout}
-        >
-          <i className="ph-light ph-sign-out" />
-        </button>
+        <div className="sidebar-footer-actions">
+          <button
+            id="settings-btn"
+            className="btn-icon-sm"
+            title="Settings"
+            onClick={onOpenSettings}
+          >
+            <i className="ph-light ph-gear-six" />
+          </button>
+
+          <button
+            id="logout-btn"
+            className="btn-logout"
+            title="Logout"
+            onClick={onLogout}
+          >
+            <i className="ph-light ph-sign-out" />
+          </button>
+        </div>
       </div>
     </aside>
   );

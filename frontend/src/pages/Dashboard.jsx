@@ -10,12 +10,15 @@ import ProjectHeader from "../components/ProjectHeader.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
 import ProjectTabs from "../components/ProjectTabs.jsx";
 import SearchOverlay from "../components/SearchOverlay.jsx";
+import SettingsPanel from "../components/SettingsPanel.jsx";
+import SettingsSidebar from "../components/SettingsSidebar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
 import { useAuth } from "../contexts/AuthContext.js";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useTheme } from "../contexts/ThemeContext.js";
 import { applyMermaidTheme } from "../lib/blocknote.js";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
 import { ensureCsrfCookie } from "../services/authService.js";
 import {
   deleteProject,
@@ -60,6 +63,10 @@ export default function Dashboard() {
   const [hasProjectsError, setHasProjectsError] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
   const [currentTab, setCurrentTab] = useState("notes");
+  const [view, setView] = useState("projects");
+  const [settingsSection, setSettingsSection] = useState(
+    DEFAULT_SETTINGS_SECTION,
+  );
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState(null);
@@ -157,6 +164,7 @@ export default function Dashboard() {
     async (projectId, tab = null, searchQuery = null, searchItemId = null) => {
       try {
         const project = await getProject(projectId);
+        setView("projects");
         setCurrentProject(project);
         if (tab) setCurrentTab(tab);
         setSearchTarget(
@@ -176,6 +184,13 @@ export default function Dashboard() {
   }, []);
 
   const closeSearch = useCallback(() => setIsSearchOpen(false), []);
+
+  const openSettings = useCallback(() => {
+    setSettingsSection(DEFAULT_SETTINGS_SECTION);
+    setView("settings");
+  }, []);
+
+  const closeSettings = useCallback(() => setView("projects"), []);
 
   const handleProjectUpdated = useCallback((updated) => {
     setCurrentProject(updated);
@@ -227,6 +242,8 @@ export default function Dashboard() {
     await signOut();
   };
 
+  const isSettingsView = view === "settings";
+
   const layoutClassName = [
     "layout",
     isSidebarHidden ? "sidebar-hidden" : "",
@@ -244,22 +261,32 @@ export default function Dashboard() {
           onClick={() => setIsSidebarVisible(false)}
         />
 
-        <Sidebar
-          user={user}
-          projects={sortedProjects}
-          isLoading={isLoadingProjects}
-          hasError={hasProjectsError}
-          activeProjectId={currentProject?.id ?? null}
-          sort={projectSort}
-          onSortChange={setProjectSort}
-          onSelectProject={selectProject}
-          onLoadMore={loadMoreProjects}
-          onDeleteProject={handleDeleteProject}
-          onNewProject={() => setIsProjectModalOpen(true)}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onCloseSidebar={closeSidebar}
-          onLogout={handleLogout}
-        />
+        {isSettingsView ? (
+          <SettingsSidebar
+            activeSection={settingsSection}
+            onSelectSection={setSettingsSection}
+            onBack={closeSettings}
+            onCloseSidebar={closeSidebar}
+          />
+        ) : (
+          <Sidebar
+            user={user}
+            projects={sortedProjects}
+            isLoading={isLoadingProjects}
+            hasError={hasProjectsError}
+            activeProjectId={currentProject?.id ?? null}
+            sort={projectSort}
+            onSortChange={setProjectSort}
+            onSelectProject={selectProject}
+            onLoadMore={loadMoreProjects}
+            onDeleteProject={handleDeleteProject}
+            onNewProject={() => setIsProjectModalOpen(true)}
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onCloseSidebar={closeSidebar}
+            onOpenSettings={openSettings}
+            onLogout={handleLogout}
+          />
+        )}
 
         <main className="main-content">
           <button
@@ -274,7 +301,9 @@ export default function Dashboard() {
           <div
             id="welcome-screen"
             className="welcome-screen"
-            style={{ display: currentProject ? "none" : "flex" }}
+            style={{
+              display: !isSettingsView && !currentProject ? "flex" : "none",
+            }}
           >
             <h1>
               Welcome,{" "}
@@ -286,7 +315,9 @@ export default function Dashboard() {
 
           <div
             id="project-view"
-            style={{ display: currentProject ? "flex" : "none" }}
+            style={{
+              display: !isSettingsView && currentProject ? "flex" : "none",
+            }}
           >
             {currentProject && (
               <>
@@ -307,6 +338,8 @@ export default function Dashboard() {
               </>
             )}
           </div>
+
+          {isSettingsView && <SettingsPanel section={settingsSection} />}
         </main>
       </div>
 
