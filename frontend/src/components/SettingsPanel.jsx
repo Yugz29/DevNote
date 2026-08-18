@@ -1,10 +1,12 @@
 import AccountSettings from "./AccountSettings.jsx";
 import AppearanceSettings from "./AppearanceSettings.jsx";
+import DefaultsSettings from "./DefaultsSettings.jsx";
 import { findSettingsSection } from "../lib/settingsSections.js";
 
 const SECTION_COMPONENTS = {
   appearance: AppearanceSettings,
   account: AccountSettings,
+  defaults: DefaultsSettings,
 };
 
 function SectionPlaceholder({ label }) {
@@ -29,7 +31,9 @@ export default function SettingsPanel({ section }) {
       </header>
 
       <div className="settings-content">
-        {Section ? <Section /> : <SectionPlaceholder label={current.label} />}
+        <div className="settings-column">
+          {Section ? <Section /> : <SectionPlaceholder label={current.label} />}
+        </div>
       </div>
     </div>
   );

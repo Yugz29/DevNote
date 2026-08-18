@@ -1,3 +1,4 @@
+import SettingsChoice from "./SettingsChoice.jsx";
 import { useTheme } from "../contexts/ThemeContext.js";
 
 const THEMES = [
@@ -16,28 +17,12 @@ export default function AppearanceSettings() {
           <p>Applies to this browser only, and is remembered between visits.</p>
         </div>
 
-        <div
-          className="settings-choice"
-          role="radiogroup"
-          aria-label="Colour theme"
-        >
-          {THEMES.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={theme === option.value}
-              className={`settings-choice-option${theme === option.value ? " active" : ""}`}
-              data-theme-option={option.value}
-              onClick={() => {
-                if (theme !== option.value) toggleTheme();
-              }}
-            >
-              <i className={`ph-light ${option.icon}`} />
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
+        <SettingsChoice
+          label="Colour theme"
+          options={THEMES}
+          value={theme}
+          onChange={() => toggleTheme()}
+        />
       </div>
     </div>
   );

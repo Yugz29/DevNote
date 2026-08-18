@@ -3645,11 +3645,15 @@ mark.search-highlight {
     padding: 24px 32px 32px;
 }
 
+.settings-column {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
 .settings-section {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 720px;
 }
 
 .settings-row {
