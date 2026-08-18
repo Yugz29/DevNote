@@ -5,7 +5,7 @@ import { SNIPPET_LANGUAGE_OPTIONS } from "../lib/languages.js";
 
 const DETECT_DELAY = 500;
 
-export default function SnippetEditor({ snippet, onSave, onCancel }) {
+export default function SnippetEditor({ snippet, onSave, onCancel, onExpand }) {
   const [title, setTitle] = useState(snippet?.title ?? "");
   const [description, setDescription] = useState(snippet?.description ?? "");
   const [content, setContent] = useState(snippet?.content ?? "");
@@ -93,6 +93,17 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
           className="item-actions"
           style={{ opacity: 1, visibility: "visible", pointerEvents: "auto" }}
         >
+          {onExpand && (
+            <button
+              className="btn-expand-snippet btn-card-icon-action"
+              title="Expand"
+              onClick={() =>
+                onExpand({ title, language, content, description })
+              }
+            >
+              <i className="ph-light ph-arrows-out" />
+            </button>
+          )}
           <button
             className="btn-save-snippet btn-card-icon-action"
             title="Save"

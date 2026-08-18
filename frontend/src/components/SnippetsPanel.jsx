@@ -57,6 +57,7 @@ export default function SnippetsPanel({
   const [isCreating, setIsCreating] = useState(false);
   const [viewingId, setViewingId] = useState(null);
   const [isEditingViewed, setIsEditingViewed] = useState(false);
+  const [draft, setDraft] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     readCollapsedGroups(projectId),
   );
@@ -124,6 +125,7 @@ export default function SnippetsPanel({
 
       setIsCreating(false);
       setIsEditingViewed(false);
+      setDraft(null);
       await reload();
     } catch (saveError) {
       console.error("Error saving snippet:", saveError);
@@ -157,30 +159,38 @@ export default function SnippetsPanel({
 
   return (
     <div id="snippets-list" className="snippets-list" ref={containerRef}>
+      <div className="gallery-toolbar">
+        <button
+          type="button"
+          className="gallery-action"
+          onClick={() => setIsCreating(true)}
+        >
+          <i className="ph-light ph-plus" />
+          <span>New snippet</span>
+        </button>
+      </div>
+
       {isLoading && <p className="loading">Loading...</p>}
 
       {!isLoading && error && <p className="error">{error}</p>}
 
       {!isLoading && !error && (
         <>
-          {isCreating ? (
+          {isCreating && (
             <SnippetEditor
               snippet={null}
               onSave={(values) => handleSave(null, values)}
               onCancel={() => setIsCreating(false)}
+              onExpand={(values) => {
+                setIsCreating(false);
+                setDraft(values);
+              }}
             />
-          ) : (
-            <div
-              className="snippet-add-card"
-              id="snippet-add-line"
-              onClick={() => setIsCreating(true)}
-            >
-              <span className="note-add-icon">+</span>
-              <span className="note-add-text">New snippet...</span>
-            </div>
           )}
 
-          {snippets.length === 0 && <p className="empty">No snippets yet</p>}
+          {snippets.length === 0 && !isCreating && (
+            <p className="empty">No snippets yet</p>
+          )}
 
           {snippets.length > 0 && view === "grouped" && (
             <div className="snippet-grouped-view">
@@ -224,6 +234,16 @@ export default function SnippetsPanel({
             view !== "grouped" &&
             snippets.map(renderSnippet)}
         </>
+      )}
+
+      {draft && (
+        <SnippetModal
+          snippet={draft}
+          isEditing
+          onCancelEdit={() => setDraft(null)}
+          onSave={(values) => handleSave(null, values)}
+          onClose={() => setDraft(null)}
+        />
       )}
 
       {viewedSnippet && (

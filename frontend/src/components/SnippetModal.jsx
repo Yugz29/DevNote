@@ -16,6 +16,7 @@ export default function SnippetModal({
   onClose,
 }) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const editTitle = snippet.id ? "Edit snippet" : "New snippet";
 
   const handleDelete = async () => {
     setIsConfirming(true);
@@ -41,7 +42,7 @@ export default function SnippetModal({
   return createPortal(
     <Modal
       isOpen
-      title={isEditing ? "Edit snippet" : snippet.title}
+      title={isEditing ? editTitle : snippet.title}
       onClose={handleClose}
     >
       <div className="snippet-modal">

@@ -1660,6 +1660,11 @@
     gap: 1rem;
 }
 
+.snippets-list .gallery-toolbar {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+
 .snippet-card {
     background: var(--dash-surface-raised);
     border: 1px solid var(--dash-border-strong);
