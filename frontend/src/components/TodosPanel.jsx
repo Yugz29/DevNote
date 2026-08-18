@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import TodoCard from "./TodoCard.jsx";
 import TodoEditor from "./TodoEditor.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
@@ -47,6 +47,7 @@ export default function TodosPanel({
   view,
   searchQuery,
   searchItemId,
+  onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
@@ -64,6 +65,12 @@ export default function TodosPanel({
   const todos = useMemo(() => sortTodos(items, sort), [items, sort]);
 
   useSearchTarget(containerRef, searchItemId, !isLoading && todos.length > 0);
+
+  const isSortable = !isLoading && !error && todos.length > 1;
+
+  useEffect(() => {
+    onSortableChange(isSortable);
+  }, [onSortableChange, isSortable]);
 
   const groups = useMemo(
     () =>

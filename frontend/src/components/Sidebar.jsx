@@ -15,6 +15,8 @@ export default function Sidebar({
   onCloseSidebar,
   onLogout,
 }) {
+  const canSort = !isLoading && !hasError && projects.length > 1;
+
   const handleScroll = (event) => {
     const element = event.currentTarget;
     const distanceFromBottom =
@@ -48,7 +50,9 @@ export default function Sidebar({
             <i className="ph-light ph-magnifying-glass" />
           </button>
 
-          <ProjectSortDropdown sort={sort} onSortChange={onSortChange} />
+          {canSort && (
+            <ProjectSortDropdown sort={sort} onSortChange={onSortChange} />
+          )}
 
           <button
             id="newProjectBtn"

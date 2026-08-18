@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SnippetCard from "./SnippetCard.jsx";
 import SnippetEditor from "./SnippetEditor.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
@@ -48,6 +48,7 @@ export default function SnippetsPanel({
   scrollRef,
   searchQuery,
   searchItemId,
+  onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
@@ -71,6 +72,12 @@ export default function SnippetsPanel({
     searchItemId,
     !isLoading && snippets.length > 0,
   );
+
+  const isSortable = !isLoading && !error && snippets.length > 1;
+
+  useEffect(() => {
+    onSortableChange(isSortable);
+  }, [onSortableChange, isSortable]);
 
   const toggleGroup = (language) => {
     const next = new Set(collapsedGroups);

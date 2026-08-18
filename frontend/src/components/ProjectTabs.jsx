@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
 import NotesPanel from "./NotesPanel.jsx";
 import SnippetsPanel from "./SnippetsPanel.jsx";
@@ -34,6 +34,15 @@ export default function ProjectTabs({
 }) {
   const tabContentRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [isSortable, setIsSortable] = useState(false);
+  const [sortableTab, setSortableTab] = useState(currentTab);
+
+  if (sortableTab !== currentTab) {
+    setSortableTab(currentTab);
+    setIsSortable(false);
+  }
+
+  const handleSortableChange = useCallback((value) => setIsSortable(value), []);
 
   const [noteSort, setNoteSort] = useLocalStorageState(
     "devnote_note_sort",
@@ -78,29 +87,33 @@ export default function ProjectTabs({
         <div
           className={`note-controls${currentTab === "notes" ? " visible" : ""}`}
         >
-          <ContentSortDropdown
-            id="note"
-            options={NOTE_SORT_OPTIONS}
-            sort={noteSort}
-            defaultSort="created"
-            isOpen={openDropdown === "note"}
-            onToggle={toggleDropdown("note")}
-            onSortChange={setNoteSort}
-          />
+          {isSortable && (
+            <ContentSortDropdown
+              id="note"
+              options={NOTE_SORT_OPTIONS}
+              sort={noteSort}
+              defaultSort="created"
+              isOpen={openDropdown === "note"}
+              onToggle={toggleDropdown("note")}
+              onSortChange={setNoteSort}
+            />
+          )}
         </div>
 
         <div
           className={`snippet-controls${currentTab === "snippets" ? " visible" : ""}`}
         >
-          <ContentSortDropdown
-            id="snippet"
-            options={SNIPPET_SORT_OPTIONS}
-            sort={snippetSort}
-            defaultSort="created"
-            isOpen={openDropdown === "snippet"}
-            onToggle={toggleDropdown("snippet")}
-            onSortChange={setSnippetSort}
-          />
+          {isSortable && (
+            <ContentSortDropdown
+              id="snippet"
+              options={SNIPPET_SORT_OPTIONS}
+              sort={snippetSort}
+              defaultSort="created"
+              isOpen={openDropdown === "snippet"}
+              onToggle={toggleDropdown("snippet")}
+              onSortChange={setSnippetSort}
+            />
+          )}
 
           <div id="snippet-view-toggle" className="todo-view-toggle">
             <button
@@ -125,15 +138,17 @@ export default function ProjectTabs({
         <div
           className={`todo-controls${currentTab === "todos" ? " visible" : ""}`}
         >
-          <ContentSortDropdown
-            id="todo"
-            options={TODO_SORT_OPTIONS}
-            sort={todoSort}
-            defaultSort="priority"
-            isOpen={openDropdown === "todo"}
-            onToggle={toggleDropdown("todo")}
-            onSortChange={setTodoSort}
-          />
+          {isSortable && (
+            <ContentSortDropdown
+              id="todo"
+              options={TODO_SORT_OPTIONS}
+              sort={todoSort}
+              defaultSort="priority"
+              isOpen={openDropdown === "todo"}
+              onToggle={toggleDropdown("todo")}
+              onSortChange={setTodoSort}
+            />
+          )}
 
           <div id="todo-view-toggle" className="todo-view-toggle">
             <button
@@ -169,6 +184,7 @@ export default function ProjectTabs({
               scrollRef={tabContentRef}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              onSortableChange={handleSortableChange}
             />
           )}
         </div>
@@ -186,6 +202,7 @@ export default function ProjectTabs({
               scrollRef={tabContentRef}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              onSortableChange={handleSortableChange}
             />
           )}
         </div>
@@ -202,6 +219,7 @@ export default function ProjectTabs({
               view={todoView}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              onSortableChange={handleSortableChange}
             />
           )}
         </div>

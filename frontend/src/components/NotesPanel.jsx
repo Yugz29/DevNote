@@ -53,6 +53,7 @@ export default function NotesPanel({
   scrollRef,
   searchQuery,
   searchItemId,
+  onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
   const { theme } = useTheme();
@@ -395,6 +396,16 @@ export default function NotesPanel({
 
   const detailNote = isCreatingNote ? null : openNote;
   const isDetail = isCreatingNote || Boolean(openNote);
+
+  const isSortable =
+    !isDetail &&
+    !isLoading &&
+    !error &&
+    (entries.length > 1 || pinnedEntries.length > 1);
+
+  useEffect(() => {
+    onSortableChange(isSortable);
+  }, [onSortableChange, isSortable]);
 
   return (
     <div id="notes-list" className="notes-list" ref={containerRef}>
