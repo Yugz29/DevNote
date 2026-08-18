@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import DnSelect from "./DnSelect.jsx";
+import { detectLanguage } from "../lib/detectLanguage.js";
 import { SNIPPET_LANGUAGE_OPTIONS } from "../lib/languages.js";
+
+const DETECT_DELAY = 500;
 
 export default function SnippetEditor({ snippet, onSave, onCancel }) {
   const [title, setTitle] = useState(snippet?.title ?? "");
@@ -8,6 +11,7 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
   const [content, setContent] = useState(snippet?.content ?? "");
   const [language, setLanguage] = useState(snippet?.language || "text");
   const [isSaving, setIsSaving] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
 
   const textareaRef = useRef(null);
 
@@ -31,6 +35,23 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
     textarea.style.height = `${textarea.scrollHeight}px`;
   }, []);
 
+  useEffect(() => {
+    let isStale = false;
+
+    const store = (detected) => {
+      if (!isStale) setSuggestion(detected);
+    };
+
+    const timer = setTimeout(() => {
+      detectLanguage(content).then(store, () => store(null));
+    }, DETECT_DELAY);
+
+    return () => {
+      isStale = true;
+      clearTimeout(timer);
+    };
+  }, [content]);
+
   const handleContentChange = (event) => {
     setContent(event.target.value);
 
@@ -46,8 +67,26 @@ export default function SnippetEditor({ snippet, onSave, onCancel }) {
           <DnSelect
             value={language}
             options={SNIPPET_LANGUAGE_OPTIONS}
-            onChange={setLanguage}
+            onChange={(value) => {
+              setLanguage(value);
+              setSuggestion(null);
+            }}
           />
+
+          {suggestion && suggestion !== language && (
+            <button
+              type="button"
+              className="snippet-lang-suggestion"
+              title={`Set the language to ${suggestion}`}
+              onClick={() => {
+                setLanguage(suggestion);
+                setSuggestion(null);
+              }}
+            >
+              <i className="ph-light ph-magic-wand" />
+              <span>Looks like {suggestion}?</span>
+            </button>
+          )}
         </div>
 
         <div

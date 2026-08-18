@@ -1,15 +1,27 @@
+import CodeBlock from "./CodeBlock.jsx";
+import CopyButton from "./CopyButton.jsx";
 import HighlightText from "./HighlightText.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
+
+const PREVIEW_LENGTH = 200;
 
 export default function SnippetCard({
   snippet,
   searchQuery,
-  onEdit,
+  onOpen,
   onDelete,
 }) {
+  const preview =
+    snippet.content.length > PREVIEW_LENGTH
+      ? `${snippet.content.substring(0, PREVIEW_LENGTH)}\n...`
+      : snippet.content;
+
   return (
-    <div className="snippet-card" data-id={snippet.id}>
-      <div className="snippet-card-header">
+    <div className="snippet-card" data-id={snippet.id} onClick={onOpen}>
+      <div
+        className="snippet-card-header"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="snippet-lang-badge">
           <LanguageIcon language={snippet.language} />
           <span className="snippet-lang-name">
@@ -18,14 +30,6 @@ export default function SnippetCard({
         </div>
 
         <div className="item-actions">
-          <button
-            className="edit-snippet-btn btn-card-icon-action"
-            data-id={snippet.id}
-            title="Edit"
-            onClick={onEdit}
-          >
-            <i className="ph-light ph-pencil-simple" />
-          </button>
           <button
             className="delete-snippet-btn btn-card-icon-action btn-card-icon-danger"
             data-id={snippet.id}
@@ -38,7 +42,9 @@ export default function SnippetCard({
       </div>
 
       <h4 className="snippet-title">
-        <HighlightText text={snippet.title} query={searchQuery} />
+        <button type="button" className="snippet-title-btn" onClick={onOpen}>
+          <HighlightText text={snippet.title} query={searchQuery} />
+        </button>
       </h4>
 
       {snippet.description && (
@@ -47,12 +53,20 @@ export default function SnippetCard({
         </p>
       )}
 
-      <pre className="snippet-preview">
-        <code>
-          {snippet.content.substring(0, 200)}
-          {snippet.content.length > 200 ? "\n..." : ""}
-        </code>
-      </pre>
+      <div className="snippet-preview-wrap">
+        <CodeBlock
+          code={preview}
+          language={snippet.language}
+          className="snippet-preview"
+        />
+
+        <div
+          className="snippet-preview-actions"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <CopyButton text={snippet.content} className="btn-card-icon-action" />
+        </div>
+      </div>
 
       <div className="snippet-card-footer">
         <span className="card-date">

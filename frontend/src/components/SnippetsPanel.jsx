@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SnippetCard from "./SnippetCard.jsx";
 import SnippetEditor from "./SnippetEditor.jsx";
+import SnippetModal from "./SnippetModal.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
@@ -53,7 +54,9 @@ export default function SnippetsPanel({
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
 
-  const [editingId, setEditingId] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [viewingId, setViewingId] = useState(null);
+  const [isEditingViewed, setIsEditingViewed] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     readCollapsedGroups(projectId),
   );
@@ -66,6 +69,7 @@ export default function SnippetsPanel({
 
   const snippets = useMemo(() => sortSnippets(items, sort), [items, sort]);
   const groups = useMemo(() => groupByLanguage(snippets), [snippets]);
+  const viewedSnippet = snippets.find((snippet) => snippet.id === viewingId);
 
   useSearchTarget(
     containerRef,
@@ -118,7 +122,8 @@ export default function SnippetsPanel({
         await createSnippet(projectId, title, language, content, description);
       }
 
-      setEditingId(null);
+      setIsCreating(false);
+      setIsEditingViewed(false);
       await reload();
     } catch (saveError) {
       console.error("Error saving snippet:", saveError);
@@ -132,6 +137,7 @@ export default function SnippetsPanel({
 
     try {
       await deleteSnippet(snippetId);
+      setViewingId((current) => (current === snippetId ? null : current));
       await reload();
     } catch (deleteError) {
       console.error("Error deleting snippet:", deleteError);
@@ -139,25 +145,15 @@ export default function SnippetsPanel({
     }
   };
 
-  const renderSnippet = (snippet) =>
-    editingId === snippet.id ? (
-      <SnippetEditor
-        key={snippet.id}
-        snippet={snippet}
-        onSave={(values) => handleSave(snippet.id, values)}
-        onCancel={() => setEditingId(null)}
-      />
-    ) : (
-      <SnippetCard
-        key={snippet.id}
-        snippet={snippet}
-        searchQuery={searchQuery}
-        onEdit={() => {
-          if (editingId === null) setEditingId(snippet.id);
-        }}
-        onDelete={() => handleDelete(snippet.id)}
-      />
-    );
+  const renderSnippet = (snippet) => (
+    <SnippetCard
+      key={snippet.id}
+      snippet={snippet}
+      searchQuery={searchQuery}
+      onOpen={() => setViewingId(snippet.id)}
+      onDelete={() => handleDelete(snippet.id)}
+    />
+  );
 
   return (
     <div id="snippets-list" className="snippets-list" ref={containerRef}>
@@ -167,19 +163,17 @@ export default function SnippetsPanel({
 
       {!isLoading && !error && (
         <>
-          {editingId === "new" ? (
+          {isCreating ? (
             <SnippetEditor
               snippet={null}
               onSave={(values) => handleSave(null, values)}
-              onCancel={() => setEditingId(null)}
+              onCancel={() => setIsCreating(false)}
             />
           ) : (
             <div
               className="snippet-add-card"
               id="snippet-add-line"
-              onClick={() => {
-                if (editingId === null) setEditingId("new");
-              }}
+              onClick={() => setIsCreating(true)}
             >
               <span className="note-add-icon">+</span>
               <span className="note-add-text">New snippet...</span>
@@ -230,6 +224,21 @@ export default function SnippetsPanel({
             view !== "grouped" &&
             snippets.map(renderSnippet)}
         </>
+      )}
+
+      {viewedSnippet && (
+        <SnippetModal
+          snippet={viewedSnippet}
+          isEditing={isEditingViewed}
+          onEdit={() => setIsEditingViewed(true)}
+          onCancelEdit={() => setIsEditingViewed(false)}
+          onSave={(values) => handleSave(viewedSnippet.id, values)}
+          onDelete={() => handleDelete(viewedSnippet.id)}
+          onClose={() => {
+            setIsEditingViewed(false);
+            setViewingId(null);
+          }}
+        />
       )}
     </div>
   );

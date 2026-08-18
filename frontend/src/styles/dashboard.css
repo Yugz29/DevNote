@@ -1676,6 +1676,45 @@
     border-color: var(--dash-glass-border-stronger);
 }
 
+.snippet-card:not(.snippet-editor) {
+    cursor: pointer;
+}
+
+.snippet-title-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.snippet-lang-suggestion {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--dash-glass-raised);
+    border: 1px solid var(--dash-border-strong);
+    border-radius: 999px;
+    padding: 3px 10px;
+    color: var(--dash-text-muted);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.snippet-lang-suggestion:hover {
+    color: var(--dash-text);
+    border-color: var(--dash-border-hover);
+}
+
+.snippet-lang-suggestion i {
+    font-size: 13px;
+}
+
 .snippet-card-header {
     display: flex;
     align-items: center;
@@ -1711,17 +1750,64 @@
     color: var(--dash-text-muted);
 }
 
+.snippet-preview-wrap {
+    position: relative;
+}
+
 .snippet-preview {
     background: var(--dash-surface-sunken);
     border: 1px solid var(--dash-border);
     border-radius: 6px;
     padding: 10px 12px;
+    overflow-x: auto;
+}
+
+.snippet-preview-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    background: var(--dash-surface-sunken);
+    border: 1px solid var(--dash-border);
+    border-radius: 6px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.15s, visibility 0s 0.15s;
+}
+
+.snippet-preview-wrap:hover .snippet-preview-actions,
+.snippet-preview-wrap:focus-within .snippet-preview-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.15s, visibility 0s;
+}
+
+/* Highlighted code (snippet preview and modal) */
+.code-block {
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     font-size: 12px;
     color: var(--dash-text-code);
-    overflow-x: auto;
-    white-space: pre;
     line-height: 1.5;
+}
+
+.code-block pre {
+    margin: 0;
+    background: transparent;
+    font: inherit;
+    white-space: pre;
+}
+
+.code-block .shiki,
+.code-block .shiki span {
+    color: var(--shiki-dark);
+    background: transparent;
+}
+
+[data-theme="light"] .code-block .shiki,
+[data-theme="light"] .code-block .shiki span {
+    color: var(--shiki-light);
 }
 
 .snippet-card-footer {
@@ -2352,6 +2438,7 @@
 }
 
 .snippet-card:hover .item-actions,
+.snippet-card:focus-within .item-actions,
 .todo-card:hover .item-actions {
     opacity: 1;
     visibility: visible;
@@ -2519,6 +2606,66 @@
     justify-content: flex-end;
     gap: 10px;
     margin-top: 20px;
+}
+
+/* Snippet detail modal */
+.modal-content:has(.snippet-modal) {
+    max-width: 860px;
+}
+
+.snippet-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 24px 24px;
+}
+
+.snippet-modal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.snippet-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.snippet-modal .snippet-editor {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    gap: 12px;
+}
+
+.snippet-modal .snippet-editor-content {
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.snippet-modal-description {
+    font-size: 13px;
+    color: var(--dash-text-muted);
+}
+
+.snippet-modal-code {
+    background: var(--dash-surface-sunken);
+    border: 1px solid var(--dash-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    max-height: 60vh;
+    overflow: auto;
+}
+
+.copy-btn.is-copied {
+    color: var(--success);
+}
+
+.copy-btn.is-failed {
+    color: var(--danger);
 }
 
 /* ── Project modal (dead code — kept for reference) ── */
