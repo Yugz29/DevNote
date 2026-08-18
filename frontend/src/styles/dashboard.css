@@ -1178,10 +1178,22 @@
     cursor: default;
 }
 
+.tab-pane.active:has(> .notes-list > .note-block) {
+    display: flex;
+    min-height: 100%;
+}
+
+.notes-list:has(> .note-block) {
+    flex: 1;
+}
+
 .note-block {
     padding: 24px 0;
     border-bottom: 1px solid var(--dash-border);
     background: transparent;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .note-block:first-child {
@@ -1266,11 +1278,13 @@
     display: flex;
     align-items: flex-start;
     gap: 28px;
+    flex: 1;
 }
 
 .note-block-body > .note-block-content {
     flex: 1;
     min-width: 0;
+    align-self: stretch;
 }
 
 .note-block-content {

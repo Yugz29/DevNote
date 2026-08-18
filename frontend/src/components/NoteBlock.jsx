@@ -17,6 +17,7 @@ import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import {
   markdownToBlocks,
+  pasteHandler,
   noteExtensions,
   noteSchema,
 } from "../lib/blocknote.js";
@@ -65,6 +66,7 @@ export default function NoteBlock({
       schema: noteSchema,
       extensions: noteExtensions,
       initialContent: initialContent ?? undefined,
+      pasteHandler,
     },
     [],
   );
