@@ -60,8 +60,6 @@
 
   /* Dashboard — surfaces */
   --dash-ground: #0a0a0a;
-  --dash-panel-solid: #121212;
-  --dash-panel-solid-fade: rgba(18, 18, 18, 0);
   --dash-surface-sunken: #141414;
   --dash-surface-sunken-alt: #161616;
   --dash-surface-deep: #181818;
@@ -78,6 +76,7 @@
   /* Dashboard — glass surfaces */
   --dash-glass-subtle: rgba(255, 255, 255, 0.02);
   --dash-glass-panel: rgba(255, 255, 255, 0.03);
+  --dash-panel-veil: inset 0 0 0 100vmax var(--dash-glass-panel);
   --dash-glass: rgba(255, 255, 255, 0.04);
   --dash-glass-hover: rgba(255, 255, 255, 0.05);
   --dash-glass-raised: rgba(255, 255, 255, 0.06);

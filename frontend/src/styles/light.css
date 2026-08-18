@@ -43,8 +43,6 @@
 
   /* Dashboard — surfaces */
   --dash-ground: #f5f7fa;
-  --dash-panel-solid: #fcfdfe;
-  --dash-panel-solid-fade: rgba(252, 253, 254, 0);
   --dash-surface-sunken: #eef2f7;
   --dash-surface-sunken-alt: #edf1f6;
   --dash-surface-deep: #eff3f8;
