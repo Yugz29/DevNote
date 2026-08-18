@@ -10,7 +10,7 @@ from django_ratelimit.decorators import ratelimit
 from django.db.models import Count, Q
 from django.core.exceptions import ValidationError as DjangoValidationError
 from uuid import UUID
-from .models import Project, Folder, Note, Snippet, TODO
+from .models import Project, Folder, Note, Snippet, TODO, TodoList
 from .serializers import (
     ProjectSerializer,
     FolderSerializer,
@@ -18,6 +18,7 @@ from .serializers import (
     NoteCardSerializer,
     SnippetSerializer,
     TODOSerializer,
+    TodoListSerializer,
 )
 import logging
 
@@ -412,14 +413,61 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class TODOViewSet(viewsets.ModelViewSet):
+class TodoListViewSet(ProjectScopedViewSet):
+    """
+    ViewSet for TodoList CRUD operations
+    - Nested under /api/projects/{id}/todo-lists/
+    - Lists are flat: deleting one leaves its todos unclassified
+    """
+    serializer_class = TodoListSerializer
+
+    def get_queryset(self):
+        """Returns only the todo lists of the logged-in user"""
+        project_pk = self.kwargs.get('project_pk')
+        queryset = TodoList.objects.filter(project__user=self.request.user)
+
+        if project_pk:
+            queryset = queryset.filter(project__id=project_pk)
+
+        return queryset.annotate(
+            todo_count=Count('todos', distinct=True)
+        ).select_related('project').order_by('name')
+
+    def perform_create(self, serializer):
+        """Assign project from URL and verify ownership"""
+        project = self.get_project()
+
+        if project is None:
+            raise PermissionDenied("Project not found or access denied.")
+
+        todo_list = serializer.save(project=project)
+        logger.info(
+            f"TODO list '{todo_list.name}' (ID: {todo_list.id}) created in project "
+            f"{project.id} by user {self.request.user.username}"
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        """Deleting a list unclassifies its todos rather than removing them"""
+        todo_list = self.get_object()
+        released = todo_list.todos.count()
+
+        logger.info(
+            f"TODO list '{todo_list.name}' (ID: {todo_list.id}) deleted, "
+            f"{released} TODO(s) left unclassified by user {request.user.username}"
+        )
+
+        return super().destroy(request, *args, **kwargs)
+
+
+class TODOViewSet(ProjectScopedViewSet):
     """
     ViewSet for Todo CRUD operations
     - Nested under /api/projects/{id}/todos/
     - User isolation via project ownership
+    - ?list=<uuid> narrows to one list, ?list=null to the unclassified ones;
+      no filter at all returns every todo of the project
     """
     serializer_class = TODOSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Return only the Todo of the logged user"""
@@ -434,25 +482,21 @@ class TODOViewSet(viewsets.ModelViewSet):
         status_param = self.request.query_params.get('status')
         if status_param:
             queryset = queryset.filter(status=status_param)
-    
+
         # Filter by priority (query_param)
         priority_param = self.request.query_params.get('priority')
         if priority_param:
             queryset = queryset.filter(priority=priority_param)
-        
-        return queryset.select_related('project')
-    
+
+        queryset = self.filter_by_relation(queryset, 'list', 'list')
+
+        return queryset.select_related('project', 'list')
+
     def perform_create(self, serializer):
         """Inject project from URL for nested routes"""
-        project_pk = self.kwargs.get('project_pk')
+        project = self.get_project()
 
-        try:
-            project = Project.objects.get(
-                id=project_pk,
-                user=self.request.user
-            )
-        except Project.DoesNotExist:
-            logger.warning(f'User {self.request.user.username} tried to access non-existent project {project_pk}')
+        if project is None:
             raise PermissionDenied("Project not found or access denied.")
 
         todo = serializer.save(project=project)

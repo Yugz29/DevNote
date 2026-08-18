@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Folder, Note, Snippet, TODO
+from .models import Project, Folder, Note, Snippet, TODO, TodoList
 from .preview import note_preview
 
 
@@ -13,6 +13,18 @@ class ScopedFolderField(serializers.PrimaryKeyRelatedField):
             return Folder.objects.none()
 
         return Folder.objects.filter(project__user=request.user)
+
+class ScopedTodoListField(serializers.PrimaryKeyRelatedField):
+    """Todo list reference restricted to the lists of the requesting user."""
+
+    def get_queryset(self):
+        request = self.context.get('request')
+
+        if request is None or not request.user.is_authenticated:
+            return TodoList.objects.none()
+
+        return TodoList.objects.filter(project__user=request.user)
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     """Serializer for Project model"""
@@ -250,9 +262,58 @@ class SnippetSerializer(serializers.ModelSerializer):
         return value.strip().lower()
 
 
+class TodoListSerializer(serializers.ModelSerializer):
+    """Serializer for TodoList model"""
+    project_id = serializers.UUIDField(read_only=True, source='project.id')
+    todo_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = TodoList
+        fields = [
+            'id',
+            'name',
+            'project_id',
+            'todo_count',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'project_id', 'created_at', 'updated_at']
+
+    def get_todo_count(self, obj):
+        count = getattr(obj, 'todo_count', None)
+        return obj.todos.count() if count is None else count
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("List name cannot be empty.")
+        return value
+
+    def validate(self, data):
+        project = (
+            self.instance.project if self.instance
+            else self.context.get('project')
+        )
+        name = data.get('name', self.instance.name if self.instance else None)
+
+        if project is not None and name:
+            siblings = TodoList.objects.filter(project=project, name=name)
+
+            if self.instance is not None:
+                siblings = siblings.exclude(id=self.instance.id)
+
+            if siblings.exists():
+                raise serializers.ValidationError(
+                    {'name': f"A list named '{name}' already exists here."}
+                )
+
+        return data
+
+
 class TODOSerializer(serializers.ModelSerializer):
     """Serializer for Todo objects"""
     project_id = serializers.UUIDField(read_only=True, source='project.id')
+    list = ScopedTodoListField(allow_null=True, required=False)
 
     class Meta:
         model = TODO
@@ -263,6 +324,7 @@ class TODOSerializer(serializers.ModelSerializer):
             'status',
             'priority',
             'project_id',
+            'list',
             'created_at',
             'updated_at',
         ]
@@ -273,3 +335,20 @@ class TODOSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError('Title cannot be empty or whitespace only')
         return value.strip()
+
+    def validate(self, data):
+        project = (
+            self.instance.project if self.instance
+            else self.context.get('project')
+        )
+        todo_list = data.get(
+            'list',
+            self.instance.list if self.instance else None
+        )
+
+        if todo_list is not None and project is not None and todo_list.project_id != project.id:
+            raise serializers.ValidationError(
+                {'list': "List must belong to the same project as the TODO."}
+            )
+
+        return data

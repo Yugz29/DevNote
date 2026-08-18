@@ -302,6 +302,63 @@ class Snippet(models.Model):
         return f'{self.title} ({self.language})'
 
 
+class TodoList(models.Model):
+    """
+    TodoList model represents a flat list holding todos inside a project.
+    Lists never nest: a todo belongs to at most one of them.
+    """
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid7,
+        editable=False,
+        help_text="Unique identifier UUIDv7"
+    )
+
+    name = models.CharField(
+        max_length=255,
+        help_text="Name of the list"
+    )
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='todo_lists',
+        help_text="List associated to project"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="List creation date"
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Date of last modification"
+    )
+
+    class Meta:
+        db_table = 'devnote_todo_lists'
+        verbose_name = 'TODO list'
+        verbose_name_plural = 'TODO lists'
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'name'],
+                name='unique_todo_list_name_in_project'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['project', 'name']),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class TODO(models.Model):
     """
     Represents a task/Todo item linked to a project.
@@ -341,6 +398,14 @@ class TODO(models.Model):
         related_name='todos',
         help_text='Associated project'
     )
+    list = models.ForeignKey(
+        TodoList,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='todos',
+        help_text='List holding the TODO, null for an unclassified TODO'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -351,6 +416,7 @@ class TODO(models.Model):
         verbose_name_plural = 'TODOs'
         indexes = [
             models.Index(fields=['project', '-created_at']),
+            models.Index(fields=['project', 'list']),
         ]
 
     def __str__(self):
