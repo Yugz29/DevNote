@@ -306,7 +306,12 @@ class TodoList(models.Model):
     """
     TodoList model represents a flat list holding todos inside a project.
     Lists never nest: a todo belongs to at most one of them.
+
+    Every project owns exactly one permanent list, created with it and
+    refused to deletion, though its name is the user's to change.
     """
+    PERMANENT_NAME = 'Top priorities'
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid7,
@@ -326,6 +331,11 @@ class TodoList(models.Model):
         help_text="List associated to project"
     )
 
+    is_permanent = models.BooleanField(
+        default=False,
+        help_text="Whether this list is built in and cannot be deleted"
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text="List creation date"
@@ -340,11 +350,16 @@ class TodoList(models.Model):
         db_table = 'devnote_todo_lists'
         verbose_name = 'TODO list'
         verbose_name_plural = 'TODO lists'
-        ordering = ['name']
+        ordering = ['-is_permanent', 'name']
         constraints = [
             models.UniqueConstraint(
                 fields=['project', 'name'],
                 name='unique_todo_list_name_in_project'
+            ),
+            models.UniqueConstraint(
+                fields=['project'],
+                condition=models.Q(is_permanent=True),
+                name='unique_permanent_list_in_project'
             ),
         ]
         indexes = [
@@ -357,6 +372,22 @@ class TodoList(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+    @classmethod
+    def ensure_permanent(cls, project):
+        """The permanent list of a project, created if it is missing."""
+        existing = cls.objects.filter(
+            project=project, is_permanent=True
+        ).first()
+
+        if existing is not None:
+            return existing
+
+        return cls.objects.create(
+            name=cls.PERMANENT_NAME,
+            project=project,
+            is_permanent=True
+        )
 
 
 class TODO(models.Model):

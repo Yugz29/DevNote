@@ -418,6 +418,7 @@ class TodoListViewSet(ProjectScopedViewSet):
     ViewSet for TodoList CRUD operations
     - Nested under /api/projects/{id}/todo-lists/
     - Lists are flat: deleting one leaves its todos unclassified
+    - The permanent list comes first and refuses to be deleted
     """
     serializer_class = TodoListSerializer
 
@@ -431,7 +432,7 @@ class TodoListViewSet(ProjectScopedViewSet):
 
         return queryset.annotate(
             todo_count=Count('todos', distinct=True)
-        ).select_related('project').order_by('name')
+        ).select_related('project').order_by('-is_permanent', 'name')
 
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
@@ -449,6 +450,19 @@ class TodoListViewSet(ProjectScopedViewSet):
     def destroy(self, request, *args, **kwargs):
         """Deleting a list unclassifies its todos rather than removing them"""
         todo_list = self.get_object()
+
+        if todo_list.is_permanent:
+            return Response(
+                {
+                    'detail': (
+                        "This list is permanent and cannot be deleted. "
+                        "Rename it if you want to call it something else."
+                    ),
+                    'code': 'permanent_list',
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
         released = todo_list.todos.count()
 
         logger.info(

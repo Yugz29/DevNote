@@ -39,8 +39,8 @@ class TodoListModelTest(TestCase):
 
         self.assertEqual(str(todo_list), 'Backlog')
 
-    def test_lists_are_ordered_by_name(self):
-        """Test : lists come out alphabetically"""
+    def test_lists_are_ordered_by_name_under_the_permanent_one(self):
+        """Test : the built-in list leads, the rest come out alphabetically"""
         TodoList.objects.create(name='Later', project=self.project)
         TodoList.objects.create(name='Backlog', project=self.project)
         TodoList.objects.create(name='Sprint 1', project=self.project)
@@ -48,7 +48,9 @@ class TodoListModelTest(TestCase):
         names = list(
             TodoList.objects.filter(project=self.project).values_list('name', flat=True)
         )
-        self.assertEqual(names, ['Backlog', 'Later', 'Sprint 1'])
+        self.assertEqual(
+            names, ['Top priorities', 'Backlog', 'Later', 'Sprint 1']
+        )
 
     def test_name_is_unique_within_a_project(self):
         """Test : two lists of a project cannot share a name"""
@@ -115,3 +117,76 @@ class TodoListModelTest(TestCase):
 
         self.assertIsNone(todo.list)
         self.assertEqual(TODO.objects.count(), 1)
+
+    def test_a_project_is_born_with_a_permanent_list(self):
+        """Test : creating a project creates its built-in list"""
+        project = Project.objects.create(title='Fresh', user=self.user)
+
+        lists = TodoList.objects.filter(project=project)
+        self.assertEqual(lists.count(), 1)
+        self.assertEqual(lists.first().name, TodoList.PERMANENT_NAME)
+        self.assertTrue(lists.first().is_permanent)
+
+    def test_saving_a_project_again_adds_nothing(self):
+        """Test : the built-in list is created once, not on every save"""
+        project = Project.objects.create(title='Fresh', user=self.user)
+
+        project.title = 'Renamed'
+        project.save()
+
+        self.assertEqual(TodoList.objects.filter(project=project).count(), 1)
+
+    def test_a_project_cannot_hold_two_permanent_lists(self):
+        """Test : the built-in list is unique within its project"""
+        with self.assertRaises(ValidationError):
+            TodoList.objects.create(
+                name='Another one', project=self.project, is_permanent=True
+            )
+
+    def test_ensure_permanent_returns_the_existing_one(self):
+        """Test : the helper never creates a second list"""
+        existing = TodoList.objects.get(
+            project=self.project, is_permanent=True
+        )
+
+        self.assertEqual(
+            TodoList.ensure_permanent(self.project).id, existing.id
+        )
+        self.assertEqual(
+            TodoList.objects.filter(
+                project=self.project, is_permanent=True
+            ).count(),
+            1
+        )
+
+    def test_ensure_permanent_recreates_a_missing_one(self):
+        """Test : the helper covers a project that somehow lost it"""
+        TodoList.objects.filter(
+            project=self.project, is_permanent=True
+        ).delete()
+
+        recreated = TodoList.ensure_permanent(self.project)
+
+        self.assertTrue(recreated.is_permanent)
+        self.assertEqual(recreated.name, TodoList.PERMANENT_NAME)
+
+    def test_the_permanent_list_can_be_renamed(self):
+        """Test : renaming does not cost it its flag"""
+        todo_list = TodoList.objects.get(
+            project=self.project, is_permanent=True
+        )
+
+        todo_list.name = 'Urgent'
+        todo_list.save()
+        todo_list.refresh_from_db()
+
+        self.assertEqual(todo_list.name, 'Urgent')
+        self.assertTrue(todo_list.is_permanent)
+
+    def test_a_regular_list_is_not_flagged(self):
+        """Test : lists made by hand are ordinary"""
+        todo_list = TodoList.objects.create(
+            name='Sprint 1', project=self.project
+        )
+
+        self.assertFalse(todo_list.is_permanent)

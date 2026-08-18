@@ -2092,6 +2092,12 @@
     cursor: pointer;
 }
 
+.todo-list-tab-icon {
+    font-size: 13px;
+    line-height: 1;
+    color: var(--accent-primary);
+}
+
 .todo-list-tab-count {
     font-size: 11px;
     color: var(--dash-text-faint);
