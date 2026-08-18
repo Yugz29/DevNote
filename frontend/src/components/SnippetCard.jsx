@@ -12,6 +12,7 @@ export default function SnippetCard({
   onOpen,
   onDuplicate,
   onTogglePin,
+  onExport,
   onDelete,
 }) {
   const preview =
@@ -45,6 +46,11 @@ export default function SnippetCard({
                 label: snippet.is_pinned ? "Unpin" : "Pin",
                 icon: snippet.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
                 onSelect: onTogglePin,
+              },
+              {
+                label: "Export",
+                icon: "ph-export",
+                onSelect: onExport,
               },
               {
                 label: "Delete",

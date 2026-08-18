@@ -4,6 +4,8 @@ import SnippetEditor from "./SnippetEditor.jsx";
 import SnippetModal from "./SnippetModal.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
+import { downloadTextFile, toFilename } from "../lib/download.js";
+import { languageExtension } from "../lib/languages.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
@@ -220,6 +222,14 @@ export default function SnippetsPanel({
     });
   };
 
+  const handleExport = (snippet) => {
+    downloadTextFile(
+      toFilename(snippet.title, languageExtension(snippet.language), "snippet"),
+      snippet.content,
+      "text/plain",
+    );
+  };
+
   const renderSnippet = (snippet) => (
     <SnippetCard
       key={snippet.id}
@@ -228,6 +238,7 @@ export default function SnippetsPanel({
       onOpen={() => setViewingId(snippet.id)}
       onDuplicate={() => handleDuplicate(snippet.id)}
       onTogglePin={() => handleTogglePin(snippet)}
+      onExport={() => handleExport(snippet)}
       onDelete={() => handleDelete(snippet.id)}
     />
   );
@@ -348,6 +359,7 @@ export default function SnippetsPanel({
           onSave={(values) => handleSave(viewedSnippet.id, values)}
           onDuplicate={() => handleDuplicate(viewedSnippet.id)}
           onTogglePin={() => handleTogglePin(viewedSnippet)}
+          onExport={() => handleExport(viewedSnippet)}
           onDelete={() => handleDelete(viewedSnippet.id)}
           onClose={() => {
             setIsEditingViewed(false);

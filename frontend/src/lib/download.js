@@ -3,7 +3,7 @@ const RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 const EDGE_CHARS = /^[.\s]+|[.\s]+$/g;
 const MAX_LENGTH = 100;
 
-export function toFilename(title, extension) {
+export function toFilename(title, extension, fallback = "note") {
   const cleaned = (title ?? "")
     .replace(INVALID_CHARS, " ")
     .replace(/\s+/g, " ")
@@ -11,7 +11,7 @@ export function toFilename(title, extension) {
     .slice(0, MAX_LENGTH)
     .replace(EDGE_CHARS, "");
 
-  const safe = !cleaned || RESERVED_NAMES.test(cleaned) ? "note" : cleaned;
+  const safe = !cleaned || RESERVED_NAMES.test(cleaned) ? fallback : cleaned;
 
   return `${safe}.${extension}`;
 }

@@ -14,6 +14,7 @@ export default function SnippetModal({
   onSave,
   onDuplicate,
   onTogglePin,
+  onExport,
   onDelete,
   onClose,
 }) {
@@ -95,6 +96,16 @@ export default function SnippetModal({
                     <i
                       className={`ph-light ${snippet.is_pinned ? "ph-push-pin-slash" : "ph-push-pin"}`}
                     />
+                  </button>
+                )}
+                {onExport && (
+                  <button
+                    type="button"
+                    className="btn-card-icon-action"
+                    title="Export"
+                    onClick={onExport}
+                  >
+                    <i className="ph-light ph-export" />
                   </button>
                 )}
                 <button
