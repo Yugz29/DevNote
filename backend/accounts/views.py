@@ -193,18 +193,16 @@ class RefreshView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            # Valider et blacklister l'ancien refresh token
             old_token = RefreshToken(refresh_token_str)
-            old_token.blacklist()  # ✅ Invalide l'ancien token (empêche la réutilisation)
 
-            # Récupérer l'utilisateur depuis le payload du token
             user_id = old_token.payload.get('user_id')
             user = UserModel.objects.get(id=user_id)
 
-            # Générer une nouvelle paire de tokens propre
             new_token = RefreshToken.for_user(user)
             new_access_token = str(new_token.access_token)
             new_refresh_token = str(new_token)
+
+            old_token.blacklist()
 
             response = Response(
                 {'message': 'Token refreshed successfully'},

@@ -33,33 +33,46 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-let isRefreshing = false;
+let refreshPromise = null;
 let unauthorizedHandler = null;
 
 export const setUnauthorizedHandler = (handler) => {
   unauthorizedHandler = handler;
 };
 
+const AUTH_ENDPOINTS = ["/auth/refresh/", "/auth/login/", "/auth/register/"];
+
+function isAuthEndpoint(url) {
+  return AUTH_ENDPOINTS.some((endpoint) => url?.includes(endpoint));
+}
+
+function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = api.post("/auth/refresh/").finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        redirectToLogin();
-        return Promise.reject(error);
-      }
-
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint(originalRequest.url)
+    ) {
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh/");
-        isRefreshing = false;
+        await refreshSession();
         return api(originalRequest);
       } catch {
-        isRefreshing = false;
         redirectToLogin();
         return Promise.reject(error);
       }
