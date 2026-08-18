@@ -116,6 +116,7 @@ export default function SnippetModal({
               code={snippet.content}
               language={snippet.language}
               className="snippet-modal-code"
+              showLineNumbers
             />
           </>
         )}
