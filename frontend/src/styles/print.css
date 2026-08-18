@@ -1,0 +1,59 @@
+.note-print {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 780px;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.note-print-title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #111;
+}
+
+@media print {
+  @page {
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  body > *:not(.note-print) {
+    display: none !important;
+  }
+
+  .note-print {
+    position: static;
+    width: auto;
+    visibility: visible;
+    pointer-events: auto;
+    z-index: auto;
+  }
+
+  .note-print .bn-editor {
+    padding-inline: 0;
+  }
+
+  .note-print .bn-block-content[data-content-type="codeBlock"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    break-inside: avoid;
+  }
+
+  .note-print .bn-block-content[data-content-type="diagram"] {
+    break-inside: avoid;
+  }
+
+  .note-print .bn-block-content[data-content-type="heading"] {
+    break-after: avoid;
+  }
+}

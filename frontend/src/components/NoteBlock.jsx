@@ -24,6 +24,8 @@ export default function NoteBlock({
   onSave,
   onDiscard,
   onDelete,
+  onExportMarkdown,
+  onExportPdf,
   ref,
 }) {
   const isNewNote = !note;
@@ -266,14 +268,32 @@ export default function NoteBlock({
 
         <div className="note-block-actions">
           {!isNewNote && (
-            <button
-              className="btn-card-icon-action btn-card-icon-danger btn-delete"
-              data-id={note.id}
-              title="Delete"
-              onClick={onDelete}
-            >
-              <i className="ph-light ph-trash" />
-            </button>
+            <>
+              <button
+                className="btn-card-icon-action"
+                title="Export as Markdown"
+                onClick={() => onExportMarkdown(readTitle(), readContent())}
+              >
+                <i className="ph-light ph-file-md" />
+              </button>
+
+              <button
+                className="btn-card-icon-action"
+                title="Export as PDF"
+                onClick={() => onExportPdf(readTitle(), readContent())}
+              >
+                <i className="ph-light ph-file-pdf" />
+              </button>
+
+              <button
+                className="btn-card-icon-action btn-card-icon-danger btn-delete"
+                data-id={note.id}
+                title="Delete"
+                onClick={onDelete}
+              >
+                <i className="ph-light ph-trash" />
+              </button>
+            </>
           )}
         </div>
       </div>

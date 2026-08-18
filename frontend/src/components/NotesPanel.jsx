@@ -4,9 +4,13 @@ import FolderCard from "./FolderCard.jsx";
 import MoveDialog from "./MoveDialog.jsx";
 import NoteBlock from "./NoteBlock.jsx";
 import NoteCard from "./NoteCard.jsx";
+import NotePrintView from "./NotePrintView.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
+import { useTheme } from "../contexts/ThemeContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
+import { applyMermaidTheme } from "../lib/blocknote.js";
+import { downloadTextFile, toFilename } from "../lib/download.js";
 import {
   createFolder,
   deleteFolder,
@@ -51,8 +55,11 @@ export default function NotesPanel({
   searchItemId,
 }) {
   const { showAlert, showConfirm } = useDialog();
+  const { theme } = useTheme();
   const containerRef = useRef(null);
   const detailRef = useRef(null);
+  const printKeyRef = useRef(0);
+  const themeRef = useRef(theme);
 
   const [path, setPath] = useState([]);
   const [openNote, setOpenNote] = useState(null);
@@ -61,6 +68,7 @@ export default function NotesPanel({
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [movingEntry, setMovingEntry] = useState(null);
   const [pinned, setPinned] = useState({ items: [], count: 0 });
+  const [printTarget, setPrintTarget] = useState(null);
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
@@ -99,6 +107,10 @@ export default function NotesPanel({
         setPinned({ items: [], count: 0 });
       });
   }, [projectId]);
+
+  useEffect(() => {
+    themeRef.current = theme;
+  });
 
   useEffect(() => {
     loadPinned();
@@ -321,6 +333,35 @@ export default function NotesPanel({
     });
   };
 
+  const exportMarkdown = (title, content) => {
+    downloadTextFile(toFilename(title, "md"), content ?? "", "text/markdown");
+  };
+
+  const exportPdf = (title, content) => {
+    applyMermaidTheme("light");
+    printKeyRef.current += 1;
+    setPrintTarget({ key: printKeyRef.current, title, content });
+  };
+
+  const closePrint = useCallback(() => {
+    applyMermaidTheme(themeRef.current);
+    setPrintTarget(null);
+  }, []);
+
+  const withNoteContent = async (note, action) => {
+    try {
+      const full = await getNote(note.id);
+      action(full.title, full.content);
+    } catch (exportError) {
+      console.error("Error exporting note:", exportError);
+      await showAlert("Unable to export the note");
+    }
+  };
+
+  const handleExportMarkdown = (note) => withNoteContent(note, exportMarkdown);
+
+  const handleExportPdf = (note) => withNoteContent(note, exportPdf);
+
   const handleDuplicateNote = async (note) => {
     try {
       await duplicateNote(note.id);
@@ -372,6 +413,8 @@ export default function NotesPanel({
           onSave={handleSave}
           onDiscard={leaveDetail}
           onDelete={() => detailNote && handleDeleteNote(detailNote)}
+          onExportMarkdown={exportMarkdown}
+          onExportPdf={exportPdf}
         />
       ) : (
         <>
@@ -395,6 +438,8 @@ export default function NotesPanel({
                     searchQuery={searchQuery}
                     onOpen={openNoteCard}
                     onTogglePin={handleTogglePin}
+                    onExportMarkdown={handleExportMarkdown}
+                    onExportPdf={handleExportPdf}
                   />
                 ))}
               </div>
@@ -462,6 +507,8 @@ export default function NotesPanel({
                     onOpen={openNoteCard}
                     onTogglePin={handleTogglePin}
                     onDuplicate={handleDuplicateNote}
+                    onExportMarkdown={handleExportMarkdown}
+                    onExportPdf={handleExportPdf}
                     onMove={setMovingEntry}
                     onDelete={handleDeleteNote}
                   />
@@ -474,6 +521,15 @@ export default function NotesPanel({
             </div>
           )}
         </>
+      )}
+
+      {printTarget && (
+        <NotePrintView
+          key={printTarget.key}
+          title={printTarget.title}
+          content={printTarget.content}
+          onDone={closePrint}
+        />
       )}
 
       {movingEntry && (

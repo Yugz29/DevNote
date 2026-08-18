@@ -8,6 +8,7 @@ import ThemeProvider from "./contexts/ThemeProvider.jsx";
 import "@blocknote/mantine/style.css";
 import "./styles/main.css";
 import "./styles/theme.css";
+import "./styles/print.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

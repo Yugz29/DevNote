@@ -7,6 +7,8 @@ export default function NoteCard({
   onOpen,
   onTogglePin,
   onDuplicate,
+  onExportMarkdown,
+  onExportPdf,
   onMove,
   onDelete,
 }) {
@@ -25,6 +27,22 @@ export default function NoteCard({
       label: "Duplicate",
       icon: "ph-copy",
       onSelect: () => onDuplicate(note),
+    });
+  }
+
+  if (onExportMarkdown) {
+    menuItems.push({
+      label: "Export as Markdown",
+      icon: "ph-file-md",
+      onSelect: () => onExportMarkdown(note),
+    });
+  }
+
+  if (onExportPdf) {
+    menuItems.push({
+      label: "Export as PDF",
+      icon: "ph-file-pdf",
+      onSelect: () => onExportPdf(note),
     });
   }
 
