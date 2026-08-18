@@ -71,3 +71,11 @@ export const changePassword = async (
   });
   return response.data;
 };
+
+export const deleteAccount = async (currentPassword) => {
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/account/delete/", {
+    current_password: currentPassword,
+  });
+  return response.data;
+};

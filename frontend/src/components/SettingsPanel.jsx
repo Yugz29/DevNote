@@ -1,5 +1,6 @@
 import AccountSettings from "./AccountSettings.jsx";
 import AppearanceSettings from "./AppearanceSettings.jsx";
+import DangerSettings from "./DangerSettings.jsx";
 import DefaultsSettings from "./DefaultsSettings.jsx";
 import { findSettingsSection } from "../lib/settingsSections.js";
 
@@ -7,6 +8,7 @@ const SECTION_COMPONENTS = {
   appearance: AppearanceSettings,
   account: AccountSettings,
   defaults: DefaultsSettings,
+  danger: DangerSettings,
 };
 
 function SectionPlaceholder({ label }) {

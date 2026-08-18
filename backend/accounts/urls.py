@@ -7,6 +7,7 @@ from .views import (
     LogoutView, 
     RefreshView,
     ChangePasswordView,
+    DeleteAccountView,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('refresh/', RefreshView.as_view(), name='refresh'),
     path('password/', ChangePasswordView.as_view(), name='change-password'),
+    path('account/delete/', DeleteAccountView.as_view(), name='delete-account'),
 ]

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { setUnauthorizedHandler } from "../services/api.js";
 import {
+  deleteAccount as deleteAccountRequest,
   getCurrentUser,
   login,
   logout,
@@ -69,9 +70,18 @@ export default function AuthProvider({ children }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(
+    async (currentPassword) => {
+      await deleteAccountRequest(currentPassword);
+      setUser(null);
+      navigate("/login", { replace: true });
+    },
+    [navigate],
+  );
+
   const value = useMemo(
-    () => ({ user, isChecking, signIn, signUp, signOut }),
-    [user, isChecking, signIn, signUp, signOut],
+    () => ({ user, isChecking, signIn, signUp, signOut, deleteAccount }),
+    [user, isChecking, signIn, signUp, signOut, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

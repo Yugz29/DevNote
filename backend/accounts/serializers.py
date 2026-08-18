@@ -222,3 +222,32 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save(update_fields=['password', 'updated_at'])
         return user
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    """Serializer guarding the deletion of the logged-in user's account.
+
+    Features:
+    - Requires the current password, so the deletion cannot be triggered
+      by a stray click or by someone borrowing an open session
+
+    Used by:
+    - DELETE /api/auth/account/
+    """
+
+    current_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={'input_type': 'password'}
+    )
+
+    def validate_current_password(self, value):
+        """
+        Checks the submitted password against the stored hash.
+
+        Raises:
+            ValidationError: If it does not match
+        """
+        if not self.context['request'].user.check_password(value):
+            raise serializers.ValidationError('Current password is incorrect.')
+        return value

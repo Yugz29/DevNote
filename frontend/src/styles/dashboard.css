@@ -3833,6 +3833,92 @@ mark.search-highlight {
     background: var(--dash-glass-raised);
 }
 
+.settings-row.is-danger {
+    border-color: var(--dash-danger-border);
+    background: var(--dash-danger-tint);
+}
+
+.settings-danger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    background: var(--dash-danger-tint-hover);
+    border: 1px solid var(--dash-danger-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--danger);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.settings-danger-btn i {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.settings-danger-btn:hover {
+    background: var(--dash-danger-tint-stronger);
+    border-color: var(--dash-danger-border-strong);
+}
+
+.delete-account {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 24px 24px;
+}
+
+.delete-account-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--dash-danger-tint);
+    border: 1px solid var(--dash-danger-border);
+    border-radius: 8px;
+}
+
+.delete-account-warning > i {
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--danger);
+    flex-shrink: 0;
+}
+
+.delete-account-warning p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--dash-text);
+}
+
+.delete-account-warning strong {
+    color: var(--dash-text-strong);
+    overflow-wrap: anywhere;
+}
+
+.delete-account-warning p.delete-account-scope {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--dash-text-muted);
+}
+
+.delete-account .settings-field input {
+    max-width: 320px;
+}
+
+.delete-account label code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--dash-danger-tint-hover);
+    color: var(--danger);
+}
+
 .settings-placeholder {
     display: flex;
     flex-direction: column;

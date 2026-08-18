@@ -14,6 +14,7 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     ChangePasswordSerializer,
+    DeleteAccountSerializer,
 )
 from .cookie_utils import set_auth_cookies, delete_auth_cookies, get_token_from_cookie
 from django.utils.decorators import method_decorator
@@ -286,5 +287,51 @@ class ChangePasswordView(APIView):
 
         set_auth_cookies(response, str(refresh.access_token), str(refresh))
         logger.info(f"Password changed for user '{user.username}'")
+
+        return response
+
+
+# ============================================
+# ENDPOINT : Delete Account
+# ============================================
+@method_decorator(ratelimit(key='user_or_ip', rate='5/m', method='POST'), name='post')
+class DeleteAccountView(APIView):
+    """
+    POST /api/auth/account/delete/
+    Deletes the logged-in user and everything cascading from them
+
+    The current password is required in the request body, which is why
+    this is a POST: a DELETE carrying content is left undefined by
+    RFC 9110 and intermediaries are free to drop it in transit
+
+    No token needs blacklisting: authentication resolves the user from
+    the database, so every token issued to the account dies with the row
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request, 'limited', False):
+            return Response(
+                {'error': 'Too many deletion attempts. Please try again later.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        serializer = DeleteAccountSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if not serializer.is_valid():
+            logger.warning(
+                f"Refused account deletion for user '{request.user.username}': {serializer.errors}"
+            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        logger.info(f"Deleting account '{user.username}' ({user.email})")
+        user.delete()
+
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        delete_auth_cookies(response)
 
         return response

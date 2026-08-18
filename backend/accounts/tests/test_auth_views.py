@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.test import override_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from workspace.models import Project, Folder, Note, Snippet, TodoList, TODO
 
 User = get_user_model()
 
@@ -320,3 +321,138 @@ class ChangePasswordViewTest(APITestCase):
 
         self.assertEqual(refused.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(accepted.status_code, status.HTTP_200_OK)
+
+
+@override_settings(RATELIMIT_ENABLE=False)
+class DeleteAccountViewTest(APITestCase):
+    """Tests for the DELETE /api/auth/account/ endpoint"""
+
+    def setUp(self):
+        """Set up an authenticated user carrying a full workspace"""
+        self.url = '/api/auth/account/delete/'
+        self.login_url = '/api/auth/login/'
+        self.password = 'SecureP@ss123'
+        self.user = User.objects.create_user(
+            username='johndoe',
+            email='john@example.com',
+            first_name='John',
+            last_name='Doe',
+            password=self.password
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.project = Project.objects.create(
+            title='Doomed Project',
+            description='Everything under it should go too.',
+            user=self.user
+        )
+        self.folder = Folder.objects.create(
+            name='Docs', project=self.project
+        )
+        Note.objects.create(
+            title='A note', content='...', project=self.project,
+            folder=self.folder
+        )
+        Snippet.objects.create(
+            title='A snippet', content='print(1)', language='python',
+            project=self.project
+        )
+        self.todo_list = TodoList.objects.create(
+            name='Sprint 1', project=self.project
+        )
+        TODO.objects.create(
+            title='A todo', project=self.project, list=self.todo_list
+        )
+
+    def test_delete_account_success(self):
+        """Test: the account is removed with the right password"""
+        response = self.client.post(
+            self.url, {'current_password': self.password}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(User.objects.filter(email='john@example.com').exists())
+
+    def test_delete_account_cascades_to_every_owned_object(self):
+        """Test: nothing owned by the user survives them"""
+        self.client.post(
+            self.url, {'current_password': self.password}, format='json'
+        )
+
+        self.assertEqual(Project.objects.count(), 0)
+        self.assertEqual(Folder.objects.count(), 0)
+        self.assertEqual(Note.objects.count(), 0)
+        self.assertEqual(Snippet.objects.count(), 0)
+        self.assertEqual(TodoList.objects.count(), 0)
+        self.assertEqual(TODO.objects.count(), 0)
+
+    def test_delete_account_clears_the_auth_cookies(self):
+        """Test: the browser is left signed out"""
+        response = self.client.post(
+            self.url, {'current_password': self.password}, format='json'
+        )
+
+        self.assertEqual(response.cookies['access_token'].value, '')
+        self.assertEqual(response.cookies['refresh_token'].value, '')
+
+    def test_delete_account_wrong_password(self):
+        """Test: a wrong password refuses the deletion"""
+        response = self.client.post(
+            self.url, {'current_password': 'NotMyP@ssw0rd'}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('current_password', response.data)
+        self.assertTrue(User.objects.filter(email='john@example.com').exists())
+        self.assertEqual(Project.objects.count(), 1)
+
+    def test_delete_account_missing_password(self):
+        """Test: the password is not optional"""
+        response = self.client.post(self.url, {}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('current_password', response.data)
+        self.assertTrue(User.objects.filter(email='john@example.com').exists())
+
+    def test_delete_account_unauthenticated(self):
+        """Test: POST /api/auth/account/delete/ returns 401 without authentication"""
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(
+            self.url, {'current_password': self.password}, format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertTrue(User.objects.filter(email='john@example.com').exists())
+
+    def test_delete_account_leaves_other_users_alone(self):
+        """Test: only the caller's workspace is destroyed"""
+        other = User.objects.create_user(
+            username='janedoe',
+            email='jane@example.com',
+            first_name='Jane',
+            last_name='Doe',
+            password='OtherP@ss123'
+        )
+        other_project = Project.objects.create(title='Kept', user=other)
+
+        self.client.post(
+            self.url, {'current_password': self.password}, format='json'
+        )
+
+        self.assertTrue(User.objects.filter(email='jane@example.com').exists())
+        self.assertTrue(Project.objects.filter(id=other_project.id).exists())
+
+    def test_deleted_account_cannot_log_back_in(self):
+        """Test: the credentials no longer open anything"""
+        self.client.post(
+            self.url, {'current_password': self.password}, format='json'
+        )
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(self.login_url, {
+            'email': 'john@example.com',
+            'password': self.password
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
