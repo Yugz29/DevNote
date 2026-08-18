@@ -152,6 +152,7 @@ class NoteSerializer(serializers.ModelSerializer):
             'content',
             'project_id',
             'folder',
+            'is_pinned',
             'created_at',
             'updated_at',
         ]
@@ -198,6 +199,7 @@ class NoteCardSerializer(serializers.ModelSerializer):
             'preview',
             'project_id',
             'folder',
+            'is_pinned',
             'created_at',
             'updated_at',
         ]

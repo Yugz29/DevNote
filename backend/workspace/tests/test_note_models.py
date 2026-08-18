@@ -77,3 +77,23 @@ class NoteModelTest(TestCase):
             project=self.project
         )
         self.assertEqual(str(note), 'String Method Note')
+
+    def test_note_is_not_pinned_by_default(self):
+        """Test that a new note starts unpinned"""
+        note = Note.objects.create(title='Fresh Note', project=self.project)
+
+        self.assertFalse(note.is_pinned)
+
+    def test_pin_note(self):
+        """Test that a note can be pinned and unpinned"""
+        note = Note.objects.create(title='Pinnable Note', project=self.project)
+
+        note.is_pinned = True
+        note.save()
+        note.refresh_from_db()
+        self.assertTrue(note.is_pinned)
+
+        note.is_pinned = False
+        note.save()
+        note.refresh_from_db()
+        self.assertFalse(note.is_pinned)

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
 import FolderCard from "./FolderCard.jsx";
 import MoveDialog from "./MoveDialog.jsx";
@@ -16,8 +16,11 @@ import {
 import {
   createNote,
   deleteNote,
+  duplicateNote,
   getNote,
+  getPinnedNotes,
   moveNote,
+  setNotePinned,
   updateNote,
 } from "../services/noteService.js";
 
@@ -57,6 +60,7 @@ export default function NotesPanel({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [movingEntry, setMovingEntry] = useState(null);
+  const [pinned, setPinned] = useState({ items: [], count: 0 });
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
@@ -75,7 +79,30 @@ export default function NotesPanel({
 
   const entries = useMemo(() => sortEntries(items, sort), [items, sort]);
 
+  const pinnedEntries = useMemo(
+    () => sortEntries(pinned.items, sort),
+    [pinned.items, sort],
+  );
+
   useSearchTarget(containerRef, searchItemId, !isLoading && entries.length > 0);
+
+  const loadPinned = useCallback(() => {
+    if (!projectId) return Promise.resolve();
+
+    return getPinnedNotes(projectId)
+      .then((data) => {
+        const results = data.results ?? data;
+        setPinned({ items: results, count: data.count ?? results.length });
+      })
+      .catch((pinnedError) => {
+        console.error("Error loading pinned notes:", pinnedError);
+        setPinned({ items: [], count: 0 });
+      });
+  }, [projectId]);
+
+  useEffect(() => {
+    loadPinned();
+  }, [loadPinned]);
 
   const flushDetail = async () => {
     await detailRef.current?.flush();
@@ -94,7 +121,7 @@ export default function NotesPanel({
     await flushDetail();
     setOpenNote(null);
     setIsCreatingNote(false);
-    await reload();
+    await Promise.all([reload(), loadPinned()]);
   };
 
   const openFolder = async (folder) => {
@@ -193,6 +220,7 @@ export default function NotesPanel({
     try {
       await deleteFolder(folder.id);
       dropEntry(folder.id);
+      await loadPinned();
       return;
     } catch (deleteError) {
       const data = deleteError.response?.data;
@@ -221,6 +249,7 @@ export default function NotesPanel({
       try {
         await deleteFolder(folder.id, { confirm: true });
         dropEntry(folder.id);
+        await loadPinned();
       } catch (forcedError) {
         console.error("Error deleting folder:", forcedError);
         await showAlert("Unable to delete the folder");
@@ -256,6 +285,52 @@ export default function NotesPanel({
     }
   };
 
+  const handleTogglePin = async (note) => {
+    const nextPinned = !note.is_pinned;
+
+    try {
+      await setNotePinned(note.id, nextPinned);
+    } catch (pinError) {
+      console.error("Error pinning note:", pinError);
+      await showAlert(`Unable to ${nextPinned ? "pin" : "unpin"} the note`);
+      return;
+    }
+
+    setItems((current) =>
+      current.map((entry) =>
+        entry.type !== "folder" && entry.id === note.id
+          ? { ...entry, is_pinned: nextPinned }
+          : entry,
+      ),
+    );
+
+    if (pinned.count > pinned.items.length) {
+      await loadPinned();
+      return;
+    }
+
+    setPinned((current) => {
+      const without = current.items.filter((entry) => entry.id !== note.id);
+
+      return {
+        items: nextPinned
+          ? [{ ...note, is_pinned: true }, ...without]
+          : without,
+        count: current.count + (nextPinned ? 1 : -1),
+      };
+    });
+  };
+
+  const handleDuplicateNote = async (note) => {
+    try {
+      await duplicateNote(note.id);
+      await reload();
+    } catch (duplicateError) {
+      console.error("Error duplicating note:", duplicateError);
+      await showAlert("Unable to duplicate the note");
+    }
+  };
+
   const handleDeleteNote = async (note) => {
     const confirmed = await showConfirm(`Delete "${note.title}"?`);
     if (!confirmed) return;
@@ -263,6 +338,13 @@ export default function NotesPanel({
     try {
       await deleteNote(note.id);
       dropEntry(note.id);
+      setPinned((current) => {
+        const items = current.items.filter((entry) => entry.id !== note.id);
+
+        return items.length === current.items.length
+          ? current
+          : { items, count: current.count - 1 };
+      });
       if (openNote?.id === note.id) setOpenNote(null);
     } catch (deleteError) {
       console.error("Error deleting note:", deleteError);
@@ -293,6 +375,32 @@ export default function NotesPanel({
         />
       ) : (
         <>
+          {pinnedEntries.length > 0 && (
+            <section className="gallery-pinned">
+              <div className="gallery-pinned-header">
+                <i className="ph-light ph-push-pin" />
+                <span>Pinned</span>
+                {pinned.count > pinnedEntries.length && (
+                  <span className="gallery-pinned-count">
+                    showing {pinnedEntries.length} of {pinned.count}
+                  </span>
+                )}
+              </div>
+
+              <div className="gallery-grid">
+                {pinnedEntries.map((entry) => (
+                  <NoteCard
+                    key={`pinned:${entry.id}`}
+                    note={entry}
+                    searchQuery={searchQuery}
+                    onOpen={openNoteCard}
+                    onTogglePin={handleTogglePin}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="gallery-toolbar">
             <button
               type="button"
@@ -352,6 +460,8 @@ export default function NotesPanel({
                     note={entry}
                     searchQuery={searchQuery}
                     onOpen={openNoteCard}
+                    onTogglePin={handleTogglePin}
+                    onDuplicate={handleDuplicateNote}
                     onMove={setMovingEntry}
                     onDelete={handleDeleteNote}
                   />

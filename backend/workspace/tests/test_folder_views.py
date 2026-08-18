@@ -522,6 +522,25 @@ class ProjectContentsViewTest(APITestCase):
         self.assertEqual(entries[1]['type'], 'note')
         self.assertEqual(entries[1]['id'], str(self.root_note.id))
 
+    def test_root_contents_note_cards_carry_the_pin_state(self):
+        """Test that gallery cards report whether the note is pinned"""
+        pinned = Note.objects.create(
+            title='Pinned note', project=self.project, is_pinned=True
+        )
+
+        response = self.client.get(f'/api/projects/{self.project.id}/contents/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        cards = {
+            entry['id']: entry
+            for entry in response.data['results']
+            if entry['type'] == 'note'
+        }
+
+        self.assertTrue(cards[str(pinned.id)]['is_pinned'])
+        self.assertFalse(cards[str(self.root_note.id)]['is_pinned'])
+
     def test_root_contents_excludes_nested_entries(self):
         """Test that entries inside folders are not listed at the root"""
         child = Folder.objects.create(
@@ -609,7 +628,7 @@ class ContentsPayloadTest(APITestCase):
             set(entry.keys()),
             {
                 'type', 'id', 'title', 'preview', 'project_id',
-                'folder', 'created_at', 'updated_at',
+                'folder', 'is_pinned', 'created_at', 'updated_at',
             }
         )
         self.assertNotIn('content', entry)

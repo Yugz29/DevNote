@@ -5,10 +5,45 @@ export default function NoteCard({
   note,
   searchQuery,
   onOpen,
+  onTogglePin,
+  onDuplicate,
   onMove,
   onDelete,
 }) {
   const preview = note.preview;
+
+  const menuItems = [
+    {
+      label: note.is_pinned ? "Unpin" : "Pin",
+      icon: note.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
+      onSelect: () => onTogglePin(note),
+    },
+  ];
+
+  if (onDuplicate) {
+    menuItems.push({
+      label: "Duplicate",
+      icon: "ph-copy",
+      onSelect: () => onDuplicate(note),
+    });
+  }
+
+  if (onMove) {
+    menuItems.push({
+      label: "Move to…",
+      icon: "ph-arrow-elbow-down-right",
+      onSelect: () => onMove(note),
+    });
+  }
+
+  if (onDelete) {
+    menuItems.push({
+      label: "Delete",
+      icon: "ph-trash",
+      isDanger: true,
+      onSelect: () => onDelete(note),
+    });
+  }
 
   return (
     <div className="gallery-card gallery-card--note" data-id={note.id}>
@@ -30,27 +65,15 @@ export default function NoteCard({
         )}
 
         <span className="gallery-card-meta">
+          {note.is_pinned && (
+            <i className="ph-light ph-push-pin gallery-card-pin" />
+          )}
           {new Date(note.updated_at).toLocaleDateString()}
         </span>
       </button>
 
       <div className="gallery-card-actions">
-        <CardMenu
-          label={`Actions for ${note.title}`}
-          items={[
-            {
-              label: "Move to…",
-              icon: "ph-arrow-elbow-down-right",
-              onSelect: () => onMove(note),
-            },
-            {
-              label: "Delete",
-              icon: "ph-trash",
-              isDanger: true,
-              onSelect: () => onDelete(note),
-            },
-          ]}
-        />
+        <CardMenu label={`Actions for ${note.title}`} items={menuItems} />
       </div>
     </div>
   );

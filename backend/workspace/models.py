@@ -243,6 +243,11 @@ class Note(models.Model):
         help_text="Folder holding the note, null for a note at the project root"
     )
 
+    is_pinned = models.BooleanField(
+        default=False,
+        help_text="Whether the note is pinned for quick access"
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text="Note creation date"
@@ -261,6 +266,7 @@ class Note(models.Model):
         indexes = [
             models.Index(fields=['project', '-created_at']),
             models.Index(fields=['folder', '-created_at']),
+            models.Index(fields=['project', 'is_pinned']),
         ]
 
     def __str__(self):

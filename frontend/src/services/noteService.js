@@ -39,6 +39,23 @@ export const updateNote = async (noteId, title, content) => {
   return response.data;
 };
 
+export const duplicateNote = async (noteId) => {
+  const response = await api.post(`/notes/${noteId}/duplicate/`);
+  return response.data;
+};
+
+export const getPinnedNotes = async (projectId) => {
+  const response = await api.get(`/projects/${projectId}/pinned/`);
+  return response.data;
+};
+
+export const setNotePinned = async (noteId, isPinned) => {
+  const response = await api.patch(`/notes/${noteId}/`, {
+    is_pinned: isPinned,
+  });
+  return response.data;
+};
+
 export const moveNote = async (noteId, folderId) => {
   const response = await api.patch(`/notes/${noteId}/`, { folder: folderId });
   return response.data;

@@ -48,6 +48,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project.notes.filter(folder__isnull=True),
         )
 
+    @action(detail=True, methods=['get'])
+    def pinned(self, request, *args, **kwargs):
+        """
+        Pinned notes of a project, wherever they sit in the folder tree, in
+        the gallery card shape so they render like any other note.
+        """
+        project = self.get_object()
+
+        return paginated_contents(
+            self,
+            Folder.objects.none(),
+            project.notes.filter(is_pinned=True),
+        )
+
 
 class ChainedQuerysets:
     """
@@ -247,6 +261,24 @@ class FolderViewSet(ProjectScopedViewSet):
         return paginated_contents(self, folder.children.all(), folder.notes.all())
 
 
+def copy_title(title, taken):
+    """
+    Title for a copy of <title>, numbered from the second copy on so that
+    duplicating twice in the same folder does not yield two identical names.
+    """
+    max_length = Note._meta.get_field('title').max_length
+    index = 1
+
+    while True:
+        suffix = ' (copy)' if index == 1 else f' (copy {index})'
+        candidate = f'{title[:max_length - len(suffix)]}{suffix}'
+
+        if candidate not in taken:
+            return candidate
+
+        index += 1
+
+
 class NoteViewSet(ProjectScopedViewSet):
     serializer_class = NoteSerializer
 
@@ -270,6 +302,32 @@ class NoteViewSet(ProjectScopedViewSet):
             raise PermissionDenied("Project not found or access denied.")
 
         serializer.save(project=project)
+
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, *args, **kwargs):
+        """Copy a note, content included, into the folder holding it"""
+        note = self.get_object()
+        taken = set(
+            Note.objects
+            .filter(project=note.project, folder=note.folder)
+            .values_list('title', flat=True)
+        )
+
+        copy = Note.objects.create(
+            title=copy_title(note.title, taken),
+            content=note.content,
+            project=note.project,
+            folder=note.folder,
+        )
+
+        logger.info(
+            f"Note '{note.title}' (ID: {note.id}) duplicated as "
+            f"'{copy.title}' (ID: {copy.id}) by user {request.user.username}"
+        )
+
+        serializer = self.get_serializer(copy)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class SnippetViewSet(viewsets.ModelViewSet):
