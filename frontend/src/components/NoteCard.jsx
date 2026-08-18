@@ -1,6 +1,13 @@
+import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 
-export default function NoteCard({ note, searchQuery, onOpen, onDelete }) {
+export default function NoteCard({
+  note,
+  searchQuery,
+  onOpen,
+  onMove,
+  onDelete,
+}) {
   const preview = note.preview;
 
   return (
@@ -28,14 +35,22 @@ export default function NoteCard({ note, searchQuery, onOpen, onDelete }) {
       </button>
 
       <div className="gallery-card-actions">
-        <button
-          type="button"
-          className="btn-card-icon-action btn-card-icon-danger"
-          title="Delete"
-          onClick={() => onDelete(note)}
-        >
-          <i className="ph-light ph-trash" />
-        </button>
+        <CardMenu
+          label={`Actions for ${note.title}`}
+          items={[
+            {
+              label: "Move to…",
+              icon: "ph-arrow-elbow-down-right",
+              onSelect: () => onMove(note),
+            },
+            {
+              label: "Delete",
+              icon: "ph-trash",
+              isDanger: true,
+              onSelect: () => onDelete(note),
+            },
+          ]}
+        />
       </div>
     </div>
   );

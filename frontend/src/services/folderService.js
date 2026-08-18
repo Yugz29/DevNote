@@ -20,6 +20,18 @@ export const deleteFolder = async (folderId, { confirm = false } = {}) => {
   return response.data;
 };
 
+export const getFolders = async (projectId, parentId = null, url = null) => {
+  if (url) {
+    const response = await api.get(url);
+    return response.data;
+  }
+
+  const response = await api.get(`/projects/${projectId}/folders/`, {
+    params: { parent: parentId ?? "null" },
+  });
+  return response.data;
+};
+
 export const getLevelContents = async (projectId, folderId, url = null) => {
   if (url) {
     const response = await api.get(url);

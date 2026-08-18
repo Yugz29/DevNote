@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 
 function summarize({ folder_count: folders = 0, note_count: notes = 0 }) {
@@ -18,6 +19,7 @@ export default function FolderCard({
   onStartRename,
   onRename,
   onCancelRename,
+  onMove,
   onDelete,
 }) {
   const inputRef = useRef(null);
@@ -86,22 +88,27 @@ export default function FolderCard({
       </button>
 
       <div className="gallery-card-actions">
-        <button
-          type="button"
-          className="btn-card-icon-action"
-          title="Rename"
-          onClick={() => onStartRename(folder.id)}
-        >
-          <i className="ph-light ph-pencil-simple" />
-        </button>
-        <button
-          type="button"
-          className="btn-card-icon-action btn-card-icon-danger"
-          title="Delete"
-          onClick={() => onDelete(folder)}
-        >
-          <i className="ph-light ph-trash" />
-        </button>
+        <CardMenu
+          label={`Actions for ${folder.name}`}
+          items={[
+            {
+              label: "Rename",
+              icon: "ph-pencil-simple",
+              onSelect: () => onStartRename(folder.id),
+            },
+            {
+              label: "Move to…",
+              icon: "ph-arrow-elbow-down-right",
+              onSelect: () => onMove(folder),
+            },
+            {
+              label: "Delete",
+              icon: "ph-trash",
+              isDanger: true,
+              onSelect: () => onDelete(folder),
+            },
+          ]}
+        />
       </div>
     </div>
   );

@@ -872,6 +872,11 @@
     background: var(--dash-glass-raised);
     border-color: var(--dash-glass-border-hover);
     transform: translateY(-1px);
+    z-index: 2;
+}
+
+.gallery-card:focus-within {
+    z-index: 3;
 }
 
 .gallery-card-open {
@@ -972,18 +977,221 @@
     right: 8px;
     display: flex;
     align-items: center;
-    gap: 2px;
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.gallery-card:hover .gallery-card-actions,
-.gallery-card:focus-within .gallery-card-actions {
-    opacity: 1;
 }
 
 .gallery-grid .empty {
     grid-column: 1 / -1;
+}
+
+/* Card actions menu */
+.card-menu {
+    position: relative;
+    display: flex;
+}
+
+.card-menu-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--dash-text-faint);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.gallery-card:hover .card-menu-trigger {
+    color: var(--dash-text-dim);
+}
+
+.card-menu-trigger:hover,
+.card-menu-trigger.open {
+    color: var(--dash-text);
+    background: var(--dash-glass-raised);
+    border-color: var(--dash-border-emphasis);
+}
+
+.card-menu-trigger i {
+    font-size: 18px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.card-menu-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 168px;
+    padding: 4px;
+    background: var(--dash-surface);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px var(--dash-shadow);
+    z-index: 200;
+}
+
+.card-menu-dropdown.open {
+    display: flex;
+}
+
+.card-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    background: none;
+    border: none;
+    border-radius: 5px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--dash-text-subtle);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.card-menu-item i {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.card-menu-item:hover {
+    background: var(--dash-glass-raised);
+    color: var(--dash-text);
+}
+
+.card-menu-item.is-danger:hover {
+    background: var(--dash-danger-tint);
+    color: var(--danger);
+}
+
+/* Move dialog */
+.move-dialog {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px 24px;
+}
+
+.move-dialog .folder-breadcrumb {
+    margin-bottom: 10px;
+}
+
+.move-dialog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 168px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 6px;
+    background: var(--dash-surface-sunken);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+}
+
+.move-dialog-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 8px 10px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--dash-text-body);
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.move-dialog-row i {
+    font-size: 17px;
+    line-height: 1;
+    color: var(--dash-text-dim);
+    flex-shrink: 0;
+}
+
+.move-dialog-row:hover:not(:disabled) {
+    background: var(--dash-glass-raised);
+    color: var(--dash-text);
+}
+
+.move-dialog-row:hover:not(:disabled) i {
+    color: var(--accent-primary);
+}
+
+.move-dialog-row:disabled {
+    color: var(--dash-text-faint);
+    cursor: default;
+}
+
+.move-dialog-row:disabled i {
+    color: var(--dash-text-faint);
+}
+
+.move-dialog-row-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.move-dialog-row-hint {
+    font-size: 11.5px;
+    color: var(--dash-text-faint);
+    font-style: italic;
+}
+
+.move-dialog-more {
+    margin-top: 4px;
+    padding: 7px 10px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--dash-text-muted);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.move-dialog-more:hover {
+    background: var(--dash-glass-raised);
+    color: var(--dash-text);
+}
+
+.move-dialog-list .loading,
+.move-dialog-list .empty,
+.move-dialog-list .error {
+    margin: auto;
+    font-size: 13px;
+}
+
+.move-dialog-note {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: var(--dash-text-dim);
+}
+
+.move-dialog .modal-actions {
+    margin-top: 16px;
+}
+
+.move-dialog .dn-dialog-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
 }
 
 .note-block {

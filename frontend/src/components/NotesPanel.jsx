@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
 import FolderCard from "./FolderCard.jsx";
+import MoveDialog from "./MoveDialog.jsx";
 import NoteBlock from "./NoteBlock.jsx";
 import NoteCard from "./NoteCard.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
@@ -16,6 +17,7 @@ import {
   createNote,
   deleteNote,
   getNote,
+  moveNote,
   updateNote,
 } from "../services/noteService.js";
 
@@ -54,6 +56,7 @@ export default function NotesPanel({
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
+  const [movingEntry, setMovingEntry] = useState(null);
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
@@ -147,6 +150,44 @@ export default function NotesPanel({
 
   const dropEntry = (id) =>
     setItems((current) => current.filter((entry) => entry.id !== id));
+
+  const handleMove = async (destinationId) => {
+    const entry = movingEntry;
+    const isFolder = entry.type === "folder";
+
+    try {
+      if (isFolder) {
+        await updateFolder(entry.id, { parent: destinationId });
+      } else {
+        await moveNote(entry.id, destinationId);
+      }
+    } catch (moveError) {
+      console.error("Error moving entry:", moveError);
+
+      const data = moveError.response?.data;
+      const reason = data?.parent?.[0] ?? data?.folder?.[0] ?? data?.name?.[0];
+
+      await showAlert(
+        reason ?? `Unable to move the ${isFolder ? "folder" : "note"}`,
+      );
+      return;
+    }
+
+    setMovingEntry(null);
+    setItems((current) =>
+      current
+        .filter((item) => item.id !== entry.id)
+        .map((item) =>
+          item.type === "folder" && item.id === destinationId
+            ? {
+                ...item,
+                folder_count: item.folder_count + (isFolder ? 1 : 0),
+                note_count: item.note_count + (isFolder ? 0 : 1),
+              }
+            : item,
+        ),
+    );
+  };
 
   const handleDeleteFolder = async (folder) => {
     try {
@@ -286,6 +327,7 @@ export default function NotesPanel({
                   onStartRename={() => {}}
                   onRename={(_, name) => handleCreateFolder(name)}
                   onCancelRename={() => setIsCreatingFolder(false)}
+                  onMove={() => {}}
                   onDelete={() => {}}
                 />
               )}
@@ -301,6 +343,7 @@ export default function NotesPanel({
                     onStartRename={setRenamingFolderId}
                     onRename={handleRenameFolder}
                     onCancelRename={() => setRenamingFolderId(null)}
+                    onMove={setMovingEntry}
                     onDelete={handleDeleteFolder}
                   />
                 ) : (
@@ -309,6 +352,7 @@ export default function NotesPanel({
                     note={entry}
                     searchQuery={searchQuery}
                     onOpen={openNoteCard}
+                    onMove={setMovingEntry}
                     onDelete={handleDeleteNote}
                   />
                 ),
@@ -320,6 +364,16 @@ export default function NotesPanel({
             </div>
           )}
         </>
+      )}
+
+      {movingEntry && (
+        <MoveDialog
+          entry={movingEntry}
+          projectId={projectId}
+          originId={currentFolderId}
+          onCancel={() => setMovingEntry(null)}
+          onMove={handleMove}
+        />
       )}
     </div>
   );
