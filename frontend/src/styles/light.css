@@ -10,7 +10,7 @@
 
   --text-primary: #1a1a2e;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #55667f;
 
   --border-default: rgba(0,0,0,0.1);
   --border-muted: rgba(0,0,0,0.06);
@@ -19,9 +19,9 @@
   --accent-hover: #1d4ed8;
   --accent-emphasis: #1e40af;
 
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
+  --success: #107636;
+  --warning: #975305;
+  --danger: #d62222;
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
@@ -33,13 +33,13 @@
   --dash-text-em: #334155;
   --dash-text-body: #3f4a5c;
   --dash-text-code: #475569;
-  --dash-text-muted: #64748b;
-  --dash-text-quote: #6b7a8d;
-  --dash-text-subtle: #7b8798;
-  --dash-text-dim: #8a94a3;
-  --dash-text-faint: #a3adba;
-  --dash-text-ghost: #b6bfc9;
-  --dash-text-disabled: #c2c9d2;
+  --dash-text-muted: #4b5769;
+  --dash-text-quote: #515c6a;
+  --dash-text-subtle: #56606f;
+  --dash-text-dim: #5b6574;
+  --dash-text-faint: #5d6b7c;
+  --dash-text-ghost: #606f81;
+  --dash-text-disabled: #606e83;
 
   /* Dashboard — surfaces */
   --dash-ground: #f5f7fa;
