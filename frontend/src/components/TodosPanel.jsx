@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TodoCard from "./TodoCard.jsx";
 import TodoEditor from "./TodoEditor.jsx";
+import TodoListTabs from "./TodoListTabs.jsx";
 import TodoModal from "./TodoModal.jsx";
+import TodoMoveDialog from "./TodoMoveDialog.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
@@ -15,8 +17,15 @@ import {
   createTodo,
   deleteTodo,
   getAllTodos,
+  moveTodo,
   updateTodo,
 } from "../services/todoService.js";
+import {
+  createTodoList,
+  deleteTodoList,
+  getTodoLists,
+  renameTodoList,
+} from "../services/todoListService.js";
 
 async function fetchAllTodos(projectId) {
   return { results: await getAllTodos(projectId), next: null };
@@ -41,6 +50,21 @@ function readCollapsedGroups(projectId) {
   return new Set(stored ? JSON.parse(stored) : []);
 }
 
+function readActiveList(projectId) {
+  return localStorage.getItem(`devnote_todo_active_list_${projectId}`) || null;
+}
+
+function writeActiveList(projectId, listId) {
+  const key = `devnote_todo_active_list_${projectId}`;
+
+  if (listId) {
+    localStorage.setItem(key, listId);
+    return;
+  }
+
+  localStorage.removeItem(key);
+}
+
 export default function TodosPanel({
   projectId,
   sort,
@@ -56,8 +80,13 @@ export default function TodosPanel({
   const [viewingId, setViewingId] = useState(null);
   const [isEditingViewed, setIsEditingViewed] = useState(false);
   const [draft, setDraft] = useState(null);
+  const [movingTodo, setMovingTodo] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     readCollapsedGroups(projectId),
+  );
+  const [lists, setLists] = useState([]);
+  const [activeListId, setActiveListId] = useState(() =>
+    searchItemId ? null : readActiveList(projectId),
   );
 
   const { items, isLoading, error, reload, setItems } = useResourceList({
@@ -68,9 +97,60 @@ export default function TodosPanel({
   const todos = useMemo(() => sortTodos(items, sort), [items, sort]);
   const viewedTodo = todos.find((todo) => todo.id === viewingId);
 
-  useSearchTarget(containerRef, searchItemId, !isLoading && todos.length > 0);
+  const visibleTodos = useMemo(
+    () =>
+      activeListId === null
+        ? todos
+        : todos.filter((todo) => todo.list === activeListId),
+    [todos, activeListId],
+  );
 
-  const isSortable = !isLoading && !error && todos.length > 1;
+  const counts = useMemo(() => {
+    const byList = {};
+
+    for (const todo of items) {
+      if (todo.list) byList[todo.list] = (byList[todo.list] ?? 0) + 1;
+    }
+
+    return { all: items.length, byList };
+  }, [items]);
+
+  const loadLists = useCallback(() => {
+    if (!projectId) return Promise.resolve();
+
+    return getTodoLists(projectId)
+      .then((data) => {
+        const results = data.results ?? data;
+        setLists(results);
+        setActiveListId((current) =>
+          current && !results.some((list) => list.id === current)
+            ? null
+            : current,
+        );
+      })
+      .catch((listError) => {
+        console.error("Error loading todo lists:", listError);
+        setLists([]);
+      });
+  }, [projectId]);
+
+  useEffect(() => {
+    loadLists();
+  }, [loadLists]);
+
+  const selectList = (listId) => {
+    writeActiveList(projectId, listId);
+    setActiveListId(listId);
+    setIsCreating(false);
+  };
+
+  useSearchTarget(
+    containerRef,
+    searchItemId,
+    !isLoading && visibleTodos.length > 0,
+  );
+
+  const isSortable = !isLoading && !error && visibleTodos.length > 1;
 
   useEffect(() => {
     onSortableChange(isSortable);
@@ -81,10 +161,10 @@ export default function TodosPanel({
       Object.fromEntries(
         STATUSES.map((status) => [
           status,
-          todos.filter((todo) => todo.status === status),
+          visibleTodos.filter((todo) => todo.status === status),
         ]),
       ),
-    [todos],
+    [visibleTodos],
   );
 
   const storeCollapsedGroups = (next) => {
@@ -160,6 +240,7 @@ export default function TodosPanel({
           description,
           values.status,
           values.priority,
+          activeListId,
         );
       }
 
@@ -170,6 +251,72 @@ export default function TodosPanel({
     } catch (saveError) {
       console.error("Error saving todo:", saveError);
       await showAlert("Unable to save the todo");
+    }
+  };
+
+  const handleCreateList = async (name) => {
+    try {
+      const created = await createTodoList(projectId, name);
+      await loadLists();
+      selectList(created.id);
+    } catch (createError) {
+      console.error("Error creating todo list:", createError);
+      await showAlert(
+        createError?.response?.data?.name?.[0] ?? "Unable to create the list",
+      );
+    }
+  };
+
+  const handleRenameList = async (list, name) => {
+    try {
+      await renameTodoList(list.id, name);
+      await loadLists();
+    } catch (renameError) {
+      console.error("Error renaming todo list:", renameError);
+      await showAlert(
+        renameError?.response?.data?.name?.[0] ?? "Unable to rename the list",
+      );
+    }
+  };
+
+  const handleDeleteList = async (list) => {
+    const held = counts.byList[list.id] ?? 0;
+
+    if (held > 0) {
+      const confirmed = await showConfirm(
+        `Delete "${list.name}"? Its ${held} todo${held > 1 ? "s" : ""} ` +
+          "will be left unclassified.",
+      );
+
+      if (!confirmed) return;
+    }
+
+    try {
+      await deleteTodoList(list.id);
+
+      if (activeListId === list.id) selectList(null);
+
+      await Promise.all([reload(), loadLists()]);
+    } catch (deleteError) {
+      console.error("Error deleting todo list:", deleteError);
+      await showAlert("Unable to delete the list");
+    }
+  };
+
+  const handleMoveTodo = async (listId) => {
+    const todo = movingTodo;
+
+    try {
+      await moveTodo(todo.id, listId);
+      setItems((current) =>
+        current.map((item) =>
+          item.id === todo.id ? { ...item, list: listId } : item,
+        ),
+      );
+      setMovingTodo(null);
+    } catch (moveError) {
+      console.error("Error moving todo:", moveError);
+      await showAlert("Unable to move the todo");
     }
   };
 
@@ -212,6 +359,7 @@ export default function TodosPanel({
       onPriorityChange={(priority) =>
         handleFieldChange(todo, "priority", priority)
       }
+      onMove={() => setMovingTodo(todo)}
       onDelete={() => handleDelete(todo.id)}
     />
   );
@@ -240,6 +388,16 @@ export default function TodosPanel({
 
   return (
     <div id="todos-list" className="todos-list" ref={containerRef}>
+      <TodoListTabs
+        lists={lists}
+        counts={counts}
+        activeListId={activeListId}
+        onSelect={selectList}
+        onCreate={handleCreateList}
+        onRename={handleRenameList}
+        onDelete={handleDeleteList}
+      />
+
       <div className="gallery-toolbar">
         <button
           type="button"
@@ -344,11 +502,24 @@ export default function TodosPanel({
           onPriorityChange={(priority) =>
             handleFieldChange(viewedTodo, "priority", priority)
           }
+          onMove={() => {
+            setViewingId(null);
+            setMovingTodo(viewedTodo);
+          }}
           onDelete={() => handleDelete(viewedTodo.id)}
           onClose={() => {
             setIsEditingViewed(false);
             setViewingId(null);
           }}
+        />
+      )}
+
+      {movingTodo && (
+        <TodoMoveDialog
+          todo={movingTodo}
+          lists={lists}
+          onCancel={() => setMovingTodo(null)}
+          onMove={handleMoveTodo}
         />
       )}
     </div>

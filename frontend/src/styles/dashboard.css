@@ -1146,6 +1146,15 @@
     color: var(--accent-primary);
 }
 
+.move-dialog-row.is-selected {
+    background: var(--dash-glass-raised-hover);
+    color: var(--dash-text);
+}
+
+.move-dialog-row.is-selected i {
+    color: var(--accent-primary);
+}
+
 .move-dialog-row:disabled {
     color: var(--dash-text-faint);
     cursor: default;
@@ -2027,6 +2036,106 @@
     gap: 0;
 }
 
+/* Todo list selector */
+.todo-list-tabs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--dash-glass-border);
+}
+
+.todo-list-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--dash-glass);
+    border: 1px solid var(--dash-glass-border);
+    border-radius: 999px;
+    padding: 0 4px 0 12px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--dash-text-muted);
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.todo-list-tab.is-open,
+.todo-list-tab.is-add {
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.todo-list-tab:hover {
+    color: var(--dash-text);
+    background: var(--dash-glass-raised);
+    border-color: var(--dash-glass-border-hover);
+}
+
+.todo-list-tab.active {
+    color: var(--dash-text);
+    background: var(--dash-glass-raised-hover);
+    border-color: var(--dash-border-emphasis);
+}
+
+.todo-list-tab-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 6px 2px 6px 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.todo-list-tab-count {
+    font-size: 11px;
+    color: var(--dash-text-faint);
+}
+
+.todo-list-tab.active .todo-list-tab-count {
+    color: var(--dash-text-dim);
+}
+
+.todo-list-tab .card-menu-trigger {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+}
+
+.todo-list-tab .card-menu-trigger i {
+    font-size: 15px;
+}
+
+.todo-list-tab.is-add i {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.todo-list-tab.is-editing {
+    padding: 0;
+}
+
+.todo-list-tab-input {
+    background: none;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 12px;
+    width: 140px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--dash-text);
+    outline: none;
+}
+
+.todo-list-tab-input::placeholder {
+    color: var(--dash-text-faint);
+}
+
 .note-controls {
     grid-column: 3;
     grid-row: 1;
@@ -2546,18 +2655,14 @@
 .todo-card .item-actions {
     position: static;
     flex-shrink: 0;
-    overflow: hidden;
-    max-width: 0;
-    opacity: 0;
-    visibility: hidden;
-    transition: max-width 0.15s ease, opacity 0.15s;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
     gap: 4px;
 }
 
-.todo-card:hover .item-actions {
-    max-width: 84px;
-    opacity: 1;
-    visibility: visible;
+.todo-card:hover .card-menu-trigger {
+    color: var(--dash-text-dim);
 }
 
 .todo-editor .item-actions {

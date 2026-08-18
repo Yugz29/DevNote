@@ -1,3 +1,4 @@
+import CardMenu from "./CardMenu.jsx";
 import DnSelect from "./DnSelect.jsx";
 import HighlightText from "./HighlightText.jsx";
 import {
@@ -14,6 +15,7 @@ export default function TodoCard({
   onOpen,
   onStatusChange,
   onPriorityChange,
+  onMove,
   onDelete,
 }) {
   const priority = PRIORITY_BADGES[todo.priority] || PRIORITY_BADGES.medium;
@@ -43,14 +45,22 @@ export default function TodoCard({
         </button>
 
         <div className="item-actions">
-          <button
-            className="delete-todo-btn btn-card-icon-action btn-card-icon-danger"
-            data-id={todo.id}
-            title="Delete"
-            onClick={onDelete}
-          >
-            <i className="ph-light ph-trash" />
-          </button>
+          <CardMenu
+            label={`Actions for ${todo.title}`}
+            items={[
+              {
+                label: "Move to…",
+                icon: "ph-arrow-elbow-down-right",
+                onSelect: onMove,
+              },
+              {
+                label: "Delete",
+                icon: "ph-trash",
+                isDanger: true,
+                onSelect: onDelete,
+              },
+            ]}
+          />
         </div>
       </div>
 

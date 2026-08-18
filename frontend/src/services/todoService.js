@@ -27,12 +27,14 @@ export const createTodo = async (
   description,
   status,
   priority,
+  list = null,
 ) => {
   const response = await api.post(`/projects/${projectId}/todos/`, {
     title,
     description,
     status,
     priority,
+    list,
   });
   return response.data;
 };
@@ -56,6 +58,11 @@ export const updateTodo = async (
   if (priority !== undefined) payload.priority = priority;
 
   const response = await api.patch(`/todos/${todoId}/`, payload);
+  return response.data;
+};
+
+export const moveTodo = async (todoId, listId) => {
+  const response = await api.patch(`/todos/${todoId}/`, { list: listId });
   return response.data;
 };
 

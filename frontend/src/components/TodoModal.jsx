@@ -18,6 +18,7 @@ export default function TodoModal({
   onSave,
   onStatusChange,
   onPriorityChange,
+  onMove,
   onDelete,
   onClose,
 }) {
@@ -84,6 +85,14 @@ export default function TodoModal({
                   onClick={onEdit}
                 >
                   <i className="ph-light ph-pencil-simple" />
+                </button>
+                <button
+                  type="button"
+                  className="btn-card-icon-action"
+                  title="Move to…"
+                  onClick={onMove}
+                >
+                  <i className="ph-light ph-arrow-elbow-down-right" />
                 </button>
                 <button
                   type="button"
