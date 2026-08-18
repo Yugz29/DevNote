@@ -415,6 +415,7 @@ export default function NotesPanel({
           onDelete={() => detailNote && handleDeleteNote(detailNote)}
           onExportMarkdown={exportMarkdown}
           onExportPdf={exportPdf}
+          scrollRef={scrollRef}
         />
       ) : (
         <>

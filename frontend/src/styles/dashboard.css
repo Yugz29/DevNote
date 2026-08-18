@@ -1327,11 +1327,129 @@
     margin-bottom: 12px;
 }
 
+.note-block-body {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+}
+
+.note-block-body > .note-block-content {
+    flex: 1;
+    min-width: 0;
+}
+
 .note-block-content {
     font-size: 14px;
     color: var(--dash-text-body);
     line-height: 1.7;
 }
+
+.note-outline-toggle {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--dash-text-dim);
+    font-size: 13px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.note-outline-toggle i {
+    font-size: 15px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.note-outline-toggle:hover,
+.note-outline-toggle.is-open {
+    color: var(--dash-text);
+    border-color: var(--dash-border-emphasis);
+    background: var(--dash-glass-raised);
+}
+
+.note-outline-slot {
+    display: none;
+}
+
+.note-outline-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-text-dim);
+}
+
+.note-outline-header i {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.note-outline-modal {
+    padding: 16px 24px 24px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.note-outline-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.note-outline-item {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    border-left: 2px solid var(--dash-border);
+    border-radius: 0 4px 4px 0;
+    padding: 4px 8px;
+    padding-left: calc(10px + var(--depth) * 12px);
+    font-family: inherit;
+    font-size: 12.5px;
+    line-height: 1.45;
+    text-align: left;
+    color: var(--dash-text-muted);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.note-outline-item:hover {
+    color: var(--dash-text);
+    border-left-color: var(--accent-primary);
+    background: var(--dash-glass);
+}
+
+@media (min-width: 1200px) {
+    .note-outline-toggle {
+        display: none;
+    }
+
+    .note-outline-slot {
+        display: block;
+        flex: 0 0 214px;
+        position: sticky;
+        top: 32px;
+        max-height: calc(100vh - 240px);
+        overflow-y: auto;
+    }
+}
+
 
 /* Markdown styles */
 .note-block-content.markdown h1,

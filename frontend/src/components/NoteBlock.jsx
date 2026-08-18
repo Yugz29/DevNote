@@ -1,4 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BlockNoteView } from "@blocknote/mantine";
 import { combineByGroup, filterSuggestionItems } from "@blocknote/core";
 import { getDiagramSlashMenuItems } from "@blocknote/diagram-block";
@@ -8,15 +9,19 @@ import {
   useCreateBlockNote,
 } from "@blocknote/react";
 import HighlightText from "./HighlightText.jsx";
+import Modal from "./Modal.jsx";
+import NoteOutline from "./NoteOutline.jsx";
 import { useTheme } from "../contexts/ThemeContext.js";
 import {
   markdownToBlocks,
   noteExtensions,
   noteSchema,
 } from "../lib/blocknote.js";
+import { collectHeadings, sameHeadings } from "../lib/outline.js";
 import { applySearchHighlight } from "../lib/searchHighlight.js";
 
 const EMPTY_DOCUMENT = [{ type: "paragraph" }];
+const MIN_OUTLINE_HEADINGS = 3;
 
 export default function NoteBlock({
   note,
@@ -26,6 +31,7 @@ export default function NoteBlock({
   onDelete,
   onExportMarkdown,
   onExportPdf,
+  scrollRef,
   ref,
 }) {
   const isNewNote = !note;
@@ -37,6 +43,7 @@ export default function NoteBlock({
   const skipCommitRef = useRef(false);
   const hasAutoFocused = useRef(false);
   const [isEditing, setIsEditing] = useState(isNewNote);
+  const [isOutlineOpen, setIsOutlineOpen] = useState(false);
   const [createdAt] = useState(() => note?.created_at ?? Date.now());
 
   const [initialContent] = useState(() => markdownToBlocks(note?.content));
@@ -49,6 +56,60 @@ export default function NoteBlock({
     },
     [],
   );
+
+  const [headings, setHeadings] = useState(() =>
+    collectHeadings(editor.document),
+  );
+
+  useEffect(
+    () =>
+      editor.onChange(() => {
+        const next = collectHeadings(editor.document);
+        setHeadings((current) =>
+          sameHeadings(current, next) ? current : next,
+        );
+      }),
+    [editor],
+  );
+
+  const hasOutline = headings.length >= MIN_OUTLINE_HEADINGS;
+
+  const scrollToHeading = (id) => {
+    const container = scrollRef?.current;
+    const target = editor.domElement?.querySelector(`[data-id="${id}"]`);
+
+    if (!container || !target) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    const header = blockRef.current?.querySelector(".note-block-header");
+    let covered = 0;
+
+    if (header) {
+      const stickyTop = parseFloat(window.getComputedStyle(header).top) || 0;
+      const paddingTop =
+        parseFloat(window.getComputedStyle(container).paddingTop) || 0;
+      covered = Math.max(0, paddingTop + stickyTop + header.offsetHeight);
+    }
+
+    const top =
+      container.scrollTop +
+      target.getBoundingClientRect().top -
+      containerTop -
+      covered -
+      8;
+
+    container.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  };
+
+  const closeOutline = () => {
+    skipCommitRef.current = true;
+    setIsOutlineOpen(false);
+  };
+
+  const handleOutlineSelect = (id) => {
+    closeOutline();
+    scrollToHeading(id);
+  };
 
   const readTitle = () => titleRef.current?.textContent.trim() ?? "";
 
@@ -150,7 +211,7 @@ export default function NoteBlock({
   };
 
   const handleKeyDown = (event) => {
-    if (event.key !== "Escape" || !isEditing) return;
+    if (event.key !== "Escape" || !isEditing || isOutlineOpen) return;
 
     event.preventDefault();
     cancelEditing();
@@ -264,6 +325,18 @@ export default function NoteBlock({
           >
             <HighlightText text={note?.title ?? ""} query={searchQuery} />
           </h3>
+
+          {hasOutline && (
+            <button
+              className={`note-outline-toggle${isOutlineOpen ? " is-open" : ""}`}
+              title="Outline"
+              aria-label="Outline"
+              aria-expanded={isOutlineOpen}
+              onClick={() => setIsOutlineOpen((current) => !current)}
+            >
+              <i className="ph-light ph-list-dashes" />
+            </button>
+          )}
         </div>
 
         <div className="note-block-actions">
@@ -304,29 +377,55 @@ export default function NoteBlock({
         </span>
       </div>
 
-      <div className="note-block-content" onMouseDown={handleContentMouseDown}>
-        <BlockNoteView
-          key={theme}
-          editor={editor}
-          editable={isEditing}
-          theme={theme === "light" ? "light" : "dark"}
-          className={`note-block-view${isEditing ? " editing" : ""}`}
-          slashMenu={false}
+      <div className="note-block-body">
+        <div
+          className="note-block-content"
+          onMouseDown={handleContentMouseDown}
         >
-          <SuggestionMenuController
-            triggerCharacter="/"
-            getItems={async (query) =>
-              filterSuggestionItems(
-                combineByGroup(
-                  getDefaultReactSlashMenuItems(editor),
-                  getDiagramSlashMenuItems(editor),
-                ),
-                query,
-              )
-            }
-          />
-        </BlockNoteView>
+          <BlockNoteView
+            key={theme}
+            editor={editor}
+            editable={isEditing}
+            theme={theme === "light" ? "light" : "dark"}
+            className={`note-block-view${isEditing ? " editing" : ""}`}
+            slashMenu={false}
+          >
+            <SuggestionMenuController
+              triggerCharacter="/"
+              getItems={async (query) =>
+                filterSuggestionItems(
+                  combineByGroup(
+                    getDefaultReactSlashMenuItems(editor),
+                    getDiagramSlashMenuItems(editor),
+                  ),
+                  query,
+                )
+              }
+            />
+          </BlockNoteView>
+        </div>
+
+        {hasOutline && (
+          <div className="note-outline-slot">
+            <div className="note-outline-header">
+              <i className="ph-light ph-list-dashes" />
+              <span>Outline</span>
+            </div>
+
+            <NoteOutline headings={headings} onSelect={handleOutlineSelect} />
+          </div>
+        )}
       </div>
+
+      {isOutlineOpen &&
+        createPortal(
+          <Modal isOpen title="Outline" onClose={closeOutline}>
+            <div className="note-outline-modal">
+              <NoteOutline headings={headings} onSelect={handleOutlineSelect} />
+            </div>
+          </Modal>,
+          document.body,
+        )}
     </div>
   );
 }
