@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import TodoCard from "./TodoCard.jsx";
 import TodoEditor from "./TodoEditor.jsx";
+import TodoModal from "./TodoModal.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
@@ -51,7 +52,10 @@ export default function TodosPanel({
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
 
-  const [editingId, setEditingId] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [viewingId, setViewingId] = useState(null);
+  const [isEditingViewed, setIsEditingViewed] = useState(false);
+  const [draft, setDraft] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     readCollapsedGroups(projectId),
   );
@@ -62,6 +66,7 @@ export default function TodosPanel({
   });
 
   const todos = useMemo(() => sortTodos(items, sort), [items, sort]);
+  const viewedTodo = todos.find((todo) => todo.id === viewingId);
 
   useSearchTarget(containerRef, searchItemId, !isLoading && todos.length > 0);
 
@@ -82,6 +87,14 @@ export default function TodosPanel({
     [todos],
   );
 
+  const storeCollapsedGroups = (next) => {
+    localStorage.setItem(
+      `devnote_todo_collapsed_${projectId}`,
+      JSON.stringify([...next]),
+    );
+    setCollapsedGroups(next);
+  };
+
   const toggleGroup = (status) => {
     const next = new Set(collapsedGroups);
 
@@ -91,25 +104,34 @@ export default function TodosPanel({
       next.add(status);
     }
 
-    localStorage.setItem(
-      `devnote_todo_collapsed_${projectId}`,
-      JSON.stringify([...next]),
-    );
-    setCollapsedGroups(next);
+    storeCollapsedGroups(next);
   };
 
-  const handleStatusChange = async (todo, newStatus) => {
-    if (newStatus === todo.status) return;
+  const startCreating = () => {
+    if (collapsedGroups.has("pending")) {
+      const next = new Set(collapsedGroups);
+      next.delete("pending");
+      storeCollapsedGroups(next);
+    }
+
+    setIsCreating(true);
+  };
+
+  const handleFieldChange = async (todo, field, value) => {
+    if (value === todo[field]) return;
+
+    const status = field === "status" ? value : undefined;
+    const priority = field === "priority" ? value : undefined;
 
     try {
-      await updateTodo(todo.id, undefined, undefined, newStatus, undefined);
+      await updateTodo(todo.id, undefined, undefined, status, priority);
       setItems((current) =>
         current.map((item) =>
-          item.id === todo.id ? { ...item, status: newStatus } : item,
+          item.id === todo.id ? { ...item, [field]: value } : item,
         ),
       );
-    } catch (statusError) {
-      console.error("Error updating todo status:", statusError);
+    } catch (fieldError) {
+      console.error(`Error updating todo ${field}:`, fieldError);
     }
   };
 
@@ -141,7 +163,9 @@ export default function TodosPanel({
         );
       }
 
-      setEditingId(null);
+      setIsCreating(false);
+      setIsEditingViewed(false);
+      setDraft(null);
       await reload();
     } catch (saveError) {
       console.error("Error saving todo:", saveError);
@@ -155,6 +179,7 @@ export default function TodosPanel({
 
     try {
       await deleteTodo(todoId);
+      setViewingId((current) => (current === todoId ? null : current));
       await reload();
     } catch (deleteError) {
       console.error("Error deleting todo:", deleteError);
@@ -162,49 +187,34 @@ export default function TodosPanel({
     }
   };
 
-  const renderAddCard = () =>
-    editingId === "new" ? (
+  const renderCreateCard = () =>
+    isCreating && (
       <TodoEditor
         todo={null}
         usePortal={view === "kanban"}
         onSave={(values) => handleSave(null, values)}
-        onCancel={() => setEditingId(null)}
-      />
-    ) : (
-      <div
-        className="snippet-add-card todo-add-card"
-        id="todo-add-line"
-        onClick={() => {
-          if (editingId === null) setEditingId("new");
+        onCancel={() => setIsCreating(false)}
+        onExpand={(values) => {
+          setIsCreating(false);
+          setDraft(values);
         }}
-      >
-        <span className="note-add-icon">+</span>
-        <span className="note-add-text">New todo...</span>
-      </div>
+      />
     );
 
-  const renderTodo = (todo) =>
-    editingId === todo.id ? (
-      <TodoEditor
-        key={todo.id}
-        todo={todo}
-        usePortal={view === "kanban"}
-        onSave={(values) => handleSave(todo.id, values)}
-        onCancel={() => setEditingId(null)}
-      />
-    ) : (
-      <TodoCard
-        key={todo.id}
-        todo={todo}
-        searchQuery={searchQuery}
-        usePortal={view === "kanban"}
-        onStatusChange={(status) => handleStatusChange(todo, status)}
-        onEdit={() => {
-          if (editingId === null) setEditingId(todo.id);
-        }}
-        onDelete={() => handleDelete(todo.id)}
-      />
-    );
+  const renderTodo = (todo) => (
+    <TodoCard
+      key={todo.id}
+      todo={todo}
+      searchQuery={searchQuery}
+      usePortal={view === "kanban"}
+      onOpen={() => setViewingId(todo.id)}
+      onStatusChange={(status) => handleFieldChange(todo, "status", status)}
+      onPriorityChange={(priority) =>
+        handleFieldChange(todo, "priority", priority)
+      }
+      onDelete={() => handleDelete(todo.id)}
+    />
+  );
 
   const renderGroupHeader = (status, count, className) => {
     const badge = STATUS_BADGES[status];
@@ -230,6 +240,17 @@ export default function TodosPanel({
 
   return (
     <div id="todos-list" className="todos-list" ref={containerRef}>
+      <div className="gallery-toolbar">
+        <button
+          type="button"
+          className="gallery-action"
+          onClick={startCreating}
+        >
+          <i className="ph-light ph-plus" />
+          <span>New todo</span>
+        </button>
+      </div>
+
       {isLoading && <p className="loading">Loading...</p>}
 
       {!isLoading && error && <p className="error">{error}</p>}
@@ -256,7 +277,7 @@ export default function TodosPanel({
                 <div
                   className={`kanban-column-items${groupItems.length === 0 ? " kanban-column-empty" : ""}`}
                 >
-                  {isPending && renderAddCard()}
+                  {isPending && renderCreateCard()}
                   {groupItems.map(renderTodo)}
                   {groupItems.length === 0 && !isPending && (
                     <p className="todo-group-empty">Empty</p>
@@ -285,19 +306,50 @@ export default function TodosPanel({
                 <div
                   className={`todo-group-items${isCollapsed ? " collapsed" : ""}`}
                 >
-                  {status === "pending" && renderAddCard()}
-                  {groupItems.length > 0 ? (
-                    groupItems.map(renderTodo)
-                  ) : (
-                    <p className="todo-group-empty">
-                      No {STATUS_LABELS[status].toLowerCase()} todos
-                    </p>
-                  )}
+                  {status === "pending" && renderCreateCard()}
+                  {groupItems.map(renderTodo)}
+                  {groupItems.length === 0 &&
+                    !(status === "pending" && isCreating) && (
+                      <p className="todo-group-empty">
+                        No {STATUS_LABELS[status].toLowerCase()} todos
+                      </p>
+                    )}
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {draft && (
+        <TodoModal
+          todo={draft}
+          isEditing
+          onCancelEdit={() => setDraft(null)}
+          onSave={(values) => handleSave(null, values)}
+          onClose={() => setDraft(null)}
+        />
+      )}
+
+      {viewedTodo && (
+        <TodoModal
+          todo={viewedTodo}
+          isEditing={isEditingViewed}
+          onEdit={() => setIsEditingViewed(true)}
+          onCancelEdit={() => setIsEditingViewed(false)}
+          onSave={(values) => handleSave(viewedTodo.id, values)}
+          onStatusChange={(status) =>
+            handleFieldChange(viewedTodo, "status", status)
+          }
+          onPriorityChange={(priority) =>
+            handleFieldChange(viewedTodo, "priority", priority)
+          }
+          onDelete={() => handleDelete(viewedTodo.id)}
+          onClose={() => {
+            setIsEditingViewed(false);
+            setViewingId(null);
+          }}
+        />
       )}
     </div>
   );

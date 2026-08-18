@@ -1938,25 +1938,6 @@
     display: none;
 }
 
-.snippet-add-card {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    border: 1px dashed var(--dash-border-strong);
-    border-radius: 8px;
-    padding: 1rem;
-    color: var(--dash-text-faint);
-    font-size: 14px;
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-}
-
-.snippet-add-card:hover {
-    border-color: var(--dash-border-hover);
-    color: var(--dash-text-muted);
-}
-
 /* Snippet editor inline */
 .snippet-editor {
     border-color: var(--dash-glass-border-warm);
@@ -2044,12 +2025,6 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-}
-
-/* Add card inside Kanban column or list group */
-.todo-add-card {
-    width: 100%;
-    box-sizing: border-box;
 }
 
 .note-controls {
@@ -2279,9 +2254,30 @@
     min-height: 80px;
 }
 
-.kanban-column-items.kanban-column-empty .todo-add-card {
+.kanban-column-items.kanban-column-empty .todo-editor {
     width: 100%;
-    justify-content: center;
+}
+
+.todo-card:not(.todo-editor) {
+    cursor: pointer;
+}
+
+.todo-title-btn {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--dash-text);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
 }
 
 .todo-card {
@@ -2337,17 +2333,17 @@
     flex-shrink: 0;
 }
 
-.todo-status-btn {
+.todo-badge-select {
     cursor: pointer;
     flex-shrink: 0;
     transition: opacity 0.15s;
 }
 
-.todo-status-btn:hover {
+.todo-badge-select:hover {
     opacity: 0.8;
 }
 
-.todo-status-btn .dn-select-chevron {
+.todo-badge-select .dn-select-chevron {
     font-size: 10px;
     margin-right: -2px;
 }
@@ -2372,6 +2368,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.todo-card-priority {
+    display: flex;
+    flex-shrink: 0;
 }
 
 
@@ -2554,9 +2555,17 @@
 }
 
 .todo-card:hover .item-actions {
-    max-width: 56px;
+    max-width: 84px;
     opacity: 1;
     visibility: visible;
+}
+
+.todo-editor .item-actions {
+    max-width: none;
+    overflow: visible;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .btn-card-icon-action {
@@ -2749,6 +2758,65 @@
 .snippet-modal-description {
     font-size: 13px;
     color: var(--dash-text-muted);
+}
+
+.todo-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 24px 24px;
+}
+
+.todo-modal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.todo-modal-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.todo-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.todo-modal .todo-editor {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    gap: 12px;
+}
+
+.todo-modal .item-actions {
+    max-width: none;
+    opacity: 1;
+    visibility: visible;
+    overflow: visible;
+}
+
+.todo-modal-description {
+    font-size: 13px;
+    color: var(--dash-text-muted);
+    white-space: pre-wrap;
+}
+
+.todo-modal-description.is-empty {
+    color: var(--dash-text-faint);
+    font-style: italic;
+}
+
+.todo-modal-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--dash-text-faint);
 }
 
 .snippet-modal-code {

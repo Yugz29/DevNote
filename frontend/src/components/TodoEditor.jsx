@@ -2,7 +2,13 @@ import { useState } from "react";
 import DnSelect from "./DnSelect.jsx";
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from "../lib/todos.js";
 
-export default function TodoEditor({ todo, usePortal, onSave, onCancel }) {
+export default function TodoEditor({
+  todo,
+  usePortal,
+  onSave,
+  onCancel,
+  onExpand,
+}) {
   const [title, setTitle] = useState(todo?.title ?? "");
   const [description, setDescription] = useState(todo?.description ?? "");
   const [status, setStatus] = useState(todo?.status || "pending");
@@ -32,10 +38,16 @@ export default function TodoEditor({ todo, usePortal, onSave, onCancel }) {
           onChange={(event) => setTitle(event.target.value)}
         />
 
-        <div
-          className="item-actions"
-          style={{ opacity: 1, visibility: "visible", pointerEvents: "auto" }}
-        >
+        <div className="item-actions">
+          {onExpand && (
+            <button
+              className="btn-expand-todo btn-card-icon-action"
+              title="Expand"
+              onClick={() => onExpand({ title, description, status, priority })}
+            >
+              <i className="ph-light ph-arrows-out" />
+            </button>
+          )}
           <button
             className="btn-save-todo btn-card-icon-action"
             title="Save"
