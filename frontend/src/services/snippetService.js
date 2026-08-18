@@ -44,6 +44,11 @@ export const updateSnippet = async (
   return response.data;
 };
 
+export const duplicateSnippet = async (snippetId) => {
+  const response = await api.post(`/snippets/${snippetId}/duplicate/`);
+  return response.data;
+};
+
 export const deleteSnippet = async (snippetId) => {
   const response = await api.delete(`/snippets/${snippetId}/`);
   return response.data;

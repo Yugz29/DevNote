@@ -12,6 +12,7 @@ export default function SnippetModal({
   onEdit,
   onCancelEdit,
   onSave,
+  onDuplicate,
   onDelete,
   onClose,
 }) {
@@ -74,6 +75,14 @@ export default function SnippetModal({
                   onClick={onEdit}
                 >
                   <i className="ph-light ph-pencil-simple" />
+                </button>
+                <button
+                  type="button"
+                  className="btn-card-icon-action"
+                  title="Duplicate"
+                  onClick={onDuplicate}
+                >
+                  <i className="ph-light ph-files" />
                 </button>
                 <button
                   type="button"

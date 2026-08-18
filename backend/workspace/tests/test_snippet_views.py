@@ -173,3 +173,148 @@ class SnippetViewTest(APITestCase):
         )
         response = self.client.get(f'/api/snippets/{snippet2.id}/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_duplicate_snippet(self):
+        """Test duplicating a snippet copies its code into the same project"""
+        self.client.force_authenticate(user=self.user1)
+
+        response = self.client.post(
+            f'/api/snippets/{self.snippet1.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'Test Snippet (copy)')
+        self.assertEqual(response.data['content'], self.snippet1.content)
+        self.assertEqual(response.data['project_id'], str(self.project1.id))
+        self.assertNotEqual(response.data['id'], str(self.snippet1.id))
+
+        self.assertEqual(Snippet.objects.count(), 2)
+
+        self.snippet1.refresh_from_db()
+        self.assertEqual(self.snippet1.title, 'Test Snippet')
+
+    def test_duplicate_snippet_nested_route(self):
+        """Test duplicating a snippet through the project nested route"""
+        self.client.force_authenticate(user=self.user1)
+
+        response = self.client.post(
+            f'/api/projects/{self.project1.id}/snippets/{self.snippet1.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'Test Snippet (copy)')
+        self.assertEqual(Snippet.objects.count(), 2)
+
+    def test_duplicate_snippet_keeps_language_and_description(self):
+        """Test the copy carries the language and description over"""
+        self.client.force_authenticate(user=self.user1)
+
+        snippet = Snippet.objects.create(
+            title='Described Snippet',
+            language='javascript',
+            content='const a = 1;',
+            description='A short description',
+            project=self.project1
+        )
+
+        response = self.client.post(
+            f'/api/snippets/{snippet.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['language'], 'javascript')
+        self.assertEqual(response.data['description'], 'A short description')
+
+        copy = Snippet.objects.get(id=response.data['id'])
+        self.assertEqual(copy.content, snippet.content)
+        self.assertEqual(copy.project, snippet.project)
+
+    def test_duplicate_snippet_numbers_further_copies(self):
+        """Test duplicating twice in a row does not repeat the same title"""
+        self.client.force_authenticate(user=self.user1)
+
+        first = self.client.post(
+            f'/api/snippets/{self.snippet1.id}/duplicate/',
+            format='json'
+        )
+        second = self.client.post(
+            f'/api/snippets/{self.snippet1.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(first.data['title'], 'Test Snippet (copy)')
+        self.assertEqual(second.data['title'], 'Test Snippet (copy 2)')
+        self.assertEqual(Snippet.objects.count(), 3)
+
+    def test_duplicate_snippet_ignores_titles_of_other_projects(self):
+        """Test the numbering only looks at the project holding the snippet"""
+        self.client.force_authenticate(user=self.user1)
+
+        Snippet.objects.create(
+            title='Test Snippet (copy)',
+            language='python',
+            content='pass',
+            project=self.project2
+        )
+
+        response = self.client.post(
+            f'/api/snippets/{self.snippet1.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'Test Snippet (copy)')
+
+    def test_duplicate_snippet_truncates_long_title(self):
+        """Test the copy title stays within the title max length"""
+        self.client.force_authenticate(user=self.user1)
+
+        max_length = Snippet._meta.get_field('title').max_length
+        snippet = Snippet.objects.create(
+            title='S' * max_length,
+            language='python',
+            content='pass',
+            project=self.project1
+        )
+
+        response = self.client.post(
+            f'/api/snippets/{snippet.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(len(response.data['title']), max_length)
+        self.assertTrue(response.data['title'].endswith(' (copy)'))
+
+    def test_duplicate_snippet_unauthenticated(self):
+        """Test duplicating a snippet without authentication returns 401"""
+        response = self.client.post(
+            f'/api/snippets/{self.snippet1.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Snippet.objects.count(), 1)
+
+    def test_duplicate_snippet_user_isolation(self):
+        """Test that users cannot duplicate each other's snippets"""
+        self.client.force_authenticate(user=self.user1)
+
+        other_snippet = Snippet.objects.create(
+            title='Other Snippet',
+            language='python',
+            content='pass',
+            project=self.project2
+        )
+
+        response = self.client.post(
+            f'/api/snippets/{other_snippet.id}/duplicate/',
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Snippet.objects.filter(project=self.project2).count(), 1)
+

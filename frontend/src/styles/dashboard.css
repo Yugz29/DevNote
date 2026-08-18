@@ -987,7 +987,8 @@
     transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
-.gallery-card:hover .card-menu-trigger {
+.gallery-card:hover .card-menu-trigger,
+.snippet-card:hover .card-menu-trigger {
     color: var(--dash-text-dim);
 }
 
@@ -2442,13 +2443,17 @@
     transition: opacity 0.15s, visibility 0s 0.15s;
 }
 
-.snippet-card:hover .item-actions,
-.snippet-card:focus-within .item-actions,
 .todo-card:hover .item-actions {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
     transition: opacity 0.15s, visibility 0s;
+}
+
+.snippet-card .item-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .todo-card .item-actions {

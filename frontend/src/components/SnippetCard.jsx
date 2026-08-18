@@ -1,3 +1,4 @@
+import CardMenu from "./CardMenu.jsx";
 import CodeBlock from "./CodeBlock.jsx";
 import CopyButton from "./CopyButton.jsx";
 import HighlightText from "./HighlightText.jsx";
@@ -9,6 +10,7 @@ export default function SnippetCard({
   snippet,
   searchQuery,
   onOpen,
+  onDuplicate,
   onDelete,
 }) {
   const preview =
@@ -30,14 +32,22 @@ export default function SnippetCard({
         </div>
 
         <div className="item-actions">
-          <button
-            className="delete-snippet-btn btn-card-icon-action btn-card-icon-danger"
-            data-id={snippet.id}
-            title="Delete"
-            onClick={onDelete}
-          >
-            <i className="ph-light ph-trash" />
-          </button>
+          <CardMenu
+            label={`Actions for ${snippet.title}`}
+            items={[
+              {
+                label: "Duplicate",
+                icon: "ph-files",
+                onSelect: onDuplicate,
+              },
+              {
+                label: "Delete",
+                icon: "ph-trash",
+                isDanger: true,
+                onSelect: onDelete,
+              },
+            ]}
+          />
         </div>
       </div>
 

@@ -9,6 +9,7 @@ import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
   createSnippet,
   deleteSnippet,
+  duplicateSnippet,
   getSnippets,
   updateSnippet,
 } from "../services/snippetService.js";
@@ -133,6 +134,17 @@ export default function SnippetsPanel({
     }
   };
 
+  const handleDuplicate = async (snippetId) => {
+    try {
+      await duplicateSnippet(snippetId);
+      setViewingId(null);
+      await reload();
+    } catch (duplicateError) {
+      console.error("Error duplicating snippet:", duplicateError);
+      await showAlert("Unable to duplicate the snippet");
+    }
+  };
+
   const handleDelete = async (snippetId) => {
     const confirmed = await showConfirm("Delete this snippet?");
     if (!confirmed) return;
@@ -153,6 +165,7 @@ export default function SnippetsPanel({
       snippet={snippet}
       searchQuery={searchQuery}
       onOpen={() => setViewingId(snippet.id)}
+      onDuplicate={() => handleDuplicate(snippet.id)}
       onDelete={() => handleDelete(snippet.id)}
     />
   );
@@ -253,6 +266,7 @@ export default function SnippetsPanel({
           onEdit={() => setIsEditingViewed(true)}
           onCancelEdit={() => setIsEditingViewed(false)}
           onSave={(values) => handleSave(viewedSnippet.id, values)}
+          onDuplicate={() => handleDuplicate(viewedSnippet.id)}
           onDelete={() => handleDelete(viewedSnippet.id)}
           onClose={() => {
             setIsEditingViewed(false);

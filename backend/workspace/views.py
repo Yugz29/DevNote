@@ -261,12 +261,11 @@ class FolderViewSet(ProjectScopedViewSet):
         return paginated_contents(self, folder.children.all(), folder.notes.all())
 
 
-def copy_title(title, taken):
+def copy_title(title, taken, max_length):
     """
     Title for a copy of <title>, numbered from the second copy on so that
-    duplicating twice in the same folder does not yield two identical names.
+    duplicating twice in the same place does not yield two identical names.
     """
-    max_length = Note._meta.get_field('title').max_length
     index = 1
 
     while True:
@@ -314,7 +313,11 @@ class NoteViewSet(ProjectScopedViewSet):
         )
 
         copy = Note.objects.create(
-            title=copy_title(note.title, taken),
+            title=copy_title(
+                note.title,
+                taken,
+                Note._meta.get_field('title').max_length,
+            ),
             content=note.content,
             project=note.project,
             folder=note.folder,
@@ -363,6 +366,37 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
         snippet = serializer.save(project=project)
         logger.info(f"Snippet '{snippet.title}' (ID: {snippet.id}) created in project {project.id} by user {self.request.user.username}")
+
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, *args, **kwargs):
+        """Copy a snippet, code included, into the project holding it"""
+        snippet = self.get_object()
+        taken = set(
+            Snippet.objects
+            .filter(project=snippet.project)
+            .values_list('title', flat=True)
+        )
+
+        copy = Snippet.objects.create(
+            title=copy_title(
+                snippet.title,
+                taken,
+                Snippet._meta.get_field('title').max_length,
+            ),
+            content=snippet.content,
+            language=snippet.language,
+            description=snippet.description,
+            project=snippet.project,
+        )
+
+        logger.info(
+            f"Snippet '{snippet.title}' (ID: {snippet.id}) duplicated as "
+            f"'{copy.title}' (ID: {copy.id}) by user {request.user.username}"
+        )
+
+        serializer = self.get_serializer(copy)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class TODOViewSet(viewsets.ModelViewSet):
     """
