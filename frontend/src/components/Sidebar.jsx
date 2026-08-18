@@ -1,3 +1,4 @@
+import CardMenu from "./CardMenu.jsx";
 import ProjectSortDropdown from "./ProjectSortDropdown.jsx";
 
 export default function Sidebar({
@@ -9,6 +10,7 @@ export default function Sidebar({
   sort,
   onSortChange,
   onSelectProject,
+  onDeleteProject,
   onLoadMore,
   onNewProject,
   onOpenSearch,
@@ -99,6 +101,23 @@ export default function Sidebar({
                 <i className="ph-light ph-folder" />
               </span>
               <span className="project-name">{project.title}</span>
+
+              <div
+                className="project-item-actions"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <CardMenu
+                  label={`Actions for ${project.title}`}
+                  items={[
+                    {
+                      label: "Delete project",
+                      icon: "ph-trash",
+                      isDanger: true,
+                      onSelect: () => onDeleteProject(project),
+                    },
+                  ]}
+                />
+              </div>
             </div>
           ))}
       </div>

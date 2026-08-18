@@ -1,19 +1,13 @@
-import { useCallback, useRef, useState } from "react";
-import { useClickOutside } from "../hooks/useClickOutside.js";
+import { useRef } from "react";
 import { updateProject } from "../services/projectService.js";
 
 export default function ProjectHeader({
   project,
   onProjectUpdated,
-  onDeleteProject,
+  actionsRef,
 }) {
   const titleRef = useRef(null);
   const descriptionRef = useRef(null);
-  const menuRef = useRef(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const closeMenu = useCallback(() => setIsMenuOpen(false), []);
-  useClickOutside(menuRef, closeMenu, isMenuOpen);
 
   const startInlineEdit = (field) => {
     const element =
@@ -104,32 +98,7 @@ export default function ProjectHeader({
         </div>
       </div>
 
-      <div className="project-menu-wrap" ref={menuRef}>
-        <button
-          id="project-menu-btn"
-          className={`btn-project-menu${isMenuOpen ? " open" : ""}`}
-          title="Project settings"
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          <i className="ph-light ph-dots-three" />
-        </button>
-
-        <div
-          id="project-menu-dropdown"
-          className={`project-menu-dropdown${isMenuOpen ? " open" : ""}`}
-        >
-          <button
-            className="project-menu-item project-menu-item--danger"
-            onClick={() => {
-              setIsMenuOpen(false);
-              onDeleteProject();
-            }}
-          >
-            <i className="ph-light ph-trash" />
-            Delete project
-          </button>
-        </div>
-      </div>
+      <div className="project-header-actions" ref={actionsRef} />
     </header>
   );
 }

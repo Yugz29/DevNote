@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
+  const [headerSlot, setHeaderSlot] = useState(null);
   const [isSidebarHidden, setIsSidebarHidden] = useState(
     () =>
       !isMobile() && localStorage.getItem("devnote_sidebar_hidden") === "true",
@@ -183,21 +184,26 @@ export default function Dashboard() {
     );
   }, []);
 
-  const handleDeleteProject = useCallback(async () => {
-    const confirmed = await showConfirm(
-      "Delete this project and all its contents?",
-    );
-    if (!confirmed) return;
+  const handleDeleteProject = useCallback(
+    async (project) => {
+      const confirmed = await showConfirm(
+        `Delete "${project.title}" and all its contents?`,
+      );
+      if (!confirmed) return;
 
-    try {
-      await deleteProject(currentProject.id);
-      setCurrentProject(null);
-      await loadProjects();
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      await showAlert("Failed to delete project");
-    }
-  }, [currentProject, loadProjects, showAlert, showConfirm]);
+      try {
+        await deleteProject(project.id);
+        setCurrentProject((current) =>
+          current?.id === project.id ? null : current,
+        );
+        await loadProjects();
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        await showAlert("Failed to delete project");
+      }
+    },
+    [loadProjects, showAlert, showConfirm],
+  );
 
   const closeSidebar = () => {
     if (isMobile()) {
@@ -248,6 +254,7 @@ export default function Dashboard() {
           onSortChange={setProjectSort}
           onSelectProject={selectProject}
           onLoadMore={loadMoreProjects}
+          onDeleteProject={handleDeleteProject}
           onNewProject={() => setIsProjectModalOpen(true)}
           onOpenSearch={() => setIsSearchOpen(true)}
           onCloseSidebar={closeSidebar}
@@ -286,13 +293,14 @@ export default function Dashboard() {
                 <ProjectHeader
                   project={currentProject}
                   onProjectUpdated={handleProjectUpdated}
-                  onDeleteProject={handleDeleteProject}
+                  actionsRef={setHeaderSlot}
                 />
 
                 <ProjectTabs
                   projectId={currentProject.id}
                   currentTab={currentTab}
                   onTabChange={handleTabChange}
+                  headerSlot={headerSlot}
                   searchQuery={searchTarget?.query ?? null}
                   searchItemId={searchTarget?.itemId ?? null}
                 />

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
 import FolderCard from "./FolderCard.jsx";
 import MoveDialog from "./MoveDialog.jsx";
@@ -51,6 +52,8 @@ export default function NotesPanel({
   projectId,
   sort,
   scrollRef,
+  headerSlot,
+  breadcrumbSlot,
   searchQuery,
   searchItemId,
   onSortableChange,
@@ -409,11 +412,15 @@ export default function NotesPanel({
 
   return (
     <div id="notes-list" className="notes-list" ref={containerRef}>
-      <FolderBreadcrumb
-        path={path}
-        isDetail={isDetail}
-        onNavigate={navigateTo}
-      />
+      {breadcrumbSlot &&
+        createPortal(
+          <FolderBreadcrumb
+            path={path}
+            isDetail={isDetail}
+            onNavigate={navigateTo}
+          />,
+          breadcrumbSlot,
+        )}
 
       {isDetail ? (
         <NoteBlock
@@ -427,6 +434,7 @@ export default function NotesPanel({
           onExportMarkdown={exportMarkdown}
           onExportPdf={exportPdf}
           scrollRef={scrollRef}
+          headerSlot={headerSlot}
         />
       ) : (
         <>

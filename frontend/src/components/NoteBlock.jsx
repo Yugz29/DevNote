@@ -8,10 +8,13 @@ import {
   getDefaultReactSlashMenuItems,
   useCreateBlockNote,
 } from "@blocknote/react";
+import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 import Modal from "./Modal.jsx";
 import NoteOutline from "./NoteOutline.jsx";
 import { useTheme } from "../contexts/ThemeContext.js";
+import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import {
   markdownToBlocks,
   noteExtensions,
@@ -22,6 +25,8 @@ import { applySearchHighlight } from "../lib/searchHighlight.js";
 
 const EMPTY_DOCUMENT = [{ type: "paragraph" }];
 const MIN_OUTLINE_HEADINGS = 3;
+const WIDE_OUTLINE_QUERY = "(min-width: 1200px)";
+const OUTLINE_HIDDEN_KEY = "devnote_outline_hidden";
 
 export default function NoteBlock({
   note,
@@ -32,6 +37,7 @@ export default function NoteBlock({
   onExportMarkdown,
   onExportPdf,
   scrollRef,
+  headerSlot,
   ref,
 }) {
   const isNewNote = !note;
@@ -44,6 +50,12 @@ export default function NoteBlock({
   const hasAutoFocused = useRef(false);
   const [isEditing, setIsEditing] = useState(isNewNote);
   const [isOutlineOpen, setIsOutlineOpen] = useState(false);
+  const [outlineHidden, setOutlineHidden] = useLocalStorageState(
+    OUTLINE_HIDDEN_KEY,
+    "false",
+  );
+  const isWideOutline = useMediaQuery(WIDE_OUTLINE_QUERY);
+  const isColumnVisible = outlineHidden !== "true";
   const [createdAt] = useState(() => note?.created_at ?? Date.now());
 
   const [initialContent] = useState(() => markdownToBlocks(note?.content));
@@ -73,6 +85,12 @@ export default function NoteBlock({
   );
 
   const hasOutline = headings.length >= MIN_OUTLINE_HEADINGS;
+  const outlineExpanded = isWideOutline ? isColumnVisible : isOutlineOpen;
+  const outlineLabel = isWideOutline
+    ? isColumnVisible
+      ? "Hide outline"
+      : "Show outline"
+    : "Outline";
 
   const scrollToHeading = (id) => {
     const container = scrollRef?.current;
@@ -104,6 +122,20 @@ export default function NoteBlock({
   const closeOutline = () => {
     skipCommitRef.current = true;
     setIsOutlineOpen(false);
+  };
+
+  const runHeaderAction = (action) => {
+    skipCommitRef.current = true;
+    action();
+  };
+
+  const toggleOutline = () => {
+    if (isWideOutline) {
+      setOutlineHidden(isColumnVisible ? "true" : "false");
+      return;
+    }
+
+    setIsOutlineOpen((current) => !current);
   };
 
   const handleOutlineSelect = (id) => {
@@ -325,48 +357,19 @@ export default function NoteBlock({
           >
             <HighlightText text={note?.title ?? ""} query={searchQuery} />
           </h3>
-
-          {hasOutline && (
-            <button
-              className={`note-outline-toggle${isOutlineOpen ? " is-open" : ""}`}
-              title="Outline"
-              aria-label="Outline"
-              aria-expanded={isOutlineOpen}
-              onClick={() => setIsOutlineOpen((current) => !current)}
-            >
-              <i className="ph-light ph-list-dashes" />
-            </button>
-          )}
         </div>
 
         <div className="note-block-actions">
-          {!isNewNote && (
-            <>
-              <button
-                className="btn-card-icon-action"
-                title="Export as Markdown"
-                onClick={() => onExportMarkdown(readTitle(), readContent())}
-              >
-                <i className="ph-light ph-file-md" />
-              </button>
-
-              <button
-                className="btn-card-icon-action"
-                title="Export as PDF"
-                onClick={() => onExportPdf(readTitle(), readContent())}
-              >
-                <i className="ph-light ph-file-pdf" />
-              </button>
-
-              <button
-                className="btn-card-icon-action btn-card-icon-danger btn-delete"
-                data-id={note.id}
-                title="Delete"
-                onClick={onDelete}
-              >
-                <i className="ph-light ph-trash" />
-              </button>
-            </>
+          {hasOutline && (
+            <button
+              className={`note-outline-toggle${outlineExpanded ? " is-open" : ""}`}
+              title={outlineLabel}
+              aria-label={outlineLabel}
+              aria-expanded={outlineExpanded}
+              onClick={toggleOutline}
+            >
+              <i className="ph-light ph-list-dashes" />
+            </button>
           )}
         </div>
       </div>
@@ -405,7 +408,7 @@ export default function NoteBlock({
           </BlockNoteView>
         </div>
 
-        {hasOutline && (
+        {hasOutline && isColumnVisible && (
           <div className="note-outline-slot">
             <div className="note-outline-header">
               <i className="ph-light ph-list-dashes" />
@@ -417,7 +420,41 @@ export default function NoteBlock({
         )}
       </div>
 
+      {headerSlot &&
+        !isNewNote &&
+        createPortal(
+          <CardMenu
+            label={`Actions for ${note.title}`}
+            items={[
+              {
+                label: "Export as Markdown",
+                icon: "ph-file-md",
+                onSelect: () =>
+                  runHeaderAction(() =>
+                    onExportMarkdown(readTitle(), readContent()),
+                  ),
+              },
+              {
+                label: "Export as PDF",
+                icon: "ph-file-pdf",
+                onSelect: () =>
+                  runHeaderAction(() =>
+                    onExportPdf(readTitle(), readContent()),
+                  ),
+              },
+              {
+                label: "Delete",
+                icon: "ph-trash",
+                isDanger: true,
+                onSelect: () => runHeaderAction(onDelete),
+              },
+            ]}
+          />,
+          headerSlot,
+        )}
+
       {isOutlineOpen &&
+        !isWideOutline &&
         createPortal(
           <Modal isOpen title="Outline" onClose={closeOutline}>
             <div className="note-outline-modal">

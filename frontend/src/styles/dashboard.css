@@ -302,8 +302,45 @@
 
 .project-name {
     flex: 1;
+    min-width: 0;
     font-size: 14px;
     font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-item-actions {
+    display: flex;
+    margin-right: -4px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.project-item:hover .project-item-actions,
+.project-item-actions:has(.card-menu-dropdown.open) {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.project-item-actions .card-menu-trigger {
+    width: 22px;
+    height: 22px;
+}
+
+.project-item-actions .card-menu-trigger i {
+    font-size: 16px;
+}
+
+.project-header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.project-header-actions .card-menu-trigger {
+    color: var(--dash-text-dim);
 }
 
 .btn-delete-project {
@@ -570,109 +607,6 @@
 }
 
 /* Project menu button */
-.project-menu-wrap {
-    position: relative;
-    flex-shrink: 0;
-}
-
-.btn-project-menu {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
-    background: none;
-    border: 1px solid transparent;
-    color: var(--dash-text-faint);
-    cursor: pointer;
-    transition: color 0.15s, background 0.15s, border-color 0.15s;
-    padding: 0;
-    flex-shrink: 0;
-}
-
-.btn-project-menu i {
-    font-size: 20px;
-    line-height: 1;
-    pointer-events: none;
-}
-
-.btn-project-menu:hover,
-.btn-project-menu.open {
-    color: var(--dash-text);
-    background: var(--dash-glass-raised);
-    border-color: var(--dash-glass-border);
-}
-
-/* Project dropdown */
-.project-menu-dropdown {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    background: var(--dash-popover-strong);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--dash-glass-border);
-    border-radius: 9px;
-    padding: 4px;
-    min-width: 180px;
-    z-index: 500;
-    box-shadow: 0 12px 32px var(--dash-shadow);
-    flex-direction: column;
-    gap: 1px;
-}
-
-.project-menu-dropdown.open {
-    display: flex;
-}
-
-.project-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    background: none;
-    border: none;
-    color: var(--dash-text-muted);
-    font-size: 13px;
-    font-family: inherit;
-    padding: 8px 10px;
-    border-radius: 6px;
-    text-align: left;
-    width: 100%;
-    cursor: pointer;
-    transition: background 0.12s, color 0.12s;
-    white-space: nowrap;
-}
-
-.project-menu-item i {
-    font-size: 15px;
-    line-height: 1;
-    flex-shrink: 0;
-    pointer-events: none;
-}
-
-.project-menu-item:hover {
-    background: var(--dash-glass-raised);
-    color: var(--dash-text);
-}
-
-.project-menu-item--danger {
-    color: var(--dash-danger-dim);
-}
-
-.project-menu-item--danger:hover {
-    background: var(--dash-danger-tint);
-    color: var(--danger);
-}
-
-.project-menu-divider {
-    height: 1px;
-    background: var(--dash-glass-raised);
-    margin: 3px 4px;
-}
-
-
 /* ============================================================
    4. TABS
    ============================================================ */
@@ -683,6 +617,17 @@
     grid-template-rows: 1fr;
     align-items: center;
     padding: 12px 32px 16px;
+}
+
+.tabs-breadcrumb {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    min-width: 0;
+}
+
+.tabs-breadcrumb .folder-breadcrumb {
+    margin-bottom: 0;
 }
 
 .tabs-inner {
@@ -1299,19 +1244,8 @@
 
 .note-block-actions {
     display: flex;
+    align-items: center;
     gap: 6px;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: none;
-}
-
-.note-block:hover .note-block-actions,
-.note-block-header.editing .note-block-actions {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transition: opacity 0.15s, visibility 0s;
 }
 
 .note-block-title:empty::before {
@@ -1436,10 +1370,6 @@
 }
 
 @media (min-width: 1200px) {
-    .note-outline-toggle {
-        display: none;
-    }
-
     .note-outline-slot {
         display: block;
         flex: 0 0 214px;

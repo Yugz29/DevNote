@@ -29,12 +29,14 @@ export default function ProjectTabs({
   projectId,
   currentTab,
   onTabChange,
+  headerSlot,
   searchQuery,
   searchItemId,
 }) {
   const tabContentRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isSortable, setIsSortable] = useState(false);
+  const [breadcrumbSlot, setBreadcrumbSlot] = useState(null);
   const [sortableTab, setSortableTab] = useState(currentTab);
 
   if (sortableTab !== currentTab) {
@@ -71,6 +73,8 @@ export default function ProjectTabs({
   return (
     <>
       <div className="tabs">
+        <div className="tabs-breadcrumb" ref={setBreadcrumbSlot} />
+
         <div className="tabs-inner">
           {TABS.map((tab) => (
             <button
@@ -182,6 +186,8 @@ export default function ProjectTabs({
               projectId={projectId}
               sort={noteSort}
               scrollRef={tabContentRef}
+              headerSlot={headerSlot}
+              breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
               onSortableChange={handleSortableChange}
