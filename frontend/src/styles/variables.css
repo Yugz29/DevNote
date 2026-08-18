@@ -43,4 +43,104 @@
   /* Font */
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Dashboard — text */
+  --dash-text-strong: #ffffff;
+  --dash-text: #e0e0e0;
+  --dash-text-em: #bbbbbb;
+  --dash-text-body: #aaaaaa;
+  --dash-text-code: #a0a0a0;
+  --dash-text-muted: #888888;
+  --dash-text-quote: #777777;
+  --dash-text-subtle: #666666;
+  --dash-text-dim: #555555;
+  --dash-text-faint: #444444;
+  --dash-text-ghost: #3a3a3a;
+  --dash-text-disabled: #333333;
+
+  /* Dashboard — surfaces */
+  --dash-ground: #0a0a0a;
+  --dash-surface-sunken: #141414;
+  --dash-surface-sunken-alt: #161616;
+  --dash-surface-deep: #181818;
+  --dash-surface: #1a1a1a;
+  --dash-surface-raised: #1e1e1e;
+  --dash-surface-muted: #222222;
+  --dash-surface-line: #2a2a2a;
+  --dash-surface-hover: #2f2f2f;
+  --dash-surface-strong: #3a3a3a;
+  --dash-surface-stronger: #4a4a4a;
+  --dash-popover: rgba(30, 30, 30, 0.75);
+  --dash-popover-strong: rgba(28, 28, 28, 0.85);
+
+  /* Dashboard — glass surfaces */
+  --dash-glass-subtle: rgba(255, 255, 255, 0.02);
+  --dash-glass-panel: rgba(255, 255, 255, 0.03);
+  --dash-panel-veil: inset 0 0 0 100vmax var(--dash-glass-panel);
+  --dash-glass: rgba(255, 255, 255, 0.04);
+  --dash-glass-hover: rgba(255, 255, 255, 0.05);
+  --dash-glass-raised: rgba(255, 255, 255, 0.06);
+  --dash-glass-raised-hover: rgba(255, 255, 255, 0.07);
+  --dash-glass-strong: rgba(255, 255, 255, 0.08);
+  --dash-glass-stronger: rgba(255, 255, 255, 0.1);
+  --dash-glass-active: rgba(255, 255, 255, 0.13);
+  --dash-glass-max: rgba(255, 255, 255, 0.14);
+
+  /* Dashboard — borders */
+  --dash-border-subtle: #222222;
+  --dash-border-faint: #252525;
+  --dash-border: #2a2a2a;
+  --dash-border-muted: #333333;
+  --dash-border-strong: #3a3a3a;
+  --dash-border-emphasis: #444444;
+  --dash-border-hover: #666666;
+  --dash-glass-border-subtle: rgba(255, 255, 255, 0.06);
+  --dash-glass-border-soft: rgba(255, 255, 255, 0.07);
+  --dash-glass-border: rgba(255, 255, 255, 0.08);
+  --dash-glass-border-hover: rgba(255, 255, 255, 0.14);
+  --dash-glass-border-active: rgba(255, 255, 255, 0.15);
+  --dash-glass-border-warm: rgba(251, 251, 251, 0.15);
+  --dash-glass-border-strong: rgba(255, 255, 255, 0.18);
+  --dash-glass-border-stronger: rgba(255, 255, 255, 0.2);
+  --dash-glass-border-max: rgba(255, 255, 255, 0.24);
+  --dash-glass-border-focus: rgba(255, 255, 255, 0.3);
+
+  /* Dashboard — scrims & shadows */
+  --dash-scrim-soft: rgba(0, 0, 0, 0.25);
+  --dash-scrim: rgba(0, 0, 0, 0.5);
+  --dash-scrim-strong: rgba(0, 0, 0, 0.6);
+  --dash-shadow-soft: rgba(0, 0, 0, 0.4);
+  --dash-shadow: rgba(0, 0, 0, 0.5);
+  --dash-shadow-strong: rgba(0, 0, 0, 0.6);
+  --dash-shadow-deep: rgba(0, 0, 0, 0.7);
+  --dash-shadow-inset: rgba(255, 255, 255, 0.1);
+
+  /* Dashboard — accent & status tints */
+  --dash-accent-tint: rgba(88, 166, 255, 0.08);
+  --dash-accent-tint-strong: rgba(88, 166, 255, 0.2);
+  --dash-accent-border-soft: rgba(88, 166, 255, 0.18);
+  --dash-accent-border: rgba(88, 166, 255, 0.4);
+  --dash-accent-glow: rgba(88, 166, 255, 0.5);
+  --dash-accent-glow-soft: rgba(88, 166, 255, 0.25);
+  --dash-accent-glow-none: rgba(88, 166, 255, 0);
+  --dash-danger-dim: #6a3a3a;
+  --dash-danger-tint: rgba(248, 81, 73, 0.08);
+  --dash-danger-tint-hover: rgba(248, 81, 73, 0.1);
+  --dash-danger-tint-strong: rgba(248, 81, 73, 0.12);
+  --dash-danger-tint-stronger: rgba(248, 81, 73, 0.18);
+  --dash-danger-border-soft: rgba(248, 81, 73, 0.15);
+  --dash-danger-border: rgba(248, 81, 73, 0.2);
+  --dash-danger-border-strong: rgba(248, 81, 73, 0.4);
+
+  /* Dashboard — badges */
+  --dash-badge-warning-bg: #332d00;
+  --dash-badge-warning-border: #6a4f00;
+  --dash-badge-danger-bg: #3d0000;
+  --dash-badge-danger-border: #7a0000;
+  --dash-badge-success-bg: #1a3a1a;
+  --dash-badge-success-border: #1a6a1a;
+  --dash-badge-pending-bg: rgba(110, 118, 129, 0.08);
+  --dash-badge-pending-border: rgba(110, 118, 129, 0.18);
+  --dash-badge-progress-bg: rgba(139, 148, 158, 0.1);
+  --dash-badge-progress-border: rgba(139, 148, 158, 0.22);
 }

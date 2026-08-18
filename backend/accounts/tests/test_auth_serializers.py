@@ -42,6 +42,54 @@ class RegisterSerializerTest(TestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn('password', serializer.errors)
 
+    def test_password_too_close_to_the_email(self):
+        """Test: a password built from the email is refused"""
+        data = {
+            'username': 'johndoe',
+            'email': 'johndoe@example.com',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'password': 'johndoe@example.com',
+            'password2': 'johndoe@example.com'
+        }
+
+        serializer = RegisterSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('password', serializer.errors)
+
+    def test_password_too_close_to_the_name(self):
+        """Test: a password built from the name is refused"""
+        data = {
+            'username': 'bartholomew',
+            'email': 'someone@example.com',
+            'first_name': 'Bartholomew',
+            'last_name': 'Kensington',
+            'password': 'Bartholomew',
+            'password2': 'Bartholomew'
+        }
+
+        serializer = RegisterSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('password', serializer.errors)
+
+    def test_weak_password_is_refused(self):
+        """Test: the project password validators still apply"""
+        data = {
+            'username': 'johndoe',
+            'email': 'john@example.com',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'password': 'password',
+            'password2': 'password'
+        }
+
+        serializer = RegisterSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('password', serializer.errors)
+
     def test_email_must_be_unique(self):
         """Test : email must be unique"""
         User.objects.create_user(

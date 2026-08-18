@@ -109,3 +109,27 @@ class SnippetModelTest(TestCase):
         )
         with self.assertRaises(ValidationError):
             snippet.full_clean()
+
+    def test_snippet_defaults_to_unpinned(self):
+        """Test : a snippet is created unpinned"""
+        snippet = Snippet.objects.create(
+            title='Fresh Snippet',
+            content='print("Hello DevNote")',
+            language='python',
+            project=self.project
+        )
+
+        self.assertFalse(snippet.is_pinned)
+
+    def test_snippet_can_be_pinned(self):
+        """Test : the pin flag is stored"""
+        snippet = Snippet.objects.create(
+            title='Pinned Snippet',
+            content='print("Hello DevNote")',
+            language='python',
+            project=self.project,
+            is_pinned=True
+        )
+        snippet.refresh_from_db()
+
+        self.assertTrue(snippet.is_pinned)

@@ -1,37 +1,81 @@
-import api from './api.js';
+import api from "./api.js";
 
+let csrfPromise = null;
 
-export const login = async (email, password) => {
-    const response = await api.post('/auth/login/', {
-        email,
-        password
+export const ensureCsrfCookie = async () => {
+  if (!csrfPromise) {
+    csrfPromise = api.get("/auth/csrf/").catch((error) => {
+      csrfPromise = null;
+      throw error;
     });
-    return response.data;
+  }
+
+  await csrfPromise;
 };
 
-export const register = async (email, password, password2, firstName, lastName, username = null) => {
-    const data = {
-        email,
-        password,
-        password2,
-        first_name: firstName,
-        last_name: lastName
-    };
+export const login = async (email, password) => {
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/login/", {
+    email,
+    password,
+  });
+  return response.data;
+};
 
-    if (username) {
-        data.username = username;
-    }
+export const register = async (
+  email,
+  password,
+  password2,
+  firstName,
+  lastName,
+  username = null,
+) => {
+  const data = {
+    email,
+    password,
+    password2,
+    first_name: firstName,
+    last_name: lastName,
+  };
 
-    const response = await api.post('/auth/register/', data);
-    return response.data;
+  if (username) {
+    data.username = username;
+  }
+
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/register/", data);
+  return response.data;
 };
 
 export const logout = async () => {
-    const response = await api.post('/auth/logout/');
-    return response.data;
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/logout/");
+  return response.data;
 };
 
 export const getCurrentUser = async () => {
-    const response = await api.get('/auth/me/');
-    return response.data;
+  const response = await api.get("/auth/me/");
+  return response.data;
+};
+
+export const changePassword = async (
+  currentPassword,
+  newPassword,
+  newPassword2,
+) => {
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/password/", {
+    current_password: currentPassword,
+    new_password: newPassword,
+    new_password2: newPassword2,
+  });
+  return response.data;
+};
+
+export const deleteAccount = async (currentPassword) => {
+  await ensureCsrfCookie();
+  const response = await api.post("/auth/account/delete/", {
+    current_password: currentPassword,
+  });
+  return response.data;
 };

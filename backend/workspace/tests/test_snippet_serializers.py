@@ -183,3 +183,39 @@ class SnippetSerializerTestCase(TestCase):
         self.assertEqual(snippet.title, 'Shared Title')
         self.assertEqual(Snippet.objects.count(), 2)
         self.assertEqual(snippet.project, project2)
+
+    def test_is_pinned_defaults_to_false(self):
+        """Test : a snippet serialized without is_pinned comes out unpinned"""
+        data = {
+            'title': 'Test Snippet',
+            'content': 'print("Hello DevNote")',
+            'language': 'python',
+        }
+        serializer = self.get_serializer(data=data)
+        self.assertTrue(serializer.is_valid())
+        snippet = serializer.save(project=self.project)
+
+        self.assertFalse(snippet.is_pinned)
+        self.assertFalse(serializer.data['is_pinned'])
+
+    def test_is_pinned_is_writable(self):
+        """Test : is_pinned can be set through the serializer"""
+        snippet = Snippet.objects.create(
+            title='Test Snippet',
+            content='print("Hello DevNote")',
+            language='python',
+            project=self.project
+        )
+        serializer = self.get_serializer(
+            data={
+                'title': snippet.title,
+                'content': snippet.content,
+                'is_pinned': True,
+            },
+            instance=snippet
+        )
+
+        self.assertTrue(serializer.is_valid(raise_exception=False))
+        updated = serializer.save()
+
+        self.assertTrue(updated.is_pinned)

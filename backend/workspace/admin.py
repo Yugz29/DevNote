@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Project, Note, Snippet, TODO
+from .models import Project, Folder, Note, Snippet, TODO
 
 
 @admin.register(Project)
@@ -49,6 +49,40 @@ class ProjectAdmin(admin.ModelAdmin):
     items_summary.short_description = 'Project Summary'
 
 
+@admin.register(Folder)
+class FolderAdmin(admin.ModelAdmin):
+    """
+    Admin interface for Folder model
+    - Display with project and parent context
+    - Search by name
+    - Filter by project and dates
+    """
+    list_display = ('id', 'name', 'project_link', 'parent', 'contents_count', 'created_at', 'updated_at')
+    search_fields = ('name', 'project__title')
+    list_filter = ('created_at', 'updated_at', 'project')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    raw_id_fields = ('project', 'parent')
+
+    def project_link(self, obj):
+        """Display project as clickable link"""
+        return format_html(
+            '<a href="/admin/workspace/project/{}/change/">{}</a>',
+            obj.project.id,
+            obj.project.title
+        )
+    project_link.short_description = 'Project'
+
+    def contents_count(self, obj):
+        """Display what a recursive delete would remove"""
+        counts = obj.cascade_counts()
+
+        return format_html(
+            '<span title="Nested folders: {} | Notes: {}">{} folder(s), {} note(s)</span>',
+            counts['folders'], counts['notes'], counts['folders'], counts['notes']
+        )
+    contents_count.short_description = 'Contents'
+
+
 @admin.register(Note)
 class NoteAdmin(admin.ModelAdmin):
     """
@@ -57,11 +91,11 @@ class NoteAdmin(admin.ModelAdmin):
     - Search in title and content
     - Filter by project and dates
     """
-    list_display = ('id', 'title', 'project_link', 'preview', 'created_at', 'updated_at')
+    list_display = ('id', 'title', 'project_link', 'folder', 'preview', 'created_at', 'updated_at')
     search_fields = ('title', 'content', 'project__title')
-    list_filter = ('created_at', 'updated_at', 'project')
+    list_filter = ('created_at', 'updated_at', 'project', 'folder')
     readonly_fields = ('id', 'created_at', 'updated_at', 'content_length')
-    raw_id_fields = ('project',)
+    raw_id_fields = ('project', 'folder')
     
     def project_link(self, obj):
         """Display project as clickable link"""

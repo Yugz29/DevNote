@@ -108,3 +108,29 @@ class NoteSerializerTest(TestCase):
         self.assertNotEqual(note.id, 666)
         self.assertNotEqual(str(note.created_at), fake_date)
         self.assertNotEqual(str(note.updated_at), fake_date)
+
+    def test_is_pinned_defaults_to_false(self):
+        """Test that a note serialized without is_pinned comes out unpinned"""
+        data = {
+            'title': 'Test Note',
+            'content': 'This is a test note.',
+        }
+        serializer = self.get_serializer(data=data)
+        self.assertTrue(serializer.is_valid())
+        note = serializer.save(project=self.project)
+
+        self.assertFalse(note.is_pinned)
+        self.assertFalse(serializer.data['is_pinned'])
+
+    def test_is_pinned_is_writable(self):
+        """Test that is_pinned can be set through the serializer"""
+        note = Note.objects.create(title='Test Note', project=self.project)
+        serializer = self.get_serializer(
+            data={'title': note.title, 'is_pinned': True},
+            instance=note
+        )
+
+        self.assertTrue(serializer.is_valid(raise_exception=False))
+        updated = serializer.save()
+
+        self.assertTrue(updated.is_pinned)

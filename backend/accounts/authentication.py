@@ -4,8 +4,10 @@ Supports both cookie-based and header-based authentication
 """
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import InvalidToken, AuthenticationFailed
+from rest_framework_simplejwt.exceptions import InvalidToken
 from django.conf import settings
+from django.middleware.csrf import CsrfViewMiddleware
+from rest_framework import exceptions
 import logging
 
 logger = logging.getLogger('accounts')
@@ -40,8 +42,10 @@ class CookieJWTAuthentication(JWTAuthentication):
         # Try to get the token from cookies first
         cookie_name = settings.SIMPLE_JWT.get('AUTH_COOKIE', 'access_token')
         raw_token = request.COOKIES.get(cookie_name)
+        token_from_cookie = False
         
         if raw_token:
+            token_from_cookie = True
             logger.debug(f"Found token in cookie: {cookie_name}")
         else:
             # Fallback to Authorization header
@@ -63,13 +67,28 @@ class CookieJWTAuthentication(JWTAuthentication):
             validated_token = self.get_validated_token(raw_token)
             user = self.get_user(validated_token)
             
-            logger.debug(f"Successfully authenticated user: {user.email}")
-            return (user, validated_token)
-            
         except InvalidToken as e:
             logger.warning(f"Invalid token (will be ignored): {str(e)}")
             return None
         
         except Exception as e:
-            logger.error(f"Authentication error: {str(e)}")
+            logger.exception(f"Authentication error: {str(e)}")
             return None
+
+        if token_from_cookie and request.method not in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+            self.enforce_csrf(request)
+
+        logger.debug(f"Successfully authenticated user: {user.email}")
+        return (user, validated_token)
+
+    def enforce_csrf(self, request):
+        """
+        Enforce Django CSRF validation for unsafe cookie-authenticated requests.
+        """
+        check = CsrfViewMiddleware(lambda req: None)
+        check.process_request(request)
+        reason = check.process_view(request, None, (), {})
+
+        if reason:
+            logger.warning("CSRF validation failed for cookie-authenticated request")
+            raise exceptions.PermissionDenied('CSRF Failed: CSRF token missing or incorrect.')

@@ -4,19 +4,42 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from django.contrib.auth import authenticate, get_user_model
 from .models import User
 
 UserModel = get_user_model()
-from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
+from .serializers import (
+    UserSerializer,
+    RegisterSerializer,
+    LoginSerializer,
+    ChangePasswordSerializer,
+    DeleteAccountSerializer,
+)
 from .cookie_utils import set_auth_cookies, delete_auth_cookies, get_token_from_cookie
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
 import logging
 
 logger = logging.getLogger('accounts')
 
+# ============================================
+# ENDPOINT : CSRF Token
+# ============================================
+class CSRFTokenView(APIView):
+    """
+    Set the CSRF cookie for browser clients
+    
+    This endpoint is used by the frontend before authenticated cookie-based
+    requests so Axios can send the CSRF token in the X-CSRFToken header
+    """
+    permission_classes = [AllowAny]
+
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request):
+        return Response({'message': 'CSRF cookie set'})
 
 # ============================================
 # ENDPOINT : Register
@@ -177,18 +200,16 @@ class RefreshView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            # Valider et blacklister l'ancien refresh token
             old_token = RefreshToken(refresh_token_str)
-            old_token.blacklist()  # ✅ Invalide l'ancien token (empêche la réutilisation)
 
-            # Récupérer l'utilisateur depuis le payload du token
             user_id = old_token.payload.get('user_id')
             user = UserModel.objects.get(id=user_id)
 
-            # Générer une nouvelle paire de tokens propre
             new_token = RefreshToken.for_user(user)
             new_access_token = str(new_token.access_token)
             new_refresh_token = str(new_token)
+
+            old_token.blacklist()
 
             response = Response(
                 {'message': 'Token refreshed successfully'},
@@ -217,3 +238,100 @@ class RefreshView(APIView):
                 {'error': 'Token refresh failed'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+# ============================================
+# ENDPOINT : Change Password
+# ============================================
+@method_decorator(ratelimit(key='user_or_ip', rate='5/m', method='POST'), name='post')
+class ChangePasswordView(APIView):
+    """
+    POST /api/auth/password/
+    Replaces the password of the logged-in user
+
+    Every refresh token issued before the change is blacklisted, then a
+    fresh pair is set on this response so the current browser stays signed
+    in while the other ones are cut off at their next refresh
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request, 'limited', False):
+            return Response(
+                {'error': 'Too many password change attempts. Please try again later.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if not serializer.is_valid():
+            logger.warning(
+                f"Failed password change for user '{request.user.username}': {serializer.errors}"
+            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.save()
+
+        for outstanding in OutstandingToken.objects.filter(user=user):
+            BlacklistedToken.objects.get_or_create(token=outstanding)
+
+        refresh = RefreshToken.for_user(user)
+
+        response = Response(
+            {'message': 'Password updated successfully'},
+            status=status.HTTP_200_OK
+        )
+
+        set_auth_cookies(response, str(refresh.access_token), str(refresh))
+        logger.info(f"Password changed for user '{user.username}'")
+
+        return response
+
+
+# ============================================
+# ENDPOINT : Delete Account
+# ============================================
+@method_decorator(ratelimit(key='user_or_ip', rate='5/m', method='POST'), name='post')
+class DeleteAccountView(APIView):
+    """
+    POST /api/auth/account/delete/
+    Deletes the logged-in user and everything cascading from them
+
+    The current password is required in the request body, which is why
+    this is a POST: a DELETE carrying content is left undefined by
+    RFC 9110 and intermediaries are free to drop it in transit
+
+    No token needs blacklisting: authentication resolves the user from
+    the database, so every token issued to the account dies with the row
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if getattr(request, 'limited', False):
+            return Response(
+                {'error': 'Too many deletion attempts. Please try again later.'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS
+            )
+
+        serializer = DeleteAccountSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if not serializer.is_valid():
+            logger.warning(
+                f"Refused account deletion for user '{request.user.username}': {serializer.errors}"
+            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        logger.info(f"Deleting account '{user.username}' ({user.email})")
+        user.delete()
+
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        delete_auth_cookies(response)
+
+        return response

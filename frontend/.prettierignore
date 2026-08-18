@@ -1,0 +1,6 @@
+dist
+node_modules
+.vite
+package-lock.json
+
+src/styles
