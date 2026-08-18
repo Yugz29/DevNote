@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-export default function DnSelect({ value, options, onChange, usePortal }) {
+export default function DnSelect({
+  value,
+  options,
+  onChange,
+  usePortal,
+  label,
+  triggerClassName = "",
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState(null);
 
@@ -42,12 +49,27 @@ export default function DnSelect({ value, options, onChange, usePortal }) {
     return () => window.removeEventListener("scroll", onScroll, true);
   }, [isOpen, usePortal, updatePosition]);
 
+  const close = useCallback(() => {
+    setIsOpen(false);
+    buttonRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = (event) => {
+    if (event.key !== "Escape" || !isOpen) return;
+
+    event.stopPropagation();
+    close();
+  };
+
   const selectedOption = options.find((option) => option.value === value);
   const isPortalOpen = Boolean(usePortal && isOpen && position);
 
   const dropdown = (
     <div
       ref={dropdownRef}
+      role="listbox"
+      aria-label={label}
+      onKeyDown={handleKeyDown}
       className={`dn-select-dropdown${isOpen ? " open" : ""}`}
       style={
         isPortalOpen
@@ -66,9 +88,11 @@ export default function DnSelect({ value, options, onChange, usePortal }) {
           className={`dn-select-option ${option.value === value ? "active" : ""}`}
           data-value={option.value}
           type="button"
+          role="option"
+          aria-selected={option.value === value}
           onClick={() => {
             onChange(option.value);
-            setIsOpen(false);
+            close();
           }}
         >
           {option.label}
@@ -78,11 +102,15 @@ export default function DnSelect({ value, options, onChange, usePortal }) {
   );
 
   return (
-    <div className="dn-select-wrap" ref={wrapRef}>
+    <div className="dn-select-wrap" ref={wrapRef} onKeyDown={handleKeyDown}>
       <button
-        className="dn-select-btn"
+        className={`dn-select-btn${triggerClassName ? ` ${triggerClassName}` : ""}`}
         type="button"
         ref={buttonRef}
+        title={label}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         onClick={() => {
           if (!isOpen && usePortal) updatePosition();
           setIsOpen((current) => !current);

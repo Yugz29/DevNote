@@ -1,10 +1,16 @@
+import DnSelect from "./DnSelect.jsx";
 import HighlightText from "./HighlightText.jsx";
-import { PRIORITY_BADGES, STATUS_BADGES } from "../lib/todos.js";
+import {
+  PRIORITY_BADGES,
+  STATUS_BADGES,
+  STATUS_OPTIONS,
+} from "../lib/todos.js";
 
 export default function TodoCard({
   todo,
   searchQuery,
-  onToggleStatus,
+  usePortal,
+  onStatusChange,
   onEdit,
   onDelete,
 }) {
@@ -17,15 +23,14 @@ export default function TodoCard({
       data-id={todo.id}
     >
       <div className="todo-card-header">
-        <button
-          className={`todo-status-btn badge ${status.class}`}
-          data-id={todo.id}
-          data-status={todo.status}
-          title="Click to change status"
-          onClick={onToggleStatus}
-        >
-          {status.label}
-        </button>
+        <DnSelect
+          value={todo.status}
+          options={STATUS_OPTIONS}
+          onChange={onStatusChange}
+          usePortal={usePortal}
+          label={`Status: ${status.label}`}
+          triggerClassName={`todo-status-btn badge ${status.class}`}
+        />
 
         <span className="todo-title">
           <HighlightText text={todo.title} query={searchQuery} />

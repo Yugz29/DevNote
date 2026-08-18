@@ -5,7 +5,6 @@ import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
-  NEXT_STATUS,
   PRIORITY_ORDER,
   STATUSES,
   STATUS_BADGES,
@@ -99,8 +98,8 @@ export default function TodosPanel({
     setCollapsedGroups(next);
   };
 
-  const handleToggleStatus = async (todo) => {
-    const newStatus = NEXT_STATUS[todo.status];
+  const handleStatusChange = async (todo, newStatus) => {
+    if (newStatus === todo.status) return;
 
     try {
       await updateTodo(todo.id, undefined, undefined, newStatus, undefined);
@@ -198,7 +197,8 @@ export default function TodosPanel({
         key={todo.id}
         todo={todo}
         searchQuery={searchQuery}
-        onToggleStatus={() => handleToggleStatus(todo)}
+        usePortal={view === "kanban"}
+        onStatusChange={(status) => handleStatusChange(todo, status)}
         onEdit={() => {
           if (editingId === null) setEditingId(todo.id);
         }}

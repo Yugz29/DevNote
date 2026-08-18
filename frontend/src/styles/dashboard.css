@@ -2333,6 +2333,10 @@
     gap: 10px;
 }
 
+.todo-card-header .dn-select-wrap {
+    flex-shrink: 0;
+}
+
 .todo-status-btn {
     cursor: pointer;
     flex-shrink: 0;
@@ -2341,6 +2345,11 @@
 
 .todo-status-btn:hover {
     opacity: 0.8;
+}
+
+.todo-status-btn .dn-select-chevron {
+    font-size: 10px;
+    margin-right: -2px;
 }
 
 .todo-title {

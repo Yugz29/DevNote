@@ -16,12 +16,6 @@ export const STATUS_LABELS = {
   done: "Done",
 };
 
-export const NEXT_STATUS = {
-  pending: "in_progress",
-  in_progress: "done",
-  done: "pending",
-};
-
 export const STATUSES = ["pending", "in_progress", "done"];
 
 export const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
