@@ -319,7 +319,8 @@
 
 /* Active row marker: a rail flush with the left edge of the row */
 .project-item.active::before,
-.pinned-item.active::before {
+.pinned-item.active::before,
+.settings-nav-item.active::before {
     content: "";
     position: absolute;
     left: 0;
@@ -3716,54 +3717,73 @@ mark.search-highlight {
 .settings-nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 12px 10px;
+    padding: 6px 8px;
     flex: 1;
     overflow-y: auto;
 }
 
 .settings-nav-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
     width: 100%;
-    padding: 9px 12px;
+    padding: 6px 10px;
     background: none;
-    border: 1px solid transparent;
-    border-radius: 8px;
+    border: none;
+    border-radius: 7px;
     font-family: inherit;
-    font-size: 14px;
+    font-size: 12.5px;
     text-align: left;
-    color: var(--dash-text-muted);
+    color: var(--dash-text);
     cursor: pointer;
-    transition: color 0.15s, background 0.15s, border-color 0.15s;
+    transition: color 0.15s, background 0.15s;
 }
 
 .settings-nav-item i {
-    font-size: 19px;
+    font-size: 16px;
     line-height: 1;
+    color: var(--dash-text-muted);
 }
 
 .settings-nav-item:hover {
-    color: var(--dash-text);
-    background: var(--dash-glass-raised);
+    background: var(--dash-accent-tint);
 }
 
 .settings-nav-item.active {
-    color: var(--dash-text);
-    background: var(--dash-glass-raised-hover);
-    border-color: var(--dash-glass-border);
+    color: var(--accent-primary);
+    background: var(--dash-accent-tint-strong);
 }
 
-.settings-nav-item.is-danger {
-    color: var(--danger);
-    opacity: 0.75;
+.settings-nav-item.active i {
+    color: var(--accent-primary);
 }
 
-.settings-nav-item.is-danger:hover,
-.settings-nav-item.is-danger.active {
+/* Danger zone keeps its own semantic colour rather than the blue language */
+.settings-nav-item.is-danger,
+.settings-nav-item.is-danger i {
     color: var(--danger);
+    opacity: 0.8;
+}
+
+.settings-nav-item.is-danger:hover {
+    background: var(--dash-danger-tint);
     opacity: 1;
+}
+
+.settings-nav-item.is-danger.active,
+.settings-nav-item.is-danger.active i {
+    color: var(--danger);
+    background: none;
+    opacity: 1;
+}
+
+.settings-nav-item.is-danger.active {
+    background: var(--dash-danger-tint-strong);
+}
+
+.settings-nav-item.is-danger.active::before {
+    background: var(--danger);
 }
 
 .settings-back-link {
