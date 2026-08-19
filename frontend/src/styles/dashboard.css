@@ -2436,8 +2436,7 @@
     transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
-.todo-list-tab.is-open,
-.todo-list-tab.is-add {
+.todo-list-tab.is-open {
     padding: 6px 12px;
     cursor: pointer;
 }
@@ -2483,11 +2482,6 @@
 
 .todo-list-tab .card-menu-trigger i {
     font-size: 15px;
-}
-
-.todo-list-tab.is-add i {
-    font-size: 14px;
-    line-height: 1;
 }
 
 .todo-list-tab.is-editing {

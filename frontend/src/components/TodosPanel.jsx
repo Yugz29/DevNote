@@ -92,6 +92,7 @@ export default function TodosPanel({
     readCollapsedGroups(projectId),
   );
   const [lists, setLists] = useState([]);
+  const [isCreatingList, setIsCreatingList] = useState(false);
   const [activeListId, setActiveListId] = useState(() =>
     searchItemId ? null : readActiveList(projectId),
   );
@@ -302,6 +303,7 @@ export default function TodosPanel({
   const handleCreateList = async (name) => {
     try {
       const created = await createTodoList(projectId, name);
+      setIsCreatingList(false);
       await loadLists();
       selectList(created.id);
     } catch (createError) {
@@ -455,17 +457,16 @@ export default function TodosPanel({
 
   return (
     <div id="todos-list" className="todos-list" ref={containerRef}>
-      <TodoListTabs
-        lists={lists}
-        counts={counts}
-        activeListId={activeListId}
-        onSelect={selectList}
-        onCreate={handleCreateList}
-        onRename={handleRenameList}
-        onDelete={handleDeleteList}
-      />
-
       <div className="gallery-toolbar">
+        <button
+          type="button"
+          className="gallery-action"
+          onClick={() => setIsCreatingList(true)}
+        >
+          <i className="ph-light ph-list-plus" />
+          <span>New list</span>
+        </button>
+
         <button
           type="button"
           className="gallery-action"
@@ -475,6 +476,21 @@ export default function TodosPanel({
           <span>New todo</span>
         </button>
       </div>
+
+      {/* Nothing to filter by until a list exists: "All" alone is noise. */}
+      {(lists.length > 0 || isCreatingList) && (
+        <TodoListTabs
+          lists={lists}
+          counts={counts}
+          activeListId={activeListId}
+          isCreating={isCreatingList}
+          onSelect={selectList}
+          onCreate={handleCreateList}
+          onCancelCreate={() => setIsCreatingList(false)}
+          onRename={handleRenameList}
+          onDelete={handleDeleteList}
+        />
+      )}
 
       {isLoading && <p className="loading">Loading...</p>}
 

@@ -5,8 +5,10 @@ export default function TodoListTabs({
   lists,
   counts,
   activeListId,
+  isCreating,
   onSelect,
   onCreate,
+  onCancelCreate,
   onRename,
   onDelete,
 }) {
@@ -15,35 +17,36 @@ export default function TodoListTabs({
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (!editingId) return;
+    if (!editingId && !isCreating) return;
 
     inputRef.current?.focus();
     inputRef.current?.select();
-  }, [editingId]);
+  }, [editingId, isCreating]);
 
   const cancel = () => {
     setEditingId(null);
     setDraft("");
+
+    if (isCreating) onCancelCreate();
   };
 
   const commit = () => {
-    if (!editingId) return;
-
     const name = draft.trim();
     const current = lists.find((list) => list.id === editingId);
 
-    if (!name || name === current?.name) {
+    if (!name || (current && name === current.name)) {
       cancel();
       return;
     }
 
-    if (editingId === "new") {
+    if (isCreating && !editingId) {
       onCreate(name);
     } else if (current) {
       onRename(current, name);
     }
 
-    cancel();
+    setEditingId(null);
+    setDraft("");
   };
 
   const handleKeyDown = (event) => {
@@ -129,19 +132,7 @@ export default function TodoListTabs({
         ),
       )}
 
-      {editingId === "new" && renderInput("New list...")}
-
-      <button
-        type="button"
-        className="todo-list-tab is-add"
-        onClick={() => {
-          setDraft("");
-          setEditingId("new");
-        }}
-      >
-        <i className="ph-light ph-plus" />
-        <span>New list</span>
-      </button>
+      {isCreating && !editingId && renderInput("New list...")}
     </div>
   );
 }
