@@ -1,10 +1,13 @@
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from workspace.models import Note, Project
-from workspace.serializers import NoteSerializer
 from uuid import UUID
 
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from workspace.models import Note, Project
+from workspace.serializers import NoteSerializer
+
 User = get_user_model()
+
 
 class NoteModelTest(TestCase):
     """Tests for the Note model"""
@@ -12,36 +15,30 @@ class NoteModelTest(TestCase):
     def setUp(self):
         """Preparation: create a test user and a project"""
         self.user = User.objects.create_user(
-            username='notetestuser',
-            email='user@test.com',
-            password='TestPass123!'
+            username="notetestuser", email="user@test.com", password="TestPass123!"
         )
         self.project = Project.objects.create(
-            title='Note Test Project',
-            description='A project for note testing.',
-            user=self.user
+            title="Note Test Project",
+            description="A project for note testing.",
+            user=self.user,
         )
 
     def test_create_note(self):
         """Test creating a note"""
-        note = Note.objects.create(
-            title='Test Note',
-            content='',
-            project=self.project
-        )
+        note = Note.objects.create(title="Test Note", content="", project=self.project)
 
-        self.assertEqual(note.title, 'Test Note')
+        self.assertEqual(note.title, "Test Note")
         self.assertEqual(note.project, self.project)
         self.assertIsNotNone(note.created_at)
         self.assertIsInstance(note.id, UUID)
-        self.assertEqual(note.content, '')
+        self.assertEqual(note.content, "")
 
     def test_delete_note_cascade(self):
         """Test that deleting a project cascades to delete its notes"""
         Note.objects.create(
-            title='Note to be deleted',
-            content='This note will be deleted when the project is deleted.',
-            project=self.project
+            title="Note to be deleted",
+            content="This note will be deleted when the project is deleted.",
+            project=self.project,
         )
 
         self.assertEqual(Note.objects.count(), 1)
@@ -50,8 +47,8 @@ class NoteModelTest(TestCase):
 
     def test_same_note_title(self):
         """Test that notes with the same title can exist under the same project"""
-        note1 = Note.objects.create(title='First Note', project=self.project)
-        note2 = Note.objects.create(title='First Note', project=self.project)
+        note1 = Note.objects.create(title="First Note", project=self.project)
+        note2 = Note.objects.create(title="First Note", project=self.project)
 
         notes = self.project.notes.all()
         self.assertEqual(notes.count(), 2)
@@ -60,33 +57,31 @@ class NoteModelTest(TestCase):
         self.assertNotEqual(note1.id, note2.id)
 
     def test_empty_note_title(self):
-        """Test that creating a note with a whitespace-only title is rejected by the serializer"""
+        """Test that a note with a whitespace-only title is rejected by the
+        serializer"""
         from types import SimpleNamespace
+
         mock_request = SimpleNamespace(user=self.user)
         serializer = NoteSerializer(
-            data={'title': '   ', 'content': ''},
-            context={'request': mock_request}
+            data={"title": "   ", "content": ""}, context={"request": mock_request}
         )
         self.assertFalse(serializer.is_valid())
-        self.assertIn('title', serializer.errors)
+        self.assertIn("title", serializer.errors)
 
     def test_str_method(self):
         """Test the __str__ method of the Note model"""
-        note = Note.objects.create(
-            title='String Method Note',
-            project=self.project
-        )
-        self.assertEqual(str(note), 'String Method Note')
+        note = Note.objects.create(title="String Method Note", project=self.project)
+        self.assertEqual(str(note), "String Method Note")
 
     def test_note_is_not_pinned_by_default(self):
         """Test that a new note starts unpinned"""
-        note = Note.objects.create(title='Fresh Note', project=self.project)
+        note = Note.objects.create(title="Fresh Note", project=self.project)
 
         self.assertFalse(note.is_pinned)
 
     def test_pin_note(self):
         """Test that a note can be pinned and unpinned"""
-        note = Note.objects.create(title='Pinnable Note', project=self.project)
+        note = Note.objects.create(title="Pinnable Note", project=self.project)
 
         note.is_pinned = True
         note.save()
