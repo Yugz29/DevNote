@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useClickOutside } from "../hooks/useClickOutside.js";
+import { useOrder } from "../hooks/useOrder.js";
+import { PROJECTS_ORDER_KEY } from "../lib/pinnedSections.js";
 
 const SORT_OPTIONS = [
   { value: "created_desc", label: "Newest first" },
@@ -17,12 +19,18 @@ const SORT_ICONS = {
   updated_desc: "ph-clock-clockwise",
 };
 
+const EMPTY_LIST = [];
+
 export default function ProjectSortDropdown({ sort, onSortChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapRef = useRef(null);
 
   const close = useCallback(() => setIsOpen(false), []);
   useClickOutside(wrapRef, close, isOpen);
+
+  /* Reads the same key the list writes to, so the entry appears as soon as
+     something has been dragged and disappears once the order is cleared. */
+  const { isCustom, reset } = useOrder(PROJECTS_ORDER_KEY, EMPTY_LIST);
 
   return (
     <div className="project-sort-wrap" ref={wrapRef}>
@@ -42,7 +50,7 @@ export default function ProjectSortDropdown({ sort, onSortChange }) {
         {SORT_OPTIONS.map((option) => (
           <button
             key={option.value}
-            className={`sort-option${option.value === sort ? " active" : ""}`}
+            className={`sort-option${!isCustom && option.value === sort ? " active" : ""}`}
             onClick={() => {
               onSortChange(option.value);
               setIsOpen(false);
@@ -51,6 +59,19 @@ export default function ProjectSortDropdown({ sort, onSortChange }) {
             {option.label}
           </button>
         ))}
+
+        {isCustom && (
+          <button
+            className="sort-option is-reset"
+            onClick={() => {
+              reset();
+              setIsOpen(false);
+            }}
+          >
+            <i className="ph-light ph-arrow-counter-clockwise" />
+            Reset custom order
+          </button>
+        )}
       </div>
     </div>
   );

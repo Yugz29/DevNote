@@ -84,6 +84,7 @@ export default function Sidebar({
 
       {isProjectContext ? (
         <SidebarPinned
+          projectId={project.id}
           documents={pinned.documents}
           snippets={pinned.snippets}
           todos={pinned.todos}

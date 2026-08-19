@@ -352,17 +352,22 @@
 
 .project-item-actions {
     display: flex;
+    align-items: center;
+    gap: 2px;
     margin-right: -4px;
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
 }
 
 .project-item:hover .project-item-actions,
+.project-item-actions:focus-within,
 .project-item-actions:has(.card-menu-trigger.open) {
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
+}
+
+.project-item.is-dragging {
+    opacity: 0.4;
 }
 
 .project-item-actions .card-menu-trigger {
@@ -391,12 +396,20 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    width: 100%;
     padding: 3px 8px 3px 4px;
     margin-bottom: 2px;
+    border-radius: 6px;
+}
+
+.pinned-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
     background: none;
     border: none;
-    border-radius: 6px;
     font-family: inherit;
     font-size: 10px;
     font-weight: 500;
@@ -404,11 +417,14 @@
     text-transform: uppercase;
     color: var(--dash-text-dim);
     cursor: pointer;
-    transition: color 0.15s, background 0.15s;
+    transition: color 0.15s;
 }
 
 .pinned-group-header:hover {
     background: var(--dash-glass);
+}
+
+.pinned-group-header:hover .pinned-group-toggle {
     color: var(--dash-text-muted);
 }
 
@@ -423,7 +439,6 @@
 }
 
 .pinned-group-count {
-    margin-left: auto;
     font-weight: 400;
     letter-spacing: 0;
     text-transform: none;
@@ -580,18 +595,83 @@
     color: var(--danger);
 }
 
-.pinned-item-actions {
+.pinned-item-actions,
+.pinned-group-actions {
     display: flex;
+    align-items: center;
+    gap: 2px;
     opacity: 0;
-    visibility: hidden;
     pointer-events: none;
 }
 
 .pinned-item:hover .pinned-item-actions,
-.pinned-item-actions:has(.card-menu-trigger.open) {
+.pinned-item-actions:focus-within,
+.pinned-item-actions:has(.card-menu-trigger.open),
+.pinned-group-header:hover .pinned-group-actions,
+.pinned-group-actions:focus-within,
+.pinned-group-actions:has(.card-menu-trigger.open) {
     opacity: 1;
-    visibility: visible;
     pointer-events: auto;
+}
+
+.pinned-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 22px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--dash-text-faint);
+    font-size: 15px;
+    line-height: 1;
+    cursor: grab;
+    touch-action: none;
+    transition: color 0.15s;
+}
+
+.pinned-drag-handle:hover {
+    color: var(--dash-text);
+}
+
+.pinned-drag-handle:active {
+    cursor: grabbing;
+}
+
+.pinned-sortable.is-dragging,
+.pinned-group.is-dragging {
+    opacity: 0.4;
+}
+
+/* The preview is portaled to the body: the sidebar's backdrop-filter would
+   otherwise anchor it and clip it. */
+.pinned-drag-preview {
+    display: flex;
+    align-items: center;
+    max-width: 236px;
+    padding: 6px 10px;
+    background: var(--dash-popover-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--dash-accent-border);
+    border-radius: 7px;
+    box-shadow: 0 8px 24px var(--dash-shadow);
+    font-size: 12.5px;
+    color: var(--dash-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: grabbing;
+}
+
+.pinned-drag-preview.is-section {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-text-muted);
 }
 
 .pinned-item-actions .card-menu-trigger {
@@ -725,6 +805,16 @@
 .sort-option:hover {
     background: var(--dash-glass-raised);
     color: var(--dash-text);
+}
+
+.sort-option.is-reset {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 9px;
+    border-top: 1px solid var(--dash-glass-border-subtle);
+    border-radius: 0 0 5px 5px;
 }
 
 .sort-option.active {
