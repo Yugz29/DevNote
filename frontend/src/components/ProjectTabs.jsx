@@ -35,6 +35,7 @@ export default function ProjectTabs({
   openTarget,
   contentVersion,
   onPinnedChanged,
+  onActiveItemChange,
 }) {
   const tabContentRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -196,6 +197,7 @@ export default function ProjectTabs({
               openTarget={openTarget?.tab === "documents" ? openTarget : null}
               contentVersion={contentVersion}
               onPinnedChanged={onPinnedChanged}
+              onActiveItemChange={onActiveItemChange}
               onSortableChange={handleSortableChange}
             />
           )}
@@ -217,6 +219,7 @@ export default function ProjectTabs({
               openTarget={openTarget?.tab === "snippets" ? openTarget : null}
               contentVersion={contentVersion}
               onPinnedChanged={onPinnedChanged}
+              onActiveItemChange={onActiveItemChange}
               onSortableChange={handleSortableChange}
             />
           )}

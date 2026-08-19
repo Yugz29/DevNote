@@ -6,6 +6,7 @@ export default function Sidebar({
   user,
   project,
   pinned,
+  activeItemId,
   projects,
   isLoading,
   hasError,
@@ -22,7 +23,6 @@ export default function Sidebar({
   onUnpinDocument,
   onUnpinSnippet,
   onOpenSearch,
-  onCloseSidebar,
   onOpenSettings,
   onLogout,
 }) {
@@ -31,17 +31,8 @@ export default function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
+      <div className={`sidebar-header${isProjectContext ? " is-context" : ""}`}>
         <div className="sidebar-header-left">
-          <button
-            id="sidebar-toggle"
-            className="btn-icon-sm"
-            title="Close sidebar"
-            onClick={onCloseSidebar}
-          >
-            <i className="ph-light ph-list" />
-          </button>
-
           {isProjectContext && (
             <button
               id="back-to-projects"
@@ -93,6 +84,7 @@ export default function Sidebar({
           documents={pinned.documents}
           snippets={pinned.snippets}
           isLoading={pinned.isLoading}
+          activeItemId={activeItemId}
           onOpenDocument={onOpenPinnedDocument}
           onOpenSnippet={onOpenPinnedSnippet}
           onUnpinDocument={onUnpinDocument}

@@ -18,6 +18,7 @@ import { useDialog } from "../contexts/DialogContext.js";
 import { useTheme } from "../contexts/ThemeContext.js";
 import { applyMermaidTheme } from "../lib/blocknote.js";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePinnedItems } from "../hooks/usePinnedItems.js";
 import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
 import { ensureCsrfCookie } from "../services/authService.js";
@@ -29,6 +30,8 @@ import {
 } from "../services/projectService.js";
 import { setSnippetPinned } from "../services/snippetService.js";
 import "../styles/dashboard.css";
+
+const MOBILE_QUERY = "(max-width: 768px)";
 
 const isMobile = () => window.innerWidth <= 768;
 
@@ -74,6 +77,7 @@ export default function Dashboard() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState(null);
   const [openTarget, setOpenTarget] = useState(null);
+  const [activeItemId, setActiveItemId] = useState(null);
   const [contentVersion, setContentVersion] = useState(0);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [headerSlot, setHeaderSlot] = useState(null);
@@ -88,6 +92,7 @@ export default function Dashboard() {
   );
 
   const { theme } = useTheme();
+  const isMobileView = useMediaQuery(MOBILE_QUERY);
   const pinned = usePinnedItems(currentProject?.id ?? null);
 
   useLayoutEffect(() => {
@@ -218,6 +223,10 @@ export default function Dashboard() {
 
   const handlePinnedChanged = useCallback(() => reloadPinned(), [reloadPinned]);
 
+  const handleActiveItemChange = useCallback((itemId) => {
+    setActiveItemId(itemId);
+  }, []);
+
   const unpin = useCallback(
     async (unpinItem, item, label) => {
       try {
@@ -299,6 +308,10 @@ export default function Dashboard() {
     }
   };
 
+  const isSidebarOpen = isMobileView ? isSidebarVisible : !isSidebarHidden;
+
+  const toggleSidebar = () => (isSidebarOpen ? closeSidebar() : openSidebar());
+
   const handleLogout = async () => {
     await signOut();
   };
@@ -327,13 +340,13 @@ export default function Dashboard() {
             activeSection={settingsSection}
             onSelectSection={setSettingsSection}
             onBack={closeSettings}
-            onCloseSidebar={closeSidebar}
           />
         ) : (
           <Sidebar
             user={user}
             project={currentProject}
             pinned={pinned}
+            activeItemId={activeItemId}
             projects={sortedProjects}
             isLoading={isLoadingProjects}
             hasError={hasProjectsError}
@@ -350,7 +363,6 @@ export default function Dashboard() {
             onUnpinDocument={unpinDocument}
             onUnpinSnippet={unpinSnippet}
             onOpenSearch={() => setIsSearchOpen(true)}
-            onCloseSidebar={closeSidebar}
             onOpenSettings={openSettings}
             onLogout={handleLogout}
           />
@@ -358,12 +370,15 @@ export default function Dashboard() {
 
         <main className="main-content">
           <button
-            id="sidebar-open"
-            className="btn-sidebar-open"
-            title="Open sidebar"
-            onClick={openSidebar}
+            id="sidebar-toggle"
+            className="btn-sidebar-toggle"
+            title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+            aria-expanded={isSidebarOpen}
+            onClick={toggleSidebar}
           >
-            <i className="ph-light ph-list" />
+            <i
+              className={`ph-light ${isSidebarOpen ? "ph-sidebar-simple" : "ph-list"}`}
+            />
           </button>
 
           <div
@@ -405,6 +420,7 @@ export default function Dashboard() {
                   openTarget={openTarget}
                   contentVersion={contentVersion}
                   onPinnedChanged={handlePinnedChanged}
+                  onActiveItemChange={handleActiveItemChange}
                 />
               </>
             )}

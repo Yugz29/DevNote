@@ -57,6 +57,7 @@ export default function SnippetsPanel({
   openTarget,
   contentVersion,
   onPinnedChanged,
+  onActiveItemChange,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
@@ -114,6 +115,12 @@ export default function SnippetsPanel({
       isStale = true;
     };
   }, [openTarget]);
+
+  useEffect(() => {
+    onActiveItemChange(viewingId);
+
+    return () => onActiveItemChange(null);
+  }, [viewingId, onActiveItemChange]);
 
   useEffect(() => {
     if (versionRef.current === contentVersion) return;

@@ -4,7 +4,6 @@ export default function SettingsSidebar({
   activeSection,
   onSelectSection,
   onBack,
-  onCloseSidebar,
 }) {
   return (
     <aside className="sidebar">
@@ -19,16 +18,6 @@ export default function SettingsSidebar({
             <i className="ph-light ph-arrow-left" />
           </button>
           <h2>Settings</h2>
-        </div>
-
-        <div className="sidebar-header-right">
-          <button
-            className="btn-icon-sm"
-            title="Close sidebar"
-            onClick={onCloseSidebar}
-          >
-            <i className="ph-light ph-list" />
-          </button>
         </div>
       </div>
 

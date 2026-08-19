@@ -59,7 +59,12 @@
   /* Dashboard — glass surfaces */
   --dash-glass-subtle: rgba(255, 255, 255, 0.5);
   --dash-glass-panel: rgba(255, 255, 255, 0.75);
+  --dash-sidebar-glass: rgba(255, 255, 255, 0.55);
+  --dash-sidebar-blur: 30px;
   --dash-glass: rgba(255, 255, 255, 0.68);
+  --dash-card-surface: rgba(255, 255, 255, 0.92);
+  --dash-card-surface-hover: #ffffff;
+  --dash-card-border: rgba(0, 0, 0, 0.09);
   --dash-glass-hover: rgba(255, 255, 255, 0.78);
   --dash-glass-raised: rgba(255, 255, 255, 0.85);
   --dash-glass-raised-hover: rgba(255, 255, 255, 0.92);

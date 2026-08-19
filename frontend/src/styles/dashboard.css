@@ -22,14 +22,17 @@
    ============================================================ */
 
 .layout {
+    --app-header-row: 32px;
+    --app-header-pad-y: 12px;
     display: flex;
     height: 100vh;
     color: var(--dash-text);
-    padding: 12px;
-    gap: 12px;
+    padding: 18px;
+    gap: 18px;
     background: var(--dash-ground);
     position: relative;
 }
+
 
 .layout > * {
     position: relative;
@@ -42,13 +45,13 @@
    ============================================================ */
 
 .sidebar {
-    width: 280px;
-    min-width: 280px;
-    background: var(--dash-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    width: 252px;
+    min-width: 252px;
+    background: var(--dash-sidebar-glass);
+    backdrop-filter: blur(var(--dash-sidebar-blur)) saturate(1.2);
+    -webkit-backdrop-filter: blur(var(--dash-sidebar-blur)) saturate(1.2);
     border: 1px solid var(--dash-glass-border);
-    border-radius: 12px;
+    border-radius: 14px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -67,46 +70,29 @@
     display: none;
 }
 
-/* Burger button — inside main-content, always accessible */
-.btn-sidebar-open {
+/* Sidebar toggle — lives in main-content, whatever the sidebar state */
+.btn-sidebar-toggle {
     position: absolute;
-    top: 27px;
+    top: var(--app-header-pad-y);
     left: 20px;
     z-index: 10;
+    height: var(--app-header-row);
     background: none;
     border: none;
     color: var(--dash-text-dim);
     cursor: pointer;
-    padding: 4px 6px;
+    padding: 0 6px;
     border-radius: 6px;
-    transition: color 0.15s, background 0.15s, opacity 0.2s;
+    transition: color 0.15s, background 0.15s;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Hidden by default on desktop when sidebar is open */
-    opacity: 0;
-    pointer-events: none;
 }
 
-.btn-sidebar-open i {
-    font-size: 22px;
-    line-height: 1;
-}
-
-.btn-sidebar-open:hover {
+.btn-sidebar-toggle:hover {
     color: var(--dash-text);
     background: var(--dash-glass-raised);
-}
-
-/* Desktop: show only when sidebar is collapsed */
-.layout.sidebar-hidden .btn-sidebar-open {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.layout.sidebar-hidden .project-header {
-    padding-left: 60px;
 }
 
 /* Mobile */
@@ -152,20 +138,13 @@
     }
 
     .main-content {
-        border-radius: 0;
         height: 100vh;
-        position: relative;
     }
 
-    /* Always show burger on mobile */
-    .btn-sidebar-open {
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .project-header {
-        padding: 16px;
-        padding-left: 52px; /* Make room for burger */
+    .project-header,
+    .settings-header {
+        padding: var(--app-header-pad-y) 16px;
+        padding-left: 52px; /* Make room for the sidebar toggle */
     }
 
     .welcome-screen {
@@ -178,7 +157,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    min-height: var(--app-header-row);
+    padding: var(--app-header-pad-y) 16px;
     border-bottom: 1px solid var(--dash-glass-border-subtle);
     gap: 8px;
 }
@@ -205,6 +185,26 @@
     font-weight: 400;
     letter-spacing: 0.01em;
     color: var(--dash-text-muted);
+}
+
+.sidebar-header.is-context .btn-icon-sm {
+    font-size: 13px;
+    padding: 4px;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.sidebar-header.is-context .btn-icon-sm i {
+    display: block;
+    line-height: 1;
+}
+
+.sidebar-header.is-context .sidebar-header-left {
+    gap: 2px;
+}
+
+.sidebar-header.is-context h2 {
+    margin-left: 4px;
 }
 
 .sidebar-header-right {
@@ -235,6 +235,10 @@
 .btn-logout i {
     font-size: 22px;
     line-height: 1;
+}
+
+.project-icon {
+    color: var(--accent-primary);
 }
 
 .project-icon i {
@@ -292,31 +296,53 @@
 }
 
 .project-item {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    margin-bottom: 4px;
-    background: var(--dash-glass);
-    border-radius: 6px;
+    gap: 11px;
+    padding: 10px 12px;
+    margin-bottom: 2px;
+    background: none;
+    border-radius: 9px;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 .project-item:hover {
-    background: var(--dash-glass-strong);
+    background: var(--dash-accent-tint);
 }
 
-.project-item.active {
-    background: var(--dash-accent-tint);
-    color: var(--dash-text);
-    border: 1px solid var(--dash-accent-border-soft);
+.project-item.active,
+.pinned-item.active {
+    background: var(--dash-accent-tint-strong);
+}
+
+/* Active row marker: a rail flush with the left edge of the row */
+.project-item.active::before,
+.pinned-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    background: var(--accent-primary);
+}
+
+.project-item.active::before {
+    top: 10px;
+    bottom: 10px;
+}
+
+.project-item.active .project-name {
+    color: var(--accent-primary);
 }
 
 .project-name {
     flex: 1;
     min-width: 0;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -351,22 +377,22 @@
 #pinned-list {
     flex: 1;
     overflow-y: auto;
-    padding: 10px;
+    padding: 6px 8px;
     min-height: 0;
     contain: layout;
 }
 
 .pinned-group + .pinned-group {
-    margin-top: 16px;
+    margin-top: 20px;
 }
 
 .pinned-group-header {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 6px;
-    margin-bottom: 6px;
-    font-size: 11px;
+    padding: 0 8px;
+    margin-bottom: 4px;
+    font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -387,14 +413,18 @@
     align-items: center;
     gap: 4px;
     padding: 0 6px 0 0;
-    margin-bottom: 2px;
-    background: var(--dash-glass);
-    border-radius: 6px;
+    background: none;
+    border-radius: 7px;
     transition: background 0.2s, box-shadow 0.2s;
 }
 
 .pinned-item:hover {
-    background: var(--dash-glass-strong);
+    background: var(--dash-accent-tint);
+}
+
+.pinned-item.active .pinned-item-title {
+    color: var(--accent-primary);
+    font-weight: 500;
 }
 
 .pinned-item.is-copied {
@@ -414,11 +444,11 @@
     transition: opacity 0.15s;
     flex: 1;
     min-width: 0;
-    padding: 9px 10px;
+    padding: 6px 10px;
     background: none;
     border: none;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--dash-text);
     text-align: left;
     cursor: pointer;
@@ -429,7 +459,7 @@
     flex-shrink: 0;
     font-size: 16px;
     line-height: 1;
-    color: var(--dash-text-muted);
+    color: var(--accent-primary);
 }
 
 .pinned-item-title {
@@ -495,6 +525,7 @@
 .project-header-actions {
     display: flex;
     align-items: center;
+    min-height: var(--app-header-row);
 }
 
 .project-header-actions .card-menu-trigger {
@@ -666,15 +697,14 @@
    ============================================================ */
 
 .main-content {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: var(--dash-glass-panel);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--dash-glass-border-soft);
-    border-radius: 12px;
+    /* Fully transparent: the fixed decorative layer shows straight through.
+       The transparent border keeps its header aligned with the sidebar card. */
+    border: 1px solid transparent;
 }
 
 /* Welcome screen */
@@ -711,9 +741,10 @@
 }
 
 .project-header {
-    padding: 20px 32px 16px;
+    padding: var(--app-header-pad-y) 32px var(--app-header-pad-y) 60px;
+    border-bottom: 1px solid transparent;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
 }
@@ -734,6 +765,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    min-height: var(--app-header-row);
 }
 
 .project-description-toggle {
@@ -995,14 +1027,14 @@
 .gallery-card {
     position: relative;
     display: flex;
-    background: var(--dash-glass);
-    border: 1px solid var(--dash-glass-border);
+    background: var(--dash-card-surface);
+    border: 1px solid var(--dash-card-border);
     border-radius: 10px;
     transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 
 .gallery-card:hover {
-    background: var(--dash-glass-raised);
+    background: var(--dash-card-surface-hover);
     border-color: var(--dash-glass-border-hover);
     transform: translateY(-1px);
     z-index: 2;
@@ -1437,7 +1469,6 @@
     padding: 10px 0;
     margin-bottom: 4px;
     background: var(--dash-ground);
-    box-shadow: var(--dash-panel-veil);
 }
 
 .document-block-title-row {
@@ -3766,7 +3797,7 @@ mark.search-highlight {
 }
 
 .settings-header {
-    padding: 20px 32px 16px;
+    padding: 20px 32px 16px 60px;
     border-bottom: 1px solid var(--dash-glass-border-subtle);
 }
 
@@ -4098,7 +4129,7 @@ mark.search-highlight {
     }
 
     .settings-header {
-        padding-left: 60px;
+        padding-left: 52px;
     }
 
     .settings-row {

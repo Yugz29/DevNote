@@ -66,6 +66,7 @@ export default function DocumentsPanel({
   openTarget,
   contentVersion,
   onPinnedChanged,
+  onActiveItemChange,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
@@ -161,6 +162,12 @@ export default function DocumentsPanel({
       isStale = true;
     };
   }, [pendingDocumentId]);
+
+  useEffect(() => {
+    onActiveItemChange(openDocument?.id ?? null);
+
+    return () => onActiveItemChange(null);
+  }, [openDocument, onActiveItemChange]);
 
   useEffect(() => {
     if (versionRef.current === contentVersion) return;

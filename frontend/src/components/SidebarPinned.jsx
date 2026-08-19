@@ -7,9 +7,9 @@ const COPY_STATES = {
   failed: { icon: "ph-warning-circle", label: "Copy failed" },
 };
 
-function PinnedDocument({ doc, onOpen, onUnpin }) {
+function PinnedDocument({ doc, isActive, onOpen, onUnpin }) {
   return (
-    <div className="pinned-item" data-id={doc.id}>
+    <div className={`pinned-item${isActive ? " active" : ""}`} data-id={doc.id}>
       <button
         type="button"
         className="pinned-item-open"
@@ -36,14 +36,14 @@ function PinnedDocument({ doc, onOpen, onUnpin }) {
   );
 }
 
-function PinnedSnippet({ snippet, onOpen, onUnpin }) {
+function PinnedSnippet({ snippet, isActive, onOpen, onUnpin }) {
   const { status, copy } = useCopyStatus();
 
   const state = COPY_STATES[status];
 
   return (
     <div
-      className={`pinned-item${state ? ` is-${status}` : ""}`}
+      className={`pinned-item${isActive ? " active" : ""}${state ? ` is-${status}` : ""}`}
       data-id={snippet.id}
     >
       <button
@@ -107,6 +107,7 @@ export default function SidebarPinned({
   documents,
   snippets,
   isLoading,
+  activeItemId,
   onOpenDocument,
   onOpenSnippet,
   onUnpinDocument,
@@ -141,6 +142,7 @@ export default function SidebarPinned({
           <PinnedDocument
             key={doc.id}
             doc={doc}
+            isActive={doc.id === activeItemId}
             onOpen={onOpenDocument}
             onUnpin={onUnpinDocument}
           />
@@ -152,6 +154,7 @@ export default function SidebarPinned({
           <PinnedSnippet
             key={snippet.id}
             snippet={snippet}
+            isActive={snippet.id === activeItemId}
             onOpen={onOpenSnippet}
             onUnpin={onUnpinSnippet}
           />
