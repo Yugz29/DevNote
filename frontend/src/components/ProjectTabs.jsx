@@ -32,6 +32,9 @@ export default function ProjectTabs({
   headerSlot,
   searchQuery,
   searchItemId,
+  openTarget,
+  contentVersion,
+  onPinnedChanged,
 }) {
   const tabContentRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -190,6 +193,9 @@ export default function ProjectTabs({
               breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              openTarget={openTarget?.tab === "documents" ? openTarget : null}
+              contentVersion={contentVersion}
+              onPinnedChanged={onPinnedChanged}
               onSortableChange={handleSortableChange}
             />
           )}
@@ -208,6 +214,9 @@ export default function ProjectTabs({
               scrollRef={tabContentRef}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              openTarget={openTarget?.tab === "snippets" ? openTarget : null}
+              contentVersion={contentVersion}
+              onPinnedChanged={onPinnedChanged}
               onSortableChange={handleSortableChange}
             />
           )}

@@ -1,8 +1,11 @@
-import CardMenu from "./CardMenu.jsx";
 import ProjectSortDropdown from "./ProjectSortDropdown.jsx";
+import SidebarPinned from "./SidebarPinned.jsx";
+import SidebarProjects from "./SidebarProjects.jsx";
 
 export default function Sidebar({
   user,
+  project,
+  pinned,
   projects,
   isLoading,
   hasError,
@@ -13,20 +16,18 @@ export default function Sidebar({
   onDeleteProject,
   onLoadMore,
   onNewProject,
+  onBackToWelcome,
+  onOpenPinnedDocument,
+  onOpenPinnedSnippet,
+  onUnpinDocument,
+  onUnpinSnippet,
   onOpenSearch,
   onCloseSidebar,
   onOpenSettings,
   onLogout,
 }) {
+  const isProjectContext = Boolean(project);
   const canSort = !isLoading && !hasError && projects.length > 1;
-
-  const handleScroll = (event) => {
-    const element = event.currentTarget;
-    const distanceFromBottom =
-      element.scrollHeight - element.scrollTop - element.clientHeight;
-
-    if (distanceFromBottom < 100) onLoadMore();
-  };
 
   return (
     <aside className="sidebar">
@@ -40,7 +41,21 @@ export default function Sidebar({
           >
             <i className="ph-light ph-list" />
           </button>
-          <h2>Projects</h2>
+
+          {isProjectContext && (
+            <button
+              id="back-to-projects"
+              className="btn-icon-sm"
+              title="Back to projects"
+              onClick={onBackToWelcome}
+            >
+              <i className="ph-light ph-house" />
+            </button>
+          )}
+
+          <h2 title={isProjectContext ? project.title : undefined}>
+            {isProjectContext ? project.title : "Projects"}
+          </h2>
         </div>
 
         <div className="sidebar-header-right">
@@ -53,75 +68,44 @@ export default function Sidebar({
             <i className="ph-light ph-magnifying-glass" />
           </button>
 
-          {canSort && (
+          {!isProjectContext && canSort && (
             <ProjectSortDropdown sort={sort} onSortChange={onSortChange} />
           )}
 
-          <button
-            id="newProjectBtn"
-            className="btn-icon-sm"
-            title="New project"
-            onClick={onNewProject}
-          >
-            <i className="ph-light ph-plus" />
-          </button>
+          {!isProjectContext && (
+            <button
+              id="newProjectBtn"
+              className="btn-icon-sm"
+              title="New project"
+              onClick={onNewProject}
+            >
+              <i className="ph-light ph-plus" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div id="projects-list" onScroll={handleScroll}>
-        {isLoading && <p className="loading">Loading projects...</p>}
-
-        {!isLoading && hasError && (
-          <p style={{ padding: "20px", color: "#888" }}>
-            Error loading projects
-          </p>
-        )}
-
-        {!isLoading && !hasError && projects.length === 0 && (
-          <div className="projects-empty">
-            <i className="ph-light ph-folder-open" />
-            <p>No projects yet</p>
-            <span>
-              Create your first project
-              <br />
-              to get started
-            </span>
-          </div>
-        )}
-
-        {!isLoading &&
-          !hasError &&
-          projects.map((project) => (
-            <div
-              key={project.id}
-              className={`project-item${project.id === activeProjectId ? " active" : ""}`}
-              data-id={project.id}
-              onClick={() => onSelectProject(project.id)}
-            >
-              <span className="project-icon">
-                <i className="ph-light ph-folder" />
-              </span>
-              <span className="project-name">{project.title}</span>
-
-              <div
-                className="project-item-actions"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <CardMenu
-                  label={`Actions for ${project.title}`}
-                  items={[
-                    {
-                      label: "Delete project",
-                      icon: "ph-trash",
-                      isDanger: true,
-                      onSelect: () => onDeleteProject(project),
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-          ))}
-      </div>
+      {isProjectContext ? (
+        <SidebarPinned
+          documents={pinned.documents}
+          snippets={pinned.snippets}
+          isLoading={pinned.isLoading}
+          onOpenDocument={onOpenPinnedDocument}
+          onOpenSnippet={onOpenPinnedSnippet}
+          onUnpinDocument={onUnpinDocument}
+          onUnpinSnippet={onUnpinSnippet}
+        />
+      ) : (
+        <SidebarProjects
+          projects={projects}
+          isLoading={isLoading}
+          hasError={hasError}
+          activeProjectId={activeProjectId}
+          onSelectProject={onSelectProject}
+          onDeleteProject={onDeleteProject}
+          onLoadMore={onLoadMore}
+        />
+      )}
 
       <div className="sidebar-footer">
         <span id="sidebar-user-name" className="sidebar-user">

@@ -1,6 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-
-const RESET_DELAY = 1500;
+import { useCopyStatus } from "../hooks/useCopyStatus.js";
 
 const STATES = {
   copied: { icon: "ph-check", title: "Copied" },
@@ -8,24 +6,7 @@ const STATES = {
 };
 
 export default function CopyButton({ text, className = "" }) {
-  const [status, setStatus] = useState(null);
-  const timerRef = useRef(null);
-
-  useEffect(() => () => clearTimeout(timerRef.current), []);
-
-  const handleCopy = async () => {
-    let next = "copied";
-
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      next = "failed";
-    }
-
-    setStatus(next);
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setStatus(null), RESET_DELAY);
-  };
+  const { status, copy } = useCopyStatus();
 
   const state = STATES[status];
 
@@ -35,7 +16,7 @@ export default function CopyButton({ text, className = "" }) {
       className={`copy-btn${status ? ` is-${status}` : ""}${className ? ` ${className}` : ""}`}
       title={state ? state.title : "Copy"}
       aria-label={state ? state.title : "Copy"}
-      onClick={handleCopy}
+      onClick={() => copy(text)}
     >
       <i className={`ph-light ${state ? state.icon : "ph-copy"}`} />
     </button>

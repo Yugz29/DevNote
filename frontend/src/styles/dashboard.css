@@ -187,6 +187,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    min-width: 0;
 }
 
 .sidebar-header h2 {
@@ -194,12 +195,16 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--dash-text-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sidebar-header-right {
     display: flex;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
 }
 
 .btn-icon-sm {
@@ -332,6 +337,151 @@
 }
 
 .project-item-actions .card-menu-trigger i {
+    font-size: 16px;
+}
+
+/* Sidebar — pinned items of the active project */
+#pinned-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    min-height: 0;
+    contain: layout;
+}
+
+.pinned-group + .pinned-group {
+    margin-top: 16px;
+}
+
+.pinned-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-text-dim);
+}
+
+.pinned-group-count {
+    margin-left: auto;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--dash-text-ghost);
+}
+
+.pinned-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px 0 0;
+    margin-bottom: 2px;
+    background: var(--dash-glass);
+    border-radius: 6px;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.pinned-item:hover {
+    background: var(--dash-glass-strong);
+}
+
+.pinned-item.is-copied {
+    background: var(--dash-accent-tint-strong);
+    box-shadow: inset 0 0 0 1px var(--dash-accent-border);
+}
+
+.pinned-item.is-failed {
+    background: var(--dash-danger-tint-stronger);
+    box-shadow: inset 0 0 0 1px var(--dash-danger-border-soft);
+}
+
+.pinned-item-open {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.15s;
+    flex: 1;
+    min-width: 0;
+    padding: 9px 10px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--dash-text);
+    text-align: left;
+    cursor: pointer;
+}
+
+.pinned-item-icon,
+.pinned-item .snippet-lang-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1;
+    color: var(--dash-text-muted);
+}
+
+.pinned-item-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pinned-item.is-copied .pinned-item-open,
+.pinned-item.is-failed .pinned-item-open {
+    opacity: 0;
+}
+
+.pinned-item-feedback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--accent-primary);
+    pointer-events: none;
+}
+
+.pinned-item-feedback i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.pinned-item.is-failed .pinned-item-feedback {
+    color: var(--danger);
+}
+
+.pinned-item-actions {
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.pinned-item:hover .pinned-item-actions,
+.pinned-item-actions:has(.card-menu-dropdown.open) {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.pinned-item-actions .card-menu-trigger {
+    width: 22px;
+    height: 22px;
+}
+
+.pinned-item-actions .card-menu-trigger i {
     font-size: 16px;
 }
 
@@ -931,37 +1081,6 @@
 
 .gallery-grid .empty {
     grid-column: 1 / -1;
-}
-
-.gallery-pinned {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--dash-glass-border);
-}
-
-.gallery-pinned-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
-    font-size: 11.5px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--dash-text-dim);
-}
-
-.gallery-pinned-header i {
-    font-size: 14px;
-    line-height: 1;
-}
-
-.gallery-pinned-count {
-    margin-left: auto;
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--dash-text-faint);
 }
 
 .gallery-card-pin {
@@ -1723,17 +1842,6 @@
 .snippets-list .gallery-toolbar {
     grid-column: 1 / -1;
     margin-bottom: 0;
-}
-
-.snippets-list .gallery-pinned {
-    grid-column: 1 / -1;
-    margin-bottom: 0;
-}
-
-.snippet-pinned-items {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
 }
 
 .snippet-card {

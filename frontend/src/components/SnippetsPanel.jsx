@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SnippetCard from "./SnippetCard.jsx";
 import SnippetEditor from "./SnippetEditor.jsx";
 import SnippetModal from "./SnippetModal.jsx";
@@ -12,7 +12,7 @@ import {
   createSnippet,
   deleteSnippet,
   duplicateSnippet,
-  getPinnedSnippets,
+  getSnippet,
   getSnippets,
   setSnippetPinned,
   updateSnippet,
@@ -54,10 +54,14 @@ export default function SnippetsPanel({
   scrollRef,
   searchQuery,
   searchItemId,
+  openTarget,
+  contentVersion,
+  onPinnedChanged,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
+  const versionRef = useRef(contentVersion);
 
   const [isCreating, setIsCreating] = useState(false);
   const [viewingId, setViewingId] = useState(null);
@@ -66,7 +70,7 @@ export default function SnippetsPanel({
   const [collapsedGroups, setCollapsedGroups] = useState(() =>
     readCollapsedGroups(projectId),
   );
-  const [pinned, setPinned] = useState({ items: [], count: 0 });
+  const [externalSnippet, setExternalSnippet] = useState(null);
 
   const { items, isLoading, error, reload, setItems } = useResourceList({
     projectId,
@@ -76,31 +80,47 @@ export default function SnippetsPanel({
 
   const snippets = useMemo(() => sortSnippets(items, sort), [items, sort]);
   const groups = useMemo(() => groupByLanguage(snippets), [snippets]);
-  const pinnedSnippets = useMemo(
-    () => sortSnippets(pinned.items, sort),
-    [pinned.items, sort],
-  );
   const viewedSnippet =
     snippets.find((snippet) => snippet.id === viewingId) ??
-    pinnedSnippets.find((snippet) => snippet.id === viewingId);
+    (externalSnippet?.id === viewingId ? externalSnippet : null);
 
-  const loadPinned = useCallback(() => {
-    if (!projectId) return Promise.resolve();
+  const refreshExternalSnippet = async (snippetId) => {
+    if (externalSnippet?.id !== snippetId) return;
 
-    return getPinnedSnippets(projectId)
-      .then((data) => {
-        const results = data.results ?? data;
-        setPinned({ items: results, count: data.count ?? results.length });
-      })
-      .catch((pinnedError) => {
-        console.error("Error loading pinned snippets:", pinnedError);
-        setPinned({ items: [], count: 0 });
-      });
-  }, [projectId]);
+    try {
+      setExternalSnippet(await getSnippet(snippetId));
+    } catch (refreshError) {
+      console.error("Error refreshing snippet:", refreshError);
+      setExternalSnippet(null);
+    }
+  };
 
   useEffect(() => {
-    loadPinned();
-  }, [loadPinned]);
+    if (!openTarget) return;
+
+    let isStale = false;
+
+    getSnippet(openTarget.itemId)
+      .then((snippet) => {
+        if (isStale) return;
+        setExternalSnippet(snippet);
+        setViewingId(snippet.id);
+      })
+      .catch((openError) => {
+        console.error("Error opening snippet:", openError);
+      });
+
+    return () => {
+      isStale = true;
+    };
+  }, [openTarget]);
+
+  useEffect(() => {
+    if (versionRef.current === contentVersion) return;
+
+    versionRef.current = contentVersion;
+    reload();
+  }, [contentVersion, reload]);
 
   useSearchTarget(
     containerRef,
@@ -156,7 +176,8 @@ export default function SnippetsPanel({
       setIsCreating(false);
       setIsEditingViewed(false);
       setDraft(null);
-      await Promise.all([reload(), loadPinned()]);
+      await Promise.all([reload(), refreshExternalSnippet(snippetId)]);
+      onPinnedChanged();
     } catch (saveError) {
       console.error("Error saving snippet:", saveError);
       await showAlert("Unable to save the snippet");
@@ -167,7 +188,7 @@ export default function SnippetsPanel({
     try {
       await duplicateSnippet(snippetId);
       setViewingId(null);
-      await Promise.all([reload(), loadPinned()]);
+      await reload();
     } catch (duplicateError) {
       console.error("Error duplicating snippet:", duplicateError);
       await showAlert("Unable to duplicate the snippet");
@@ -181,7 +202,8 @@ export default function SnippetsPanel({
     try {
       await deleteSnippet(snippetId);
       setViewingId((current) => (current === snippetId ? null : current));
-      await Promise.all([reload(), loadPinned()]);
+      await reload();
+      onPinnedChanged();
     } catch (deleteError) {
       console.error("Error deleting snippet:", deleteError);
       await showAlert("Unable to delete the snippet");
@@ -205,21 +227,8 @@ export default function SnippetsPanel({
       ),
     );
 
-    if (pinned.count > pinned.items.length) {
-      await loadPinned();
-      return;
-    }
-
-    setPinned((current) => {
-      const without = current.items.filter((entry) => entry.id !== snippet.id);
-
-      return {
-        items: nextPinned
-          ? [{ ...snippet, is_pinned: true }, ...without]
-          : without,
-        count: current.count + (nextPinned ? 1 : -1),
-      };
-    });
+    await refreshExternalSnippet(snippet.id);
+    onPinnedChanged();
   };
 
   const handleExport = (snippet) => {
@@ -245,24 +254,6 @@ export default function SnippetsPanel({
 
   return (
     <div id="snippets-list" className="snippets-list" ref={containerRef}>
-      {!isLoading && !error && pinnedSnippets.length > 0 && (
-        <section className="gallery-pinned">
-          <div className="gallery-pinned-header">
-            <i className="ph-light ph-push-pin" />
-            <span>Pinned</span>
-            {pinned.count > pinnedSnippets.length && (
-              <span className="gallery-pinned-count">
-                showing {pinnedSnippets.length} of {pinned.count}
-              </span>
-            )}
-          </div>
-
-          <div className="snippet-pinned-items">
-            {pinnedSnippets.map(renderSnippet)}
-          </div>
-        </section>
-      )}
-
       <div className="gallery-toolbar">
         <button
           type="button"

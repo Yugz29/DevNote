@@ -22,7 +22,6 @@ import {
   deleteDocument,
   duplicateDocument,
   getDocument,
-  getPinnedDocuments,
   moveDocument,
   setDocumentPinned,
   updateDocument,
@@ -64,6 +63,9 @@ export default function DocumentsPanel({
   breadcrumbSlot,
   searchQuery,
   searchItemId,
+  openTarget,
+  contentVersion,
+  onPinnedChanged,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
@@ -72,6 +74,7 @@ export default function DocumentsPanel({
   const detailRef = useRef(null);
   const printKeyRef = useRef(0);
   const themeRef = useRef(theme);
+  const versionRef = useRef(contentVersion);
 
   const [initialLocation] = useState(() =>
     searchItemId ? EMPTY_LOCATION : readLocation(projectId),
@@ -90,8 +93,18 @@ export default function DocumentsPanel({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [movingEntry, setMovingEntry] = useState(null);
-  const [pinned, setPinned] = useState({ items: [], count: 0 });
   const [printTarget, setPrintTarget] = useState(null);
+
+  const [openRequest, setOpenRequest] = useState(null);
+
+  if (openTarget !== openRequest) {
+    setOpenRequest(openTarget);
+
+    if (openTarget) {
+      setIsCreatingDocument(false);
+      setPendingDocumentId(openTarget.itemId);
+    }
+  }
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
@@ -123,34 +136,11 @@ export default function DocumentsPanel({
 
   const entries = useMemo(() => sortEntries(items, sort), [items, sort]);
 
-  const pinnedEntries = useMemo(
-    () => sortEntries(pinned.items, sort),
-    [pinned.items, sort],
-  );
-
   useSearchTarget(containerRef, searchItemId, !isLoading && entries.length > 0);
-
-  const loadPinned = useCallback(() => {
-    if (!projectId) return Promise.resolve();
-
-    return getPinnedDocuments(projectId)
-      .then((data) => {
-        const results = data.results ?? data;
-        setPinned({ items: results, count: data.count ?? results.length });
-      })
-      .catch((pinnedError) => {
-        console.error("Error loading pinned documents:", pinnedError);
-        setPinned({ items: [], count: 0 });
-      });
-  }, [projectId]);
 
   useEffect(() => {
     themeRef.current = theme;
   });
-
-  useEffect(() => {
-    loadPinned();
-  }, [loadPinned]);
 
   useEffect(() => {
     if (!pendingDocumentId) return;
@@ -171,6 +161,13 @@ export default function DocumentsPanel({
       isStale = true;
     };
   }, [pendingDocumentId]);
+
+  useEffect(() => {
+    if (versionRef.current === contentVersion) return;
+
+    versionRef.current = contentVersion;
+    reload();
+  }, [contentVersion, reload]);
 
   useEffect(() => {
     writeLocation(projectId, {
@@ -197,7 +194,8 @@ export default function DocumentsPanel({
     await flushDetail();
     setOpenDocument(null);
     setIsCreatingDocument(false);
-    await Promise.all([reload(), loadPinned()]);
+    await reload();
+    onPinnedChanged();
   };
 
   const openFolder = async (folder) => {
@@ -296,7 +294,7 @@ export default function DocumentsPanel({
     try {
       await deleteFolder(folder.id);
       dropEntry(folder.id);
-      await loadPinned();
+      onPinnedChanged();
       return;
     } catch (deleteError) {
       const data = deleteError.response?.data;
@@ -327,7 +325,7 @@ export default function DocumentsPanel({
       try {
         await deleteFolder(folder.id, { confirm: true });
         dropEntry(folder.id);
-        await loadPinned();
+        onPinnedChanged();
       } catch (forcedError) {
         console.error("Error deleting folder:", forcedError);
         await showAlert("Unable to delete the folder");
@@ -382,19 +380,7 @@ export default function DocumentsPanel({
       ),
     );
 
-    if (pinned.count > pinned.items.length) {
-      await loadPinned();
-      return;
-    }
-
-    setPinned((current) => {
-      const without = current.items.filter((entry) => entry.id !== doc.id);
-
-      return {
-        items: nextPinned ? [{ ...doc, is_pinned: true }, ...without] : without,
-        count: current.count + (nextPinned ? 1 : -1),
-      };
-    });
+    onPinnedChanged();
   };
 
   const exportMarkdown = (title, content) => {
@@ -444,14 +430,8 @@ export default function DocumentsPanel({
     try {
       await deleteDocument(doc.id);
       dropEntry(doc.id);
-      setPinned((current) => {
-        const items = current.items.filter((entry) => entry.id !== doc.id);
-
-        return items.length === current.items.length
-          ? current
-          : { items, count: current.count - 1 };
-      });
       if (openDocument?.id === doc.id) setOpenDocument(null);
+      onPinnedChanged();
     } catch (deleteError) {
       console.error("Error deleting document:", deleteError);
       await showAlert("Unable to delete the document");
@@ -527,11 +507,7 @@ export default function DocumentsPanel({
     };
   }, [isDetail, locatedDocumentId, path, projectId, scrollRef]);
 
-  const isSortable =
-    !isDetail &&
-    !isLoading &&
-    !error &&
-    (entries.length > 1 || pinnedEntries.length > 1);
+  const isSortable = !isDetail && !isLoading && !error && entries.length > 1;
 
   useEffect(() => {
     onSortableChange(isSortable);
@@ -567,34 +543,6 @@ export default function DocumentsPanel({
         />
       ) : (
         <>
-          {pinnedEntries.length > 0 && (
-            <section className="gallery-pinned">
-              <div className="gallery-pinned-header">
-                <i className="ph-light ph-push-pin" />
-                <span>Pinned</span>
-                {pinned.count > pinnedEntries.length && (
-                  <span className="gallery-pinned-count">
-                    showing {pinnedEntries.length} of {pinned.count}
-                  </span>
-                )}
-              </div>
-
-              <div className="gallery-grid">
-                {pinnedEntries.map((entry) => (
-                  <DocumentCard
-                    key={`pinned:${entry.id}`}
-                    doc={entry}
-                    searchQuery={searchQuery}
-                    onOpen={openDocumentCard}
-                    onTogglePin={handleTogglePin}
-                    onExportMarkdown={handleExportMarkdown}
-                    onExportPdf={handleExportPdf}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
           <div className="gallery-toolbar">
             <button
               type="button"

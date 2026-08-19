@@ -18,13 +18,16 @@ import { useDialog } from "../contexts/DialogContext.js";
 import { useTheme } from "../contexts/ThemeContext.js";
 import { applyMermaidTheme } from "../lib/blocknote.js";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import { usePinnedItems } from "../hooks/usePinnedItems.js";
 import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
 import { ensureCsrfCookie } from "../services/authService.js";
+import { setDocumentPinned } from "../services/documentService.js";
 import {
   deleteProject,
   getProject,
   getProjects,
 } from "../services/projectService.js";
+import { setSnippetPinned } from "../services/snippetService.js";
 import "../styles/dashboard.css";
 
 const isMobile = () => window.innerWidth <= 768;
@@ -70,6 +73,8 @@ export default function Dashboard() {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchTarget, setSearchTarget] = useState(null);
+  const [openTarget, setOpenTarget] = useState(null);
+  const [contentVersion, setContentVersion] = useState(0);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [headerSlot, setHeaderSlot] = useState(null);
   const [isSidebarHidden, setIsSidebarHidden] = useState(
@@ -83,6 +88,7 @@ export default function Dashboard() {
   );
 
   const { theme } = useTheme();
+  const pinned = usePinnedItems(currentProject?.id ?? null);
 
   useLayoutEffect(() => {
     applyMermaidTheme(theme);
@@ -167,6 +173,7 @@ export default function Dashboard() {
         setView("projects");
         setCurrentProject(project);
         if (tab) setCurrentTab(tab);
+        setOpenTarget(null);
         setSearchTarget(
           searchQuery ? { query: searchQuery, itemId: searchItemId } : null,
         );
@@ -181,7 +188,61 @@ export default function Dashboard() {
   const handleTabChange = useCallback((tab) => {
     setCurrentTab(tab);
     setSearchTarget(null);
+    setOpenTarget(null);
   }, []);
+
+  const backToWelcome = useCallback(() => {
+    setCurrentProject(null);
+    setSearchTarget(null);
+    setOpenTarget(null);
+  }, []);
+
+  const openPinnedItem = useCallback((tab, itemId) => {
+    setCurrentTab(tab);
+    setSearchTarget(null);
+    setOpenTarget({ tab, itemId });
+    if (isMobile()) setIsSidebarVisible(false);
+  }, []);
+
+  const openPinnedDocument = useCallback(
+    (doc) => openPinnedItem("documents", doc.id),
+    [openPinnedItem],
+  );
+
+  const openPinnedSnippet = useCallback(
+    (snippet) => openPinnedItem("snippets", snippet.id),
+    [openPinnedItem],
+  );
+
+  const { reload: reloadPinned } = pinned;
+
+  const handlePinnedChanged = useCallback(() => reloadPinned(), [reloadPinned]);
+
+  const unpin = useCallback(
+    async (unpinItem, item, label) => {
+      try {
+        await unpinItem(item.id, false);
+      } catch (error) {
+        console.error(`Error unpinning ${label}:`, error);
+        await showAlert(`Unable to unpin the ${label}`);
+        return;
+      }
+
+      await reloadPinned();
+      setContentVersion((current) => current + 1);
+    },
+    [reloadPinned, showAlert],
+  );
+
+  const unpinDocument = useCallback(
+    (doc) => unpin(setDocumentPinned, doc, "document"),
+    [unpin],
+  );
+
+  const unpinSnippet = useCallback(
+    (snippet) => unpin(setSnippetPinned, snippet, "snippet"),
+    [unpin],
+  );
 
   const closeSearch = useCallback(() => setIsSearchOpen(false), []);
 
@@ -271,6 +332,8 @@ export default function Dashboard() {
         ) : (
           <Sidebar
             user={user}
+            project={currentProject}
+            pinned={pinned}
             projects={sortedProjects}
             isLoading={isLoadingProjects}
             hasError={hasProjectsError}
@@ -281,6 +344,11 @@ export default function Dashboard() {
             onLoadMore={loadMoreProjects}
             onDeleteProject={handleDeleteProject}
             onNewProject={() => setIsProjectModalOpen(true)}
+            onBackToWelcome={backToWelcome}
+            onOpenPinnedDocument={openPinnedDocument}
+            onOpenPinnedSnippet={openPinnedSnippet}
+            onUnpinDocument={unpinDocument}
+            onUnpinSnippet={unpinSnippet}
             onOpenSearch={() => setIsSearchOpen(true)}
             onCloseSidebar={closeSidebar}
             onOpenSettings={openSettings}
@@ -334,6 +402,9 @@ export default function Dashboard() {
                   headerSlot={headerSlot}
                   searchQuery={searchTarget?.query ?? null}
                   searchItemId={searchTarget?.itemId ?? null}
+                  openTarget={openTarget}
+                  contentVersion={contentVersion}
+                  onPinnedChanged={handlePinnedChanged}
                 />
               </>
             )}
