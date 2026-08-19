@@ -1216,6 +1216,15 @@
     margin-bottom: 16px;
 }
 
+/* Sort and view sit at the right end of the toolbar row, opposite the
+   New… buttons; the tab row above keeps its own line. */
+.gallery-toolbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
 .gallery-action {
     display: inline-flex;
     align-items: center;
@@ -2502,57 +2511,6 @@
 
 .todo-list-tab-input::placeholder {
     color: var(--dash-text-faint);
-}
-
-.document-controls {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.document-controls.visible {
-    visibility: visible;
-    opacity: 1;
-}
-
-.snippet-controls {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.snippet-controls.visible {
-    visibility: visible;
-    opacity: 1;
-}
-
-.todo-controls {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.todo-controls.visible {
-    visibility: visible;
-    opacity: 1;
 }
 
 .todo-sort-select {

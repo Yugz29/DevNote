@@ -77,6 +77,7 @@ export default function TodosPanel({
   contentVersion,
   onPinnedChanged,
   onActiveItemChange,
+  controls,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
@@ -475,6 +476,8 @@ export default function TodosPanel({
           <i className="ph-light ph-plus" />
           <span>New todo</span>
         </button>
+
+        <div className="gallery-toolbar-controls">{controls}</div>
       </div>
 
       {/* Nothing to filter by until a list exists: "All" alone is noise. */}

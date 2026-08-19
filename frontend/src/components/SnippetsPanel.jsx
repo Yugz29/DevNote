@@ -58,6 +58,7 @@ export default function SnippetsPanel({
   contentVersion,
   onPinnedChanged,
   onActiveItemChange,
+  controls,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
@@ -270,6 +271,8 @@ export default function SnippetsPanel({
           <i className="ph-light ph-plus" />
           <span>New snippet</span>
         </button>
+
+        <div className="gallery-toolbar-controls">{controls}</div>
       </div>
 
       {isLoading && <p className="loading">Loading...</p>}

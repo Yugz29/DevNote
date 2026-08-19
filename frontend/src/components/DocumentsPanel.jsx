@@ -67,6 +67,7 @@ export default function DocumentsPanel({
   contentVersion,
   onPinnedChanged,
   onActiveItemChange,
+  controls,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
@@ -567,6 +568,8 @@ export default function DocumentsPanel({
               <i className="ph-light ph-plus" />
               <span>New document</span>
             </button>
+
+            <div className="gallery-toolbar-controls">{controls}</div>
           </div>
 
           {isLoading && <p className="loading">Loading...</p>}

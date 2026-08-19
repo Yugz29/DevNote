@@ -74,6 +74,77 @@ export default function ProjectTabs({
   const toggleDropdown = (name) => (isOpen) =>
     setOpenDropdown(isOpen ? name : null);
 
+  /* Sort and view live on the toolbar row of each panel, not on the tab row:
+     each panel receives them as a node and drops them at its right end. */
+  const sortDropdown = (id, options, sort, defaultSort, onSortChange) =>
+    isSortable && (
+      <ContentSortDropdown
+        id={id}
+        options={options}
+        sort={sort}
+        defaultSort={defaultSort}
+        isOpen={openDropdown === id}
+        onToggle={toggleDropdown(id)}
+        onSortChange={onSortChange}
+      />
+    );
+
+  const viewToggle = (id, value, onChange, views) => (
+    <div id={id} className="todo-view-toggle">
+      {views.map((view) => (
+        <button
+          key={view.value}
+          className={`btn-view-toggle${value === view.value ? " active" : ""}`}
+          data-view={view.value}
+          title={view.title}
+          onClick={() => onChange(view.value)}
+        >
+          <i className={`ph-light ${view.icon}`} />
+        </button>
+      ))}
+    </div>
+  );
+
+  const documentControls = sortDropdown(
+    "document",
+    DOCUMENT_SORT_OPTIONS,
+    documentSort,
+    "created",
+    setDocumentSort,
+  );
+
+  const snippetControls = (
+    <>
+      {sortDropdown(
+        "snippet",
+        SNIPPET_SORT_OPTIONS,
+        snippetSort,
+        "created",
+        setSnippetSort,
+      )}
+      {viewToggle("snippet-view-toggle", snippetView, setSnippetView, [
+        { value: "grid", title: "Grid view", icon: "ph-squares-four" },
+        { value: "grouped", title: "By language", icon: "ph-rows" },
+      ])}
+    </>
+  );
+
+  const todoControls = (
+    <>
+      {sortDropdown(
+        "todo",
+        TODO_SORT_OPTIONS,
+        todoSort,
+        "priority",
+        setTodoSort,
+      )}
+      {viewToggle("todo-view-toggle", todoView, setTodoView, [
+        { value: "list", title: "List view", icon: "ph-list-bullets" },
+        { value: "kanban", title: "Kanban view", icon: "ph-columns" },
+      ])}
+    </>
+  );
+
   return (
     <>
       <div className="tabs">
@@ -91,92 +162,6 @@ export default function ProjectTabs({
             </button>
           ))}
         </div>
-
-        <div
-          className={`document-controls${currentTab === "documents" ? " visible" : ""}`}
-        >
-          {isSortable && (
-            <ContentSortDropdown
-              id="document"
-              options={DOCUMENT_SORT_OPTIONS}
-              sort={documentSort}
-              defaultSort="created"
-              isOpen={openDropdown === "document"}
-              onToggle={toggleDropdown("document")}
-              onSortChange={setDocumentSort}
-            />
-          )}
-        </div>
-
-        <div
-          className={`snippet-controls${currentTab === "snippets" ? " visible" : ""}`}
-        >
-          {isSortable && (
-            <ContentSortDropdown
-              id="snippet"
-              options={SNIPPET_SORT_OPTIONS}
-              sort={snippetSort}
-              defaultSort="created"
-              isOpen={openDropdown === "snippet"}
-              onToggle={toggleDropdown("snippet")}
-              onSortChange={setSnippetSort}
-            />
-          )}
-
-          <div id="snippet-view-toggle" className="todo-view-toggle">
-            <button
-              className={`btn-view-toggle${snippetView === "grid" ? " active" : ""}`}
-              data-view="grid"
-              title="Grid view"
-              onClick={() => setSnippetView("grid")}
-            >
-              <i className="ph-light ph-squares-four" />
-            </button>
-            <button
-              className={`btn-view-toggle${snippetView === "grouped" ? " active" : ""}`}
-              data-view="grouped"
-              title="By language"
-              onClick={() => setSnippetView("grouped")}
-            >
-              <i className="ph-light ph-rows" />
-            </button>
-          </div>
-        </div>
-
-        <div
-          className={`todo-controls${currentTab === "todos" ? " visible" : ""}`}
-        >
-          {isSortable && (
-            <ContentSortDropdown
-              id="todo"
-              options={TODO_SORT_OPTIONS}
-              sort={todoSort}
-              defaultSort="priority"
-              isOpen={openDropdown === "todo"}
-              onToggle={toggleDropdown("todo")}
-              onSortChange={setTodoSort}
-            />
-          )}
-
-          <div id="todo-view-toggle" className="todo-view-toggle">
-            <button
-              className={`btn-view-toggle${todoView === "list" ? " active" : ""}`}
-              data-view="list"
-              title="List view"
-              onClick={() => setTodoView("list")}
-            >
-              <i className="ph-light ph-list-bullets" />
-            </button>
-            <button
-              className={`btn-view-toggle${todoView === "kanban" ? " active" : ""}`}
-              data-view="kanban"
-              title="Kanban view"
-              onClick={() => setTodoView("kanban")}
-            >
-              <i className="ph-light ph-columns" />
-            </button>
-          </div>
-        </div>
       </div>
 
       <div className="tab-content" ref={tabContentRef}>
@@ -187,6 +172,7 @@ export default function ProjectTabs({
           {currentTab === "documents" && (
             <DocumentsPanel
               key={projectId}
+              controls={documentControls}
               projectId={projectId}
               sort={documentSort}
               scrollRef={tabContentRef}
@@ -210,6 +196,7 @@ export default function ProjectTabs({
           {currentTab === "snippets" && (
             <SnippetsPanel
               key={projectId}
+              controls={snippetControls}
               projectId={projectId}
               sort={snippetSort}
               view={snippetView}
@@ -232,6 +219,7 @@ export default function ProjectTabs({
           {currentTab === "todos" && (
             <TodosPanel
               key={projectId}
+              controls={todoControls}
               projectId={projectId}
               sort={todoSort}
               view={todoView}
