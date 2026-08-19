@@ -18,6 +18,7 @@ import {
   deleteTodo,
   getAllTodos,
   moveTodo,
+  setTodoPinned,
   updateTodo,
 } from "../services/todoService.js";
 import {
@@ -71,10 +72,15 @@ export default function TodosPanel({
   view,
   searchQuery,
   searchItemId,
+  openTarget,
+  contentVersion,
+  onPinnedChanged,
+  onActiveItemChange,
   onSortableChange,
 }) {
   const { showAlert, showConfirm } = useDialog();
   const containerRef = useRef(null);
+  const versionRef = useRef(contentVersion);
 
   const [isCreating, setIsCreating] = useState(false);
   const [viewingId, setViewingId] = useState(null);
@@ -88,6 +94,16 @@ export default function TodosPanel({
   const [activeListId, setActiveListId] = useState(() =>
     searchItemId ? null : readActiveList(projectId),
   );
+  const [openRequest, setOpenRequest] = useState(null);
+
+  if (openTarget !== openRequest) {
+    setOpenRequest(openTarget);
+
+    if (openTarget) {
+      setViewingId(openTarget.itemId);
+      setIsEditingViewed(false);
+    }
+  }
 
   const { items, isLoading, error, reload, setItems } = useResourceList({
     projectId,
@@ -137,6 +153,19 @@ export default function TodosPanel({
   useEffect(() => {
     loadLists();
   }, [loadLists]);
+
+  useEffect(() => {
+    onActiveItemChange(viewingId);
+
+    return () => onActiveItemChange(null);
+  }, [viewingId, onActiveItemChange]);
+
+  useEffect(() => {
+    if (versionRef.current === contentVersion) return;
+
+    versionRef.current = contentVersion;
+    reload();
+  }, [contentVersion, reload]);
 
   const selectList = (listId) => {
     writeActiveList(projectId, listId);
@@ -210,6 +239,8 @@ export default function TodosPanel({
           item.id === todo.id ? { ...item, [field]: value } : item,
         ),
       );
+
+      if (todo.is_pinned) onPinnedChanged();
     } catch (fieldError) {
       console.error(`Error updating todo ${field}:`, fieldError);
     }
@@ -248,6 +279,7 @@ export default function TodosPanel({
       setIsEditingViewed(false);
       setDraft(null);
       await reload();
+      onPinnedChanged();
     } catch (saveError) {
       console.error("Error saving todo:", saveError);
       await showAlert("Unable to save the todo");
@@ -303,6 +335,26 @@ export default function TodosPanel({
     }
   };
 
+  const handleTogglePin = async (todo) => {
+    const nextPinned = !todo.is_pinned;
+
+    try {
+      await setTodoPinned(todo.id, nextPinned);
+    } catch (pinError) {
+      console.error("Error pinning todo:", pinError);
+      await showAlert(`Unable to ${nextPinned ? "pin" : "unpin"} the todo`);
+      return;
+    }
+
+    setItems((current) =>
+      current.map((item) =>
+        item.id === todo.id ? { ...item, is_pinned: nextPinned } : item,
+      ),
+    );
+
+    onPinnedChanged();
+  };
+
   const handleMoveTodo = async (listId) => {
     const todo = movingTodo;
 
@@ -328,6 +380,7 @@ export default function TodosPanel({
       await deleteTodo(todoId);
       setViewingId((current) => (current === todoId ? null : current));
       await reload();
+      onPinnedChanged();
     } catch (deleteError) {
       console.error("Error deleting todo:", deleteError);
       await showAlert("Unable to delete the todo");
@@ -360,6 +413,7 @@ export default function TodosPanel({
         handleFieldChange(todo, "priority", priority)
       }
       onMove={() => setMovingTodo(todo)}
+      onTogglePin={() => handleTogglePin(todo)}
       onDelete={() => handleDelete(todo.id)}
     />
   );
@@ -506,6 +560,7 @@ export default function TodosPanel({
             setViewingId(null);
             setMovingTodo(viewedTodo);
           }}
+          onTogglePin={() => handleTogglePin(viewedTodo)}
           onDelete={() => handleDelete(viewedTodo.id)}
           onClose={() => {
             setIsEditingViewed(false);

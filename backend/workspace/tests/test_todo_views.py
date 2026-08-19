@@ -243,3 +243,167 @@ class TODOViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("priority", response.data)
+
+
+class TODOPinnedViewTest(APITestCase):
+    """Tests for the pinned TODOs stream"""
+
+    def setUp(self):
+        """Create a user and a project holding todos"""
+        self.user = User.objects.create_user(
+            username="pinnedtododev",
+            email="pinnedtododev@test.com",
+            password="TestPass123!",
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.project = Project.objects.create(
+            title="Pinned Todo Project", user=self.user
+        )
+
+    def make_todo(self, title, is_pinned=False, project=None, todo_status="pending"):
+        """Helper building a todo in the test project"""
+        return TODO.objects.create(
+            title=title,
+            project=project or self.project,
+            status=todo_status,
+            is_pinned=is_pinned,
+        )
+
+    def test_todo_is_unpinned_on_create(self):
+        """Test : a todo created through the API starts unpinned"""
+        response = self.client.post(
+            f"/api/projects/{self.project.id}/todos/",
+            {"title": "Fresh TODO"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(response.data["is_pinned"])
+
+    def test_pin_todo_through_patch(self):
+        """Test : the generic todo update toggles the pin"""
+        todo = self.make_todo("Pin me")
+
+        response = self.client.patch(
+            f"/api/todos/{todo.id}/", {"is_pinned": True}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["is_pinned"])
+
+        todo.refresh_from_db()
+        self.assertTrue(todo.is_pinned)
+
+        response = self.client.patch(
+            f"/api/todos/{todo.id}/", {"is_pinned": False}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["is_pinned"])
+
+        todo.refresh_from_db()
+        self.assertFalse(todo.is_pinned)
+
+    def test_pinning_changes_nothing_else(self):
+        """Test : pinning leaves the rest of the todo untouched"""
+        todo = self.make_todo("Untouched", todo_status="in_progress")
+
+        response = self.client.patch(
+            f"/api/todos/{todo.id}/", {"is_pinned": True}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        todo.refresh_from_db()
+        self.assertTrue(todo.is_pinned)
+        self.assertEqual(todo.title, "Untouched")
+        self.assertEqual(todo.status, "in_progress")
+        self.assertEqual(todo.project, self.project)
+
+    def test_pinned_lists_only_pinned_todos(self):
+        """Test : the stream carries the pinned todos and nothing else"""
+        pinned = self.make_todo("Pinned", is_pinned=True)
+        self.make_todo("Plain")
+
+        response = self.client.get(f"/api/projects/{self.project.id}/todos/pinned/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], str(pinned.id))
+        self.assertTrue(response.data["results"][0]["is_pinned"])
+
+    def test_pinned_entries_carry_the_status(self):
+        """Test : pinned entries render like any other todo, status included"""
+        self.make_todo("Pinned", is_pinned=True, todo_status="done")
+
+        response = self.client.get(f"/api/projects/{self.project.id}/todos/pinned/")
+        entry = response.data["results"][0]
+
+        self.assertEqual(entry["status"], "done")
+        self.assertEqual(
+            set(entry.keys()),
+            {
+                "id",
+                "title",
+                "description",
+                "status",
+                "priority",
+                "project_id",
+                "list",
+                "is_pinned",
+                "created_at",
+                "updated_at",
+            },
+        )
+
+    def test_pinned_todo_stays_in_the_plain_listing(self):
+        """Test : pinning is a shortcut, not a move"""
+        pinned = self.make_todo("Pinned", is_pinned=True)
+        plain = self.make_todo("Plain")
+
+        response = self.client.get(f"/api/projects/{self.project.id}/todos/")
+
+        ids = {entry["id"] for entry in response.data["results"]}
+        self.assertEqual(ids, {str(pinned.id), str(plain.id)})
+
+    def test_pinned_is_scoped_to_the_project(self):
+        """Test : pinned todos of another project are not listed"""
+        other_project = Project.objects.create(
+            title="Other Todo Project", user=self.user
+        )
+        self.make_todo("Elsewhere", is_pinned=True, project=other_project)
+        mine = self.make_todo("Mine", is_pinned=True)
+
+        response = self.client.get(f"/api/projects/{self.project.id}/todos/pinned/")
+
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], str(mine.id))
+
+    def test_pinned_of_foreign_project_is_refused(self):
+        """Test : users cannot read another user's pinned todos
+
+        Project-scoped viewsets refuse an unowned project outright, where the
+        snippet stream answers with an empty page.
+        """
+        other_user = User.objects.create_user(
+            username="pinnedforeigntododev",
+            email="pinnedforeigntododev@test.com",
+            password="OtherPass123!",
+        )
+        foreign_project = Project.objects.create(
+            title="Foreign Todo Project", user=other_user
+        )
+        self.make_todo("Foreign", is_pinned=True, project=foreign_project)
+
+        response = self.client.get(f"/api/projects/{foreign_project.id}/todos/pinned/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_pinned_unauthenticated(self):
+        """Test : the pinned stream requires authentication"""
+        self.client.force_authenticate(user=None)
+
+        response = self.client.get(f"/api/projects/{self.project.id}/todos/pinned/")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

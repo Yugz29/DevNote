@@ -100,9 +100,6 @@ export default function TodoListTabs({
               aria-pressed={activeListId === list.id}
               onClick={() => onSelect(list.id)}
             >
-              {list.is_permanent && (
-                <i className="ph-light ph-star todo-list-tab-icon" />
-              )}
               <span>{list.name}</span>
               <span className="todo-list-tab-count">
                 {counts.byList[list.id] ?? 0}
@@ -120,16 +117,12 @@ export default function TodoListTabs({
                     setEditingId(list.id);
                   },
                 },
-                ...(list.is_permanent
-                  ? []
-                  : [
-                      {
-                        label: "Delete",
-                        icon: "ph-trash",
-                        isDanger: true,
-                        onSelect: () => onDelete(list),
-                      },
-                    ]),
+                {
+                  label: "Delete",
+                  icon: "ph-trash",
+                  isDanger: true,
+                  onSelect: () => onDelete(list),
+                },
               ]}
             />
           </div>

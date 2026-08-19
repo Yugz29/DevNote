@@ -498,6 +498,64 @@
     opacity: 0;
 }
 
+/* A pinned todo stacks its title over its status. One line was measured and
+   dropped: the title fell to ~90px and the status pill wrapped in two. */
+.pinned-todo {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-bottom: 7px;
+}
+
+.pinned-todo-main {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 6px;
+}
+
+.pinned-todo .pinned-item-open {
+    padding-bottom: 3px;
+}
+
+.pinned-todo-badges {
+    display: flex;
+    align-items: center;
+    padding-left: 31px;
+}
+
+/* Priority reads off a dot: a filled core inside a ring of its own colour */
+.pinned-todo-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    margin: 0 3px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.pinned-todo-dot.is-low {
+    color: var(--dash-text-muted);
+}
+
+.pinned-todo-dot.is-medium {
+    color: var(--warning);
+}
+
+.pinned-todo-dot.is-high {
+    color: var(--danger);
+}
+
+.pinned-todo.is-done .pinned-item-title {
+    color: var(--dash-text-subtle);
+    text-decoration: line-through;
+}
+
+.pinned-todo.is-done .pinned-todo-dot {
+    color: var(--dash-text-faint);
+}
+
 .pinned-item-feedback {
     position: absolute;
     inset: 0;
@@ -2265,12 +2323,6 @@
     cursor: pointer;
 }
 
-.todo-list-tab-icon {
-    font-size: 13px;
-    line-height: 1;
-    color: var(--accent-primary);
-}
-
 .todo-list-tab-count {
     font-size: 11px;
     color: var(--dash-text-faint);
@@ -2806,6 +2858,20 @@
 .badge-pending     { background: var(--dash-badge-pending-bg); color: var(--text-muted); border: 1px solid var(--dash-badge-pending-border); }
 .badge-in-progress { background: var(--dash-badge-progress-bg);  color: var(--text-secondary); border: 1px solid var(--dash-badge-progress-border); }
 .badge-done        { background: var(--dash-badge-success-bg); color: var(--success); border: 1px solid var(--dash-badge-success-border); }
+
+/* Miniature variant for the sidebar rail: same colours, less room */
+.badge-mini {
+    font-size: 9px;
+    padding: 1px 6px;
+    letter-spacing: 0.03em;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.badge-mini .dn-select-chevron {
+    font-size: 9px;
+    margin-right: -1px;
+}
 
 /* Card action buttons */
 .item-actions {

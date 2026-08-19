@@ -4,6 +4,8 @@
    ========================================== */
 
 [data-theme="light"] {
+  color-scheme: light;
+
   --bg-primary: #e7eaf0;
   --bg-secondary: #ffffff;
   --bg-tertiary: #e2e7ef;

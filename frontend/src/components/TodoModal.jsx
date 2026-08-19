@@ -19,6 +19,7 @@ export default function TodoModal({
   onStatusChange,
   onPriorityChange,
   onMove,
+  onTogglePin,
   onDelete,
   onClose,
 }) {
@@ -94,6 +95,18 @@ export default function TodoModal({
                 >
                   <i className="ph-light ph-arrow-elbow-down-right" />
                 </button>
+                {onTogglePin && (
+                  <button
+                    type="button"
+                    className={`btn-card-icon-action${todo.is_pinned ? " is-active" : ""}`}
+                    title={todo.is_pinned ? "Unpin" : "Pin"}
+                    onClick={onTogglePin}
+                  >
+                    <i
+                      className={`ph-light ${todo.is_pinned ? "ph-push-pin-slash" : "ph-push-pin"}`}
+                    />
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn-card-icon-action btn-card-icon-danger"

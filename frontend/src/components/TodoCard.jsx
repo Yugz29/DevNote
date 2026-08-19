@@ -16,6 +16,7 @@ export default function TodoCard({
   onStatusChange,
   onPriorityChange,
   onMove,
+  onTogglePin,
   onDelete,
 }) {
   const priority = PRIORITY_BADGES[todo.priority] || PRIORITY_BADGES.medium;
@@ -48,6 +49,11 @@ export default function TodoCard({
           <CardMenu
             label={`Actions for ${todo.title}`}
             items={[
+              {
+                label: todo.is_pinned ? "Unpin" : "Pin",
+                icon: todo.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
+                onSelect: onTogglePin,
+              },
               {
                 label: "Move to…",
                 icon: "ph-arrow-elbow-down-right",
@@ -85,6 +91,9 @@ export default function TodoCard({
           />
         </div>
         <span className="card-date">
+          {todo.is_pinned && (
+            <i className="ph-light ph-push-pin gallery-card-pin" />
+          )}
           {new Date(todo.created_at).toLocaleDateString()}
         </span>
       </div>

@@ -12,7 +12,7 @@ export default function TodoMoveDialog({ todo, lists, onCancel, onMove }) {
     ...lists.map((list) => ({
       id: list.id,
       name: list.name,
-      icon: list.is_permanent ? "ph-star" : "ph-list-checks",
+      icon: "ph-list-checks",
     })),
   ];
 

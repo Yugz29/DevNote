@@ -20,8 +20,11 @@ export default function Sidebar({
   onBackToWelcome,
   onOpenPinnedDocument,
   onOpenPinnedSnippet,
+  onOpenPinnedTodo,
+  onChangeTodoStatus,
   onUnpinDocument,
   onUnpinSnippet,
+  onUnpinTodo,
   onOpenSearch,
   onOpenSettings,
   onLogout,
@@ -83,12 +86,16 @@ export default function Sidebar({
         <SidebarPinned
           documents={pinned.documents}
           snippets={pinned.snippets}
+          todos={pinned.todos}
           isLoading={pinned.isLoading}
           activeItemId={activeItemId}
           onOpenDocument={onOpenPinnedDocument}
           onOpenSnippet={onOpenPinnedSnippet}
+          onOpenTodo={onOpenPinnedTodo}
+          onChangeTodoStatus={onChangeTodoStatus}
           onUnpinDocument={onUnpinDocument}
           onUnpinSnippet={onUnpinSnippet}
+          onUnpinTodo={onUnpinTodo}
         />
       ) : (
         <SidebarProjects

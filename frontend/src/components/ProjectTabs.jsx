@@ -237,6 +237,10 @@ export default function ProjectTabs({
               view={todoView}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              openTarget={openTarget?.tab === "todos" ? openTarget : null}
+              contentVersion={contentVersion}
+              onPinnedChanged={onPinnedChanged}
+              onActiveItemChange={onActiveItemChange}
               onSortableChange={handleSortableChange}
             />
           )}

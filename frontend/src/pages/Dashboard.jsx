@@ -29,6 +29,7 @@ import {
   getProjects,
 } from "../services/projectService.js";
 import { setSnippetPinned } from "../services/snippetService.js";
+import { setTodoPinned, updateTodo } from "../services/todoService.js";
 import "../styles/dashboard.css";
 
 const MOBILE_QUERY = "(max-width: 768px)";
@@ -219,6 +220,11 @@ export default function Dashboard() {
     [openPinnedItem],
   );
 
+  const openPinnedTodo = useCallback(
+    (todo) => openPinnedItem("todos", todo.id),
+    [openPinnedItem],
+  );
+
   const { reload: reloadPinned } = pinned;
 
   const handlePinnedChanged = useCallback(() => reloadPinned(), [reloadPinned]);
@@ -251,6 +257,29 @@ export default function Dashboard() {
   const unpinSnippet = useCallback(
     (snippet) => unpin(setSnippetPinned, snippet, "snippet"),
     [unpin],
+  );
+
+  const unpinTodo = useCallback(
+    (todo) => unpin(setTodoPinned, todo, "todo"),
+    [unpin],
+  );
+
+  const changeTodoStatus = useCallback(
+    async (todo, nextStatus) => {
+      if (nextStatus === todo.status) return;
+
+      try {
+        await updateTodo(todo.id, undefined, undefined, nextStatus, undefined);
+      } catch (error) {
+        console.error("Error updating todo status:", error);
+        await showAlert("Unable to update the todo");
+        return;
+      }
+
+      await reloadPinned();
+      setContentVersion((current) => current + 1);
+    },
+    [reloadPinned, showAlert],
   );
 
   const closeSearch = useCallback(() => setIsSearchOpen(false), []);
@@ -360,8 +389,11 @@ export default function Dashboard() {
             onBackToWelcome={backToWelcome}
             onOpenPinnedDocument={openPinnedDocument}
             onOpenPinnedSnippet={openPinnedSnippet}
+            onOpenPinnedTodo={openPinnedTodo}
+            onChangeTodoStatus={changeTodoStatus}
             onUnpinDocument={unpinDocument}
             onUnpinSnippet={unpinSnippet}
+            onUnpinTodo={unpinTodo}
             onOpenSearch={() => setIsSearchOpen(true)}
             onOpenSettings={openSettings}
             onLogout={handleLogout}

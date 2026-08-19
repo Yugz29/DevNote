@@ -19,9 +19,6 @@ class TodoListViewTest(APITestCase):
 
         self.project = Project.objects.create(title="List View Project", user=self.user)
         self.todo_list = TodoList.objects.create(name="Sprint 1", project=self.project)
-        self.permanent_list = TodoList.objects.get(
-            project=self.project, is_permanent=True
-        )
 
         self.other_user = User.objects.create_user(
             username="listintruder",
@@ -42,20 +39,9 @@ class TodoListViewTest(APITestCase):
         response = self.client.get(f"/api/projects/{self.project.id}/todo-lists/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 3)
+        self.assertEqual(response.data["count"], 2)
         names = [entry["name"] for entry in response.data["results"]]
-        self.assertEqual(names, ["Top priorities", "Backlog", "Sprint 1"])
-
-    def test_the_permanent_list_leads_and_is_flagged(self):
-        """Test : the built-in list comes first and says so"""
-        TodoList.objects.create(name="Backlog", project=self.project)
-
-        response = self.client.get(f"/api/projects/{self.project.id}/todo-lists/")
-        results = response.data["results"]
-
-        self.assertTrue(results[0]["is_permanent"])
-        self.assertEqual(results[0]["id"], str(self.permanent_list.id))
-        self.assertFalse(any(entry["is_permanent"] for entry in results[1:]))
+        self.assertEqual(names, ["Backlog", "Sprint 1"])
 
     def test_list_carries_its_todo_count(self):
         """Test : each list reports how many todos it holds"""
@@ -81,7 +67,6 @@ class TodoListViewTest(APITestCase):
                 "id",
                 "name",
                 "project_id",
-                "is_permanent",
                 "todo_count",
                 "created_at",
                 "updated_at",
@@ -99,7 +84,7 @@ class TodoListViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], "Backlog")
         self.assertEqual(response.data["project_id"], str(self.project.id))
-        self.assertEqual(TodoList.objects.filter(project=self.project).count(), 3)
+        self.assertEqual(TodoList.objects.filter(project=self.project).count(), 2)
 
     def test_create_list_with_empty_name_rejected(self):
         """Test : a list needs a name"""
@@ -132,7 +117,7 @@ class TodoListViewTest(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(TodoList.objects.filter(project=self.other_project).count(), 2)
+        self.assertEqual(TodoList.objects.filter(project=self.other_project).count(), 1)
 
     def test_rename_list(self):
         """Test : a list can be renamed"""
@@ -201,80 +186,8 @@ class TodoListViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(TodoList.objects.filter(id=self.foreign_list.id).count(), 1)
 
-    def test_the_permanent_list_cannot_be_deleted(self):
-        """Test : the built-in list refuses to go"""
-        response = self.client.delete(f"/api/todo-lists/{self.permanent_list.id}/")
-
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-        self.assertEqual(response.data["code"], "permanent_list")
-        self.assertEqual(TodoList.objects.filter(id=self.permanent_list.id).count(), 1)
-
-    def test_deleting_it_leaves_its_todos_alone(self):
-        """Test : a refused delete changes nothing"""
-        todo = TODO.objects.create(
-            title="Urgent", project=self.project, list=self.permanent_list
-        )
-
-        self.client.delete(f"/api/todo-lists/{self.permanent_list.id}/")
-
-        todo.refresh_from_db()
-        self.assertEqual(todo.list, self.permanent_list)
-
-    def test_the_permanent_list_can_be_renamed(self):
-        """Test : the built-in list is the user's to name"""
-        response = self.client.patch(
-            f"/api/todo-lists/{self.permanent_list.id}/",
-            {"name": "Urgent"},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["name"], "Urgent")
-        self.assertTrue(response.data["is_permanent"])
-
-        self.permanent_list.refresh_from_db()
-        self.assertEqual(self.permanent_list.name, "Urgent")
-        self.assertTrue(self.permanent_list.is_permanent)
-
-    def test_a_renamed_permanent_list_still_refuses_deletion(self):
-        """Test : the protection follows the flag, not the name"""
-        self.client.patch(
-            f"/api/todo-lists/{self.permanent_list.id}/",
-            {"name": "Urgent"},
-            format="json",
-        )
-
-        response = self.client.delete(f"/api/todo-lists/{self.permanent_list.id}/")
-
-        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
-
-    def test_the_flag_cannot_be_set_through_the_api(self):
-        """Test : a plain list cannot promote itself"""
-        response = self.client.patch(
-            f"/api/todo-lists/{self.todo_list.id}/",
-            {"is_permanent": True},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertFalse(response.data["is_permanent"])
-
-        self.todo_list.refresh_from_db()
-        self.assertFalse(self.todo_list.is_permanent)
-
-    def test_the_flag_cannot_be_claimed_at_creation(self):
-        """Test : a new list never comes out flagged"""
-        response = self.client.post(
-            f"/api/projects/{self.project.id}/todo-lists/",
-            {"name": "Impostor", "is_permanent": True},
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertFalse(response.data["is_permanent"])
-
-    def test_a_new_project_is_served_with_its_permanent_list(self):
-        """Test : a project created through the API already has one"""
+    def test_a_new_project_arrives_without_any_list(self):
+        """Test : nothing is created alongside a project any more"""
         created = self.client.post(
             "/api/projects/", {"title": "Brand new", "description": ""}, format="json"
         )
@@ -283,23 +196,22 @@ class TodoListViewTest(APITestCase):
 
         response = self.client.get(f"/api/projects/{created.data['id']}/todo-lists/")
 
-        self.assertEqual(response.data["count"], 1)
-        self.assertTrue(response.data["results"][0]["is_permanent"])
+        self.assertEqual(response.data["count"], 0)
 
-    def test_a_todo_can_be_moved_into_the_permanent_list(self):
-        """Test : it takes todos like any other list"""
+    def test_a_todo_can_be_moved_into_a_list(self):
+        """Test : a loose todo can be filed"""
         todo = TODO.objects.create(title="Loose", project=self.project)
 
         response = self.client.patch(
             f"/api/todos/{todo.id}/",
-            {"list": str(self.permanent_list.id)},
+            {"list": str(self.todo_list.id)},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         todo.refresh_from_db()
-        self.assertEqual(todo.list, self.permanent_list)
+        self.assertEqual(todo.list, self.todo_list)
 
     def test_lists_of_a_foreign_project_denied(self):
         """Test : the nested listing refuses another user's project"""
@@ -313,7 +225,7 @@ class TodoListViewTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         ids = {entry["id"] for entry in response.data["results"]}
-        self.assertEqual(ids, {str(self.todo_list.id), str(self.permanent_list.id)})
+        self.assertEqual(ids, {str(self.todo_list.id)})
 
     def test_lists_require_authentication(self):
         """Test : the endpoint is closed to anonymous users"""

@@ -1,7 +1,13 @@
 import CardMenu from "./CardMenu.jsx";
+import DnSelect from "./DnSelect.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
+import SidebarGroup from "./SidebarGroup.jsx";
 import { useCopyStatus } from "../hooks/useCopyStatus.js";
-import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import {
+  PRIORITY_BADGES,
+  STATUS_BADGES,
+  STATUS_OPTIONS,
+} from "../lib/todos.js";
 
 const COPY_STATES = {
   copied: { icon: "ph-check-circle", label: "Copied!" },
@@ -85,48 +91,72 @@ function PinnedSnippet({ snippet, isActive, onOpen, onUnpin }) {
   );
 }
 
-function PinnedGroup({ label, list, storageKey, children }) {
-  const [collapsed, setCollapsed] = useLocalStorageState(storageKey, "false");
-
-  const isCollapsed = collapsed === "true";
-
-  if (list.items.length === 0) return null;
+function PinnedTodo({ todo, isActive, onOpen, onStatusChange, onUnpin }) {
+  const status = STATUS_BADGES[todo.status] || STATUS_BADGES.pending;
+  const priority = PRIORITY_BADGES[todo.priority] || PRIORITY_BADGES.medium;
 
   return (
-    <section className="pinned-group">
-      <button
-        type="button"
-        className="pinned-group-header"
-        aria-expanded={!isCollapsed}
-        onClick={() => setCollapsed(isCollapsed ? "false" : "true")}
-      >
-        <i
-          className={`ph-light ph-caret-down pinned-group-caret${isCollapsed ? " rotated" : ""}`}
-        />
-        <span>{label}</span>
-        {list.count > list.items.length && (
-          <span className="pinned-group-count">
-            {list.items.length} of {list.count}
-          </span>
-        )}
-      </button>
+    <div
+      className={`pinned-item pinned-todo${isActive ? " active" : ""}${todo.status === "done" ? " is-done" : ""}`}
+      data-id={todo.id}
+    >
+      <div className="pinned-todo-main">
+        <button
+          type="button"
+          className="pinned-item-open"
+          title={`Open ${todo.title} — ${priority.label} priority`}
+          onClick={() => onOpen(todo)}
+        >
+          <span className={`pinned-todo-dot is-${todo.priority}`} />
+          <span className="pinned-item-title">{todo.title}</span>
+        </button>
 
-      {!isCollapsed && children}
-    </section>
+        <div className="pinned-item-actions">
+          <CardMenu
+            label={`Actions for ${todo.title}`}
+            items={[
+              {
+                label: "Unpin",
+                icon: "ph-push-pin-slash",
+                onSelect: () => onUnpin(todo),
+              },
+            ]}
+          />
+        </div>
+      </div>
+
+      <div className="pinned-todo-badges">
+        <DnSelect
+          value={todo.status}
+          options={STATUS_OPTIONS}
+          onChange={(next) => onStatusChange(todo, next)}
+          usePortal
+          label={`Status: ${status.label}`}
+          triggerClassName={`todo-badge-select badge badge-mini ${status.class}`}
+        />
+      </div>
+    </div>
   );
 }
 
 export default function SidebarPinned({
   documents,
   snippets,
+  todos,
   isLoading,
   activeItemId,
   onOpenDocument,
   onOpenSnippet,
+  onOpenTodo,
+  onChangeTodoStatus,
   onUnpinDocument,
   onUnpinSnippet,
+  onUnpinTodo,
 }) {
-  const isEmpty = documents.items.length === 0 && snippets.items.length === 0;
+  const isEmpty =
+    documents.items.length === 0 &&
+    snippets.items.length === 0 &&
+    todos.items.length === 0;
 
   if (isLoading) {
     return (
@@ -143,16 +173,17 @@ export default function SidebarPinned({
           <i className="ph-light ph-push-pin" />
           <p>Nothing pinned yet</p>
           <span>
-            Pin a document or a snippet
+            Pin a document, a snippet or a todo
             <br />
             to keep it one click away
           </span>
         </div>
       )}
 
-      <PinnedGroup
+      <SidebarGroup
         label="Documents"
-        list={documents}
+        items={documents.items}
+        count={documents.count}
         storageKey="devnote_pinned_documents_collapsed"
       >
         {documents.items.map((doc) => (
@@ -164,11 +195,12 @@ export default function SidebarPinned({
             onUnpin={onUnpinDocument}
           />
         ))}
-      </PinnedGroup>
+      </SidebarGroup>
 
-      <PinnedGroup
+      <SidebarGroup
         label="Snippets"
-        list={snippets}
+        items={snippets.items}
+        count={snippets.count}
         storageKey="devnote_pinned_snippets_collapsed"
       >
         {snippets.items.map((snippet) => (
@@ -180,7 +212,25 @@ export default function SidebarPinned({
             onUnpin={onUnpinSnippet}
           />
         ))}
-      </PinnedGroup>
+      </SidebarGroup>
+
+      <SidebarGroup
+        label="TODOs"
+        items={todos.items}
+        count={todos.count}
+        storageKey="devnote_pinned_todos_collapsed"
+      >
+        {todos.items.map((todo) => (
+          <PinnedTodo
+            key={todo.id}
+            todo={todo}
+            isActive={todo.id === activeItemId}
+            onOpen={onOpenTodo}
+            onStatusChange={onChangeTodoStatus}
+            onUnpin={onUnpinTodo}
+          />
+        ))}
+      </SidebarGroup>
     </div>
   );
 }

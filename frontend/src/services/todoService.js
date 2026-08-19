@@ -21,6 +21,11 @@ export const getAllTodos = async (projectId) => {
   return allResults;
 };
 
+export const getPinnedTodos = async (projectId) => {
+  const response = await api.get(`/projects/${projectId}/todos/pinned/`);
+  return response.data;
+};
+
 export const createTodo = async (
   projectId,
   title,
@@ -58,6 +63,13 @@ export const updateTodo = async (
   if (priority !== undefined) payload.priority = priority;
 
   const response = await api.patch(`/todos/${todoId}/`, payload);
+  return response.data;
+};
+
+export const setTodoPinned = async (todoId, isPinned) => {
+  const response = await api.patch(`/todos/${todoId}/`, {
+    is_pinned: isPinned,
+  });
   return response.data;
 };
 
