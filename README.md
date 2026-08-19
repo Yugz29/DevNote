@@ -114,7 +114,7 @@ DevNote/
 
 ### Prerequisites
 
-- **Python 3.9+** (the reference virtualenv runs 3.9.6)
+- **Python 3.11+** (the reference virtualenv runs 3.11.15)
 - **Node.js 20.19+** or **22.12+** — required by Vite 7
 
 ### Backend setup
