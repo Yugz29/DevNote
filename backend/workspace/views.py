@@ -1,28 +1,29 @@
-from rest_framework import viewsets, permissions
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import status
+import logging
+from uuid import UUID
+
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
-from django.db.models import Count, Q
-from django.core.exceptions import ValidationError as DjangoValidationError
-from uuid import UUID
-from .models import Project, Folder, Note, Snippet, TODO, TodoList
-from .serializers import (
-    ProjectSerializer,
-    FolderSerializer,
-    NoteSerializer,
-    NoteCardSerializer,
-    SnippetSerializer,
-    TODOSerializer,
-    TodoListSerializer,
-)
-import logging
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-logger = logging.getLogger('workspace')
+from .models import TODO, Folder, Note, Project, Snippet, TodoList
+from .serializers import (
+    FolderSerializer,
+    NoteCardSerializer,
+    NoteSerializer,
+    ProjectSerializer,
+    SnippetSerializer,
+    TodoListSerializer,
+    TODOSerializer,
+)
+
+logger = logging.getLogger("workspace")
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -36,9 +37,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Automatically associate the project with the logged-in user"""
         project = serializer.save(user=self.request.user)
-        logger.info(f"Project '{project.title}' (ID: {project.id}) created by user {self.request.user.username}")
+        logger.info(
+            f"Project '{project.title}' (ID: {project.id}) "
+            f"created by user {self.request.user.username}"
+        )
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
         """Folders then notes sitting at the root of a project"""
         project = self.get_object()
@@ -49,7 +53,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project.notes.filter(folder__isnull=True),
         )
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def pinned(self, request, *args, **kwargs):
         """
         Pinned notes of a project, wherever they sit in the folder tree, in
@@ -111,9 +115,9 @@ class ChainedQuerysets:
 def folders_with_counts(queryset):
     """Annotate direct children and note counts, for the gallery cards."""
     return queryset.annotate(
-        folder_count=Count('children', distinct=True),
-        note_count=Count('notes', distinct=True),
-    ).order_by('name')
+        folder_count=Count("children", distinct=True),
+        note_count=Count("notes", distinct=True),
+    ).order_by("name")
 
 
 def paginated_contents(view, folders, notes):
@@ -123,15 +127,15 @@ def paginated_contents(view, folders, notes):
     """
     context = view.get_serializer_context()
     entries = ChainedQuerysets(
-        folders_with_counts(folders).select_related('project', 'parent'),
-        notes.select_related('project', 'folder'),
+        folders_with_counts(folders).select_related("project", "parent"),
+        notes.select_related("project", "folder"),
     )
 
     def represent(entry):
         if isinstance(entry, Folder):
-            return {'type': 'folder', **FolderSerializer(entry, context=context).data}
+            return {"type": "folder", **FolderSerializer(entry, context=context).data}
 
-        return {'type': 'note', **NoteCardSerializer(entry, context=context).data}
+        return {"type": "note", **NoteCardSerializer(entry, context=context).data}
 
     page = view.paginate_queryset(entries)
 
@@ -143,10 +147,11 @@ def paginated_contents(view, folders, notes):
 
 class ProjectScopedViewSet(viewsets.ModelViewSet):
     """Shared plumbing for resources nested under a project."""
+
     permission_classes = [IsAuthenticated]
 
     def get_project(self):
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
 
         if not project_pk:
             return None
@@ -159,15 +164,15 @@ class ProjectScopedViewSet(viewsets.ModelViewSet):
     def get_serializer_context(self):
         context = super().get_serializer_context()
 
-        if getattr(self, 'swagger_fake_view', False):
+        if getattr(self, "swagger_fake_view", False):
             return context
 
-        if self.kwargs.get('project_pk'):
-            context['project'] = self.get_project()
-        elif self.detail and self.kwargs.get('pk'):
-            instance = self.get_queryset().filter(pk=self.kwargs['pk']).first()
+        if self.kwargs.get("project_pk"):
+            context["project"] = self.get_project()
+        elif self.detail and self.kwargs.get("pk"):
+            instance = self.get_queryset().filter(pk=self.kwargs["pk"]).first()
             if instance is not None:
-                context['project'] = instance.project
+                context["project"] = instance.project
 
         return context
 
@@ -178,15 +183,15 @@ class ProjectScopedViewSet(viewsets.ModelViewSet):
         if value is None:
             return queryset
 
-        if value == 'null':
-            return queryset.filter(**{f'{field}__isnull': True})
+        if value == "null":
+            return queryset.filter(**{f"{field}__isnull": True})
 
         try:
             UUID(value)
         except ValueError:
             raise ValidationError({param: f"Invalid {param} id."})
 
-        return queryset.filter(**{f'{field}__id': value})
+        return queryset.filter(**{f"{field}__id": value})
 
 
 class FolderViewSet(ProjectScopedViewSet):
@@ -195,19 +200,20 @@ class FolderViewSet(ProjectScopedViewSet):
     - Nested under /api/projects/{id}/folders/
     - ?parent=<uuid> or ?parent=null narrows the listing to one level
     """
+
     serializer_class = FolderSerializer
 
     def get_queryset(self):
         """Returns only the folders of the logged-in user"""
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
         queryset = Folder.objects.filter(project__user=self.request.user)
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
 
-        queryset = self.filter_by_relation(queryset, 'parent', 'parent')
+        queryset = self.filter_by_relation(queryset, "parent", "parent")
 
-        return folders_with_counts(queryset).select_related('project', 'parent')
+        return folders_with_counts(queryset).select_related("project", "parent")
 
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
@@ -229,21 +235,22 @@ class FolderViewSet(ProjectScopedViewSet):
         """
         folder = self.get_object()
         counts = folder.cascade_counts()
-        confirmed = request.query_params.get('confirm') == 'true'
+        confirmed = request.query_params.get("confirm") == "true"
 
-        if not confirmed and (counts['folders'] or counts['notes']):
+        if not confirmed and (counts["folders"] or counts["notes"]):
             return Response(
                 {
-                    'detail': (
+                    "detail": (
                         "This folder is not empty. Deleting it will also delete "
-                        f"{counts['folders']} subfolder(s) and {counts['notes']} note(s). "
+                        f"{counts['folders']} subfolder(s) and "
+                        f"{counts['notes']} note(s). "
                         "Repeat the request with ?confirm=true to proceed."
                     ),
-                    'code': 'folder_not_empty',
-                    'folders': counts['folders'],
-                    'notes': counts['notes'],
+                    "code": "folder_not_empty",
+                    "folders": counts["folders"],
+                    "notes": counts["notes"],
                 },
-                status=status.HTTP_409_CONFLICT
+                status=status.HTTP_409_CONFLICT,
             )
 
         logger.info(
@@ -254,7 +261,7 @@ class FolderViewSet(ProjectScopedViewSet):
 
         return super().destroy(request, *args, **kwargs)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
         """Direct subfolders then direct notes of a folder"""
         folder = self.get_object()
@@ -270,8 +277,8 @@ def copy_title(title, taken, max_length):
     index = 1
 
     while True:
-        suffix = ' (copy)' if index == 1 else f' (copy {index})'
-        candidate = f'{title[:max_length - len(suffix)]}{suffix}'
+        suffix = " (copy)" if index == 1 else f" (copy {index})"
+        candidate = f"{title[:max_length - len(suffix)]}{suffix}"
 
         if candidate not in taken:
             return candidate
@@ -284,15 +291,15 @@ class NoteViewSet(ProjectScopedViewSet):
 
     def get_queryset(self):
         """Returns only the notes of the logged-in user"""
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
         queryset = Note.objects.filter(project__user=self.request.user)
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
 
-        queryset = self.filter_by_relation(queryset, 'folder', 'folder')
+        queryset = self.filter_by_relation(queryset, "folder", "folder")
 
-        return queryset.select_related('project', 'folder')
+        return queryset.select_related("project", "folder")
 
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
@@ -303,21 +310,21 @@ class NoteViewSet(ProjectScopedViewSet):
 
         serializer.save(project=project)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def duplicate(self, request, *args, **kwargs):
         """Copy a note, content included, into the folder holding it"""
         note = self.get_object()
         taken = set(
-            Note.objects
-            .filter(project=note.project, folder=note.folder)
-            .values_list('title', flat=True)
+            Note.objects.filter(project=note.project, folder=note.folder).values_list(
+                "title", flat=True
+            )
         )
 
         copy = Note.objects.create(
             title=copy_title(
                 note.title,
                 taken,
-                Note._meta.get_field('title').max_length,
+                Note._meta.get_field("title").max_length,
             ),
             content=note.content,
             project=note.project,
@@ -340,35 +347,39 @@ class SnippetViewSet(viewsets.ModelViewSet):
     - Nested under /api/projects/{id}/snippets/
     - User isolation via project ownership
     """
+
     serializer_class = SnippetSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Returns only the snippet of the logged_in user"""
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
         queryset = Snippet.objects.filter(project__user=self.request.user)
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
-        return queryset.select_related('project')
-    
+        return queryset.select_related("project")
+
     def perform_create(self, serializer):
         """Inject project from URL and verify ownership"""
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
 
         try:
-            project = Project.objects.get(
-                id=project_pk,
-                user=self.request.user
-            )
+            project = Project.objects.get(id=project_pk, user=self.request.user)
         except Project.DoesNotExist:
-            logger.warning(f'User {self.request.user.username} tried to access non-existent project {project_pk}')
+            logger.warning(
+                f"User {self.request.user.username} tried to access "
+                f"non-existent project {project_pk}"
+            )
             raise PermissionDenied("Project not found or access denied.")
 
         snippet = serializer.save(project=project)
-        logger.info(f"Snippet '{snippet.title}' (ID: {snippet.id}) created in project {project.id} by user {self.request.user.username}")
+        logger.info(
+            f"Snippet '{snippet.title}' (ID: {snippet.id}) created in "
+            f"project {project.id} by user {self.request.user.username}"
+        )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def pinned(self, request, *args, **kwargs):
         """
         Pinned snippets of a project, in the same shape as the plain listing so
@@ -378,25 +389,27 @@ class SnippetViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(queryset)
 
         if page is not None:
-            return self.get_paginated_response(self.get_serializer(page, many=True).data)
+            return self.get_paginated_response(
+                self.get_serializer(page, many=True).data
+            )
 
         return Response(self.get_serializer(queryset, many=True).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def duplicate(self, request, *args, **kwargs):
         """Copy a snippet, code included, into the project holding it"""
         snippet = self.get_object()
         taken = set(
-            Snippet.objects
-            .filter(project=snippet.project)
-            .values_list('title', flat=True)
+            Snippet.objects.filter(project=snippet.project).values_list(
+                "title", flat=True
+            )
         )
 
         copy = Snippet.objects.create(
             title=copy_title(
                 snippet.title,
                 taken,
-                Snippet._meta.get_field('title').max_length,
+                Snippet._meta.get_field("title").max_length,
             ),
             content=snippet.content,
             language=snippet.language,
@@ -413,6 +426,7 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 class TodoListViewSet(ProjectScopedViewSet):
     """
     ViewSet for TodoList CRUD operations
@@ -420,19 +434,22 @@ class TodoListViewSet(ProjectScopedViewSet):
     - Lists are flat: deleting one leaves its todos unclassified
     - The permanent list comes first and refuses to be deleted
     """
+
     serializer_class = TodoListSerializer
 
     def get_queryset(self):
         """Returns only the todo lists of the logged-in user"""
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
         queryset = TodoList.objects.filter(project__user=self.request.user)
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
 
-        return queryset.annotate(
-            todo_count=Count('todos', distinct=True)
-        ).select_related('project').order_by('-is_permanent', 'name')
+        return (
+            queryset.annotate(todo_count=Count("todos", distinct=True))
+            .select_related("project")
+            .order_by("-is_permanent", "name")
+        )
 
     def perform_create(self, serializer):
         """Assign project from URL and verify ownership"""
@@ -454,13 +471,13 @@ class TodoListViewSet(ProjectScopedViewSet):
         if todo_list.is_permanent:
             return Response(
                 {
-                    'detail': (
+                    "detail": (
                         "This list is permanent and cannot be deleted. "
                         "Rename it if you want to call it something else."
                     ),
-                    'code': 'permanent_list',
+                    "code": "permanent_list",
                 },
-                status=status.HTTP_409_CONFLICT
+                status=status.HTTP_409_CONFLICT,
             )
 
         released = todo_list.todos.count()
@@ -481,11 +498,12 @@ class TODOViewSet(ProjectScopedViewSet):
     - ?list=<uuid> narrows to one list, ?list=null to the unclassified ones;
       no filter at all returns every todo of the project
     """
+
     serializer_class = TODOSerializer
 
     def get_queryset(self):
         """Return only the Todo of the logged user"""
-        project_pk = self.kwargs.get('project_pk')
+        project_pk = self.kwargs.get("project_pk")
         queryset = TODO.objects.filter(project__user=self.request.user)
 
         # Filter by project (nested routes)
@@ -493,18 +511,18 @@ class TODOViewSet(ProjectScopedViewSet):
             queryset = queryset.filter(project__id=project_pk)
 
         # Filter by status (query_param)
-        status_param = self.request.query_params.get('status')
+        status_param = self.request.query_params.get("status")
         if status_param:
             queryset = queryset.filter(status=status_param)
 
         # Filter by priority (query_param)
-        priority_param = self.request.query_params.get('priority')
+        priority_param = self.request.query_params.get("priority")
         if priority_param:
             queryset = queryset.filter(priority=priority_param)
 
-        queryset = self.filter_by_relation(queryset, 'list', 'list')
+        queryset = self.filter_by_relation(queryset, "list", "list")
 
-        return queryset.select_related('project', 'list')
+        return queryset.select_related("project", "list")
 
     def perform_create(self, serializer):
         """Inject project from URL for nested routes"""
@@ -514,87 +532,102 @@ class TODOViewSet(ProjectScopedViewSet):
             raise PermissionDenied("Project not found or access denied.")
 
         todo = serializer.save(project=project)
-        logger.info(f"TODO '{todo.title}' (ID: {todo.id}) created in project {project.id} by user {self.request.user.username}")
+        logger.info(
+            f"TODO '{todo.title}' (ID: {todo.id}) created in "
+            f"project {project.id} by user {self.request.user.username}"
+        )
 
 
-@method_decorator(ratelimit(key='user', rate='30/m', method='GET'), name='get')
+@method_decorator(ratelimit(key="user", rate="30/m", method="GET"), name="get")
 class SearchView(APIView):
     """
     Global search across Notes, Snippets and TODOs
     GET /api/search/?q=<query>&type=<notes|snippets|todos>
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     MAX_QUERY_LENGTH = 200
 
     def get(self, request):
-        if getattr(request, 'limited', False):
+        if getattr(request, "limited", False):
             return Response(
-                {'error': 'Too many search requests. Please slow down.'},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
+                {"error": "Too many search requests. Please slow down."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        query = request.query_params.get('q')
-        search_type = request.query_params.get('type')
+        query = request.query_params.get("q")
+        search_type = request.query_params.get("type")
 
         if not query:
             return Response(
-                {'error': 'Search query parameter "q" is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": 'Search query parameter "q" is required'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if len(query) > self.MAX_QUERY_LENGTH:
             return Response(
-                {'error': f'Query too long (max {self.MAX_QUERY_LENGTH} characters)'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": f"Query too long (max {self.MAX_QUERY_LENGTH} characters)"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        VALID_TYPES = ['projects', 'notes', 'snippets', 'todos']
+
+        VALID_TYPES = ["projects", "notes", "snippets", "todos"]
         if search_type and search_type not in VALID_TYPES:
             return Response(
                 {
-                    'error': f'Invalid type. Must be one of: {", ".join(VALID_TYPES)}',
-                    'code': 'INVALID_TYPE'
+                    "error": f'Invalid type. Must be one of: {", ".join(VALID_TYPES)}',
+                    "code": "INVALID_TYPE",
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         user = request.user
         results = {}
 
         # Search in Projects
-        if not search_type or search_type == 'projects':
+        if not search_type or search_type == "projects":
             projects = Project.objects.filter(user=user).filter(
                 Q(title__icontains=query) | Q(description__icontains=query)
             )
             from .serializers import ProjectSerializer as PS
-            results['projects'] = PS(projects, many=True).data
+
+            results["projects"] = PS(projects, many=True).data
 
         # Search in Notes
-        if not search_type or search_type =='notes':
-            notes = Note.objects.filter(project__user=user).filter(
-                Q(title__icontains=query) | Q(content__icontains=query)
-            ).select_related('project')
-            results['notes'] = NoteSerializer(notes, many=True).data
+        if not search_type or search_type == "notes":
+            notes = (
+                Note.objects.filter(project__user=user)
+                .filter(Q(title__icontains=query) | Q(content__icontains=query))
+                .select_related("project")
+            )
+            results["notes"] = NoteSerializer(notes, many=True).data
 
         # Search in Snippets
-        if not search_type or search_type == 'snippets':
-            snippets = Snippet.objects.filter(project__user=user).filter(
-                Q(title__icontains=query) |
-                Q(content__icontains=query) |
-                Q(language__icontains=query) |
-                Q(description__icontains=query)
-            ).select_related('project')
-            results['snippets'] = SnippetSerializer(snippets, many=True).data
+        if not search_type or search_type == "snippets":
+            snippets = (
+                Snippet.objects.filter(project__user=user)
+                .filter(
+                    Q(title__icontains=query)
+                    | Q(content__icontains=query)
+                    | Q(language__icontains=query)
+                    | Q(description__icontains=query)
+                )
+                .select_related("project")
+            )
+            results["snippets"] = SnippetSerializer(snippets, many=True).data
 
         # Search in TODOs
-        if not search_type or search_type == 'todos':
-            todos = TODO.objects.filter(project__user=user).filter(
-                Q(title__icontains=query) |
-                Q(description__icontains=query) |
-                Q(status__icontains=query) |
-                Q(priority__icontains=query)
-            ).select_related('project')
-            results['todos'] = TODOSerializer(todos, many=True).data
+        if not search_type or search_type == "todos":
+            todos = (
+                TODO.objects.filter(project__user=user)
+                .filter(
+                    Q(title__icontains=query)
+                    | Q(description__icontains=query)
+                    | Q(status__icontains=query)
+                    | Q(priority__icontains=query)
+                )
+                .select_related("project")
+            )
+            results["todos"] = TODOSerializer(todos, many=True).data
 
         return Response(results, status=status.HTTP_200_OK)

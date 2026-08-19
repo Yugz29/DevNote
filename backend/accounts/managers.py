@@ -1,6 +1,7 @@
 # accounts/managers.py
-from django.contrib.auth.models import BaseUserManager
 import uuid
+
+from django.contrib.auth.models import BaseUserManager
 
 
 class UserManager(BaseUserManager):
@@ -21,15 +22,15 @@ class UserManager(BaseUserManager):
             **extra_fields: first_name, last_name, username (optional)
         """
         if not email:
-            raise ValueError('Email is required')
+            raise ValueError("Email is required")
 
         email = self.normalize_email(email)
 
         # Autogeneration of the username if not provided
-        username = extra_fields.get('username')
+        username = extra_fields.get("username")
         if not username:
-            username = f'user_{uuid.uuid4().hex[:10]}'
-            extra_fields['username'] = username
+            username = f"user_{uuid.uuid4().hex[:10]}"
+            extra_fields["username"] = username
 
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -45,13 +46,13 @@ class UserManager(BaseUserManager):
             password (str): Password
             **extra_fields: first_name, last_name, etc.
         """
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_active", True)
 
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True')
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True")
 
         return self.create_user(email, password, **extra_fields)
