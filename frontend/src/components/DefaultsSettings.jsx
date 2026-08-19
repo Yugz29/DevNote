@@ -1,5 +1,6 @@
 import SettingsChoice from "./SettingsChoice.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import { DONE_PINNED_DEFAULT, DONE_PINNED_KEY } from "../lib/todoPinRule.js";
 
 const PREFERENCES = [
   {
@@ -20,6 +21,16 @@ const PREFERENCES = [
     options: [
       { value: "list", label: "List", icon: "ph-list-bullets" },
       { value: "kanban", label: "Kanban", icon: "ph-columns" },
+    ],
+  },
+  {
+    storageKey: DONE_PINNED_KEY,
+    fallback: DONE_PINNED_DEFAULT,
+    title: "Pinned todo marked done",
+    hint: "What the sidebar does once a pinned todo is completed.",
+    options: [
+      { value: "keep", label: "Keep pinned", icon: "ph-push-pin" },
+      { value: "unpin", label: "Unpin it", icon: "ph-push-pin-slash" },
     ],
   },
 ];

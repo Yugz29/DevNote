@@ -13,11 +13,17 @@ import SearchOverlay from "../components/SearchOverlay.jsx";
 import SettingsPanel from "../components/SettingsPanel.jsx";
 import SettingsSidebar from "../components/SettingsSidebar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
+
 import { useAuth } from "../contexts/AuthContext.js";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useTheme } from "../contexts/ThemeContext.js";
 import { applyMermaidTheme } from "../lib/blocknote.js";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import {
+  SIDEBAR_WIDTH_DEFAULT,
+  SIDEBAR_WIDTH_KEY,
+  clampWidth,
+} from "../lib/sidebarWidth.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePinnedItems } from "../hooks/usePinnedItems.js";
 import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
@@ -30,6 +36,7 @@ import {
 } from "../services/projectService.js";
 import { setSnippetPinned } from "../services/snippetService.js";
 import { setTodoPinned, updateTodo } from "../services/todoService.js";
+import { shouldUnpinOnDone } from "../lib/todoPinRule.js";
 import "../styles/dashboard.css";
 
 const MOBILE_QUERY = "(max-width: 768px)";
@@ -85,6 +92,15 @@ export default function Dashboard() {
   const [isSidebarHidden, setIsSidebarHidden] = useState(
     () =>
       !isMobile() && localStorage.getItem("devnote_sidebar_hidden") === "true",
+  );
+
+  const [storedSidebarWidth, setStoredSidebarWidth] = useLocalStorageState(
+    SIDEBAR_WIDTH_KEY,
+    String(SIDEBAR_WIDTH_DEFAULT),
+  );
+
+  const sidebarWidth = clampWidth(
+    Number(storedSidebarWidth) || SIDEBAR_WIDTH_DEFAULT,
   );
 
   const [projectSort, setProjectSort] = useLocalStorageState(
@@ -270,6 +286,10 @@ export default function Dashboard() {
 
       try {
         await updateTodo(todo.id, undefined, undefined, nextStatus, undefined);
+
+        if (shouldUnpinOnDone(todo, nextStatus)) {
+          await setTodoPinned(todo.id, false);
+        }
       } catch (error) {
         console.error("Error updating todo status:", error);
         await showAlert("Unable to update the todo");
@@ -357,7 +377,10 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className={layoutClassName}>
+      <div
+        className={layoutClassName}
+        style={{ "--sidebar-width": `${sidebarWidth}px` }}
+      >
         <div
           id="sidebar-overlay"
           className="sidebar-overlay"
@@ -397,6 +420,8 @@ export default function Dashboard() {
             onOpenSearch={() => setIsSearchOpen(true)}
             onOpenSettings={openSettings}
             onLogout={handleLogout}
+            sidebarWidth={sidebarWidth}
+            onSidebarWidthChange={(next) => setStoredSidebarWidth(String(next))}
           />
         )}
 

@@ -45,8 +45,9 @@
    ============================================================ */
 
 .sidebar {
-    width: 252px;
-    min-width: 252px;
+    position: relative;
+    width: var(--sidebar-width, 252px);
+    min-width: var(--sidebar-width, 252px);
     background: var(--dash-sidebar-glass);
     backdrop-filter: blur(var(--dash-sidebar-blur)) saturate(1.2);
     -webkit-backdrop-filter: blur(var(--dash-sidebar-blur)) saturate(1.2);
@@ -64,6 +65,54 @@
     opacity: 0;
     margin-right: -12px;
     border: none;
+}
+
+/* Resizing writes the width straight to the CSS variable, so the width
+   transition has to stand down for the duration of the drag. */
+.layout.is-resizing .sidebar {
+    transition: none;
+}
+
+.layout.is-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.sidebar-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.sidebar-resizer::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    bottom: 12px;
+    right: 2px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--accent-primary);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+.layout.is-resizing .sidebar-resizer::after {
+    opacity: 1;
+}
+
+.sidebar-resizer:focus-visible {
+    outline: none;
+}
+
+.layout.sidebar-hidden .sidebar-resizer {
+    display: none;
 }
 
 .sidebar-overlay {
@@ -100,6 +149,10 @@
     .layout {
         padding: 0;
         gap: 0;
+    }
+
+    .sidebar-resizer {
+        display: none;
     }
 
     .sidebar {

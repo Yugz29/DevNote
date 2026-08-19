@@ -6,6 +6,7 @@ import TodoModal from "./TodoModal.jsx";
 import TodoMoveDialog from "./TodoMoveDialog.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
+import { shouldUnpinOnDone } from "../lib/todoPinRule.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
 import {
   PRIORITY_ORDER,
@@ -234,9 +235,15 @@ export default function TodosPanel({
 
     try {
       await updateTodo(todo.id, undefined, undefined, status, priority);
+      const unpins = field === "status" && shouldUnpinOnDone(todo, value);
+
+      if (unpins) await setTodoPinned(todo.id, false);
+
       setItems((current) =>
         current.map((item) =>
-          item.id === todo.id ? { ...item, [field]: value } : item,
+          item.id === todo.id
+            ? { ...item, [field]: value, ...(unpins && { is_pinned: false }) }
+            : item,
         ),
       );
 
@@ -264,6 +271,12 @@ export default function TodosPanel({
           values.status,
           values.priority,
         );
+
+        const saved = items.find((item) => item.id === todoId);
+
+        if (shouldUnpinOnDone(saved, values.status)) {
+          await setTodoPinned(todoId, false);
+        }
       } else {
         await createTodo(
           projectId,

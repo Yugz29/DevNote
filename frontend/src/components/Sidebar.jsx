@@ -1,6 +1,7 @@
 import ProjectSortDropdown from "./ProjectSortDropdown.jsx";
 import SidebarPinned from "./SidebarPinned.jsx";
 import SidebarProjects from "./SidebarProjects.jsx";
+import SidebarResizer from "./SidebarResizer.jsx";
 
 export default function Sidebar({
   user,
@@ -28,6 +29,8 @@ export default function Sidebar({
   onOpenSearch,
   onOpenSettings,
   onLogout,
+  sidebarWidth,
+  onSidebarWidthChange,
 }) {
   const isProjectContext = Boolean(project);
   const canSort = !isLoading && !hasError && projects.length > 1;
@@ -134,6 +137,10 @@ export default function Sidebar({
           </button>
         </div>
       </div>
+      <SidebarResizer
+        width={sidebarWidth}
+        onWidthChange={onSidebarWidthChange}
+      />
     </aside>
   );
 }
