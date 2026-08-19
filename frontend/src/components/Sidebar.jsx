@@ -53,7 +53,10 @@ export default function Sidebar({
             </button>
           )}
 
-          <h2 title={isProjectContext ? project.title : undefined}>
+          <h2
+            className={isProjectContext ? "is-context" : undefined}
+            title={isProjectContext ? project.title : undefined}
+          >
             {isProjectContext ? project.title : "Projects"}
           </h2>
         </div>

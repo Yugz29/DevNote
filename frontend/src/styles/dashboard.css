@@ -200,6 +200,13 @@
     white-space: nowrap;
 }
 
+.sidebar-header h2.is-context {
+    font-size: 12.5px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--dash-text-muted);
+}
+
 .sidebar-header-right {
     display: flex;
     align-items: center;
@@ -723,10 +730,36 @@
     font-weight: 600;
 }
 
+.project-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.project-description-toggle {
+    color: var(--dash-text-faint);
+    padding: 2px;
+    border-radius: 5px;
+}
+
+.project-description-toggle:hover {
+    color: var(--dash-text-dim);
+    background: var(--dash-glass);
+}
+
+.project-description-toggle i {
+    font-size: 14px;
+    transition: transform 0.15s;
+}
+
 .project-description {
     margin-top: 4px;
     font-size: 13px;
     color: var(--dash-text-dim);
+}
+
+.project-description.collapsed {
+    display: none;
 }
 
 /* Inline editing — title & description */

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { updateProject } from "../services/projectService.js";
 
 export default function ProjectHeader({
@@ -8,6 +8,16 @@ export default function ProjectHeader({
 }) {
   const titleRef = useRef(null);
   const descriptionRef = useRef(null);
+
+  const hasDescription = Boolean(project.description?.trim());
+
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(!hasDescription);
+  const [describedProjectId, setDescribedProjectId] = useState(project.id);
+
+  if (describedProjectId !== project.id) {
+    setDescribedProjectId(project.id);
+    setIsDescriptionOpen(!hasDescription);
+  }
 
   const startInlineEdit = (field) => {
     const element =
@@ -80,16 +90,34 @@ export default function ProjectHeader({
     <header className="project-header">
       <div className="project-header-left">
         <div>
-          <h1
-            id="project-title"
-            ref={titleRef}
-            onClick={() => startInlineEdit("title")}
-          >
-            {project.title}
-          </h1>
+          <div className="project-title-row">
+            <h1
+              id="project-title"
+              ref={titleRef}
+              onClick={() => startInlineEdit("title")}
+            >
+              {project.title}
+            </h1>
+
+            <button
+              type="button"
+              className="btn-toggle-group project-description-toggle"
+              title={
+                isDescriptionOpen ? "Hide description" : "Show description"
+              }
+              aria-expanded={isDescriptionOpen}
+              aria-controls="project-description"
+              onClick={() => setIsDescriptionOpen((current) => !current)}
+            >
+              <i
+                className={`ph-light ph-caret-down${isDescriptionOpen ? "" : " rotated"}`}
+              />
+            </button>
+          </div>
+
           <p
             id="project-description"
-            className="project-description"
+            className={`project-description${isDescriptionOpen ? "" : " collapsed"}`}
             ref={descriptionRef}
             onClick={() => startInlineEdit("description")}
           >
