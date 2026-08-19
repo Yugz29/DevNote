@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useClickOutside } from "../hooks/useClickOutside.js";
 
 const VIEWPORT_MARGIN = 8;
+const DROPDOWN_GAP = 6;
 const SUBMENU_GAP = 5;
 const SUBMENU_INSET = 5;
 const HOVER_CLOSE_DELAY = 120;
 
 export default function CardMenu({ label, items }) {
   const wrapRef = useRef(null);
+  const menuTriggerRef = useRef(null);
+  const dropdownNodeRef = useRef(null);
   const triggerNodeRef = useRef(null);
   const submenuNodeRef = useRef(null);
   const focusOnOpenRef = useRef(false);
   const closeTimerRef = useRef(null);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState(null);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [submenuPosition, setSubmenuPosition] = useState(null);
 
@@ -28,6 +31,7 @@ export default function CardMenu({ label, items }) {
   const close = useCallback(() => {
     cancelHoverClose();
     setIsOpen(false);
+    setDropdownPosition(null);
     setOpenSubmenu(null);
   }, [cancelHoverClose]);
 
@@ -37,9 +41,68 @@ export default function CardMenu({ label, items }) {
     triggerNodeRef.current?.focus();
   }, [cancelHoverClose]);
 
-  useClickOutside(wrapRef, close, isOpen);
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onDocumentClick = (event) => {
+      const insideMenu =
+        wrapRef.current?.contains(event.target) ||
+        dropdownNodeRef.current?.contains(event.target) ||
+        submenuNodeRef.current?.contains(event.target);
+
+      if (!insideMenu) close();
+    };
+
+    document.addEventListener("click", onDocumentClick);
+    return () => document.removeEventListener("click", onDocumentClick);
+  }, [isOpen, close]);
 
   useEffect(() => cancelHoverClose, [cancelHoverClose]);
+
+  const measureDropdown = useCallback(() => {
+    const trigger = menuTriggerRef.current;
+    const dropdown = dropdownNodeRef.current;
+    if (!trigger || !dropdown) return null;
+
+    const anchor = trigger.getBoundingClientRect();
+    const { width, height } = dropdown.getBoundingClientRect();
+
+    const left = Math.min(
+      Math.max(anchor.right - width, VIEWPORT_MARGIN),
+      Math.max(window.innerWidth - width - VIEWPORT_MARGIN, VIEWPORT_MARGIN),
+    );
+
+    const below = anchor.bottom + DROPDOWN_GAP;
+    const fitsBelow = below + height <= window.innerHeight - VIEWPORT_MARGIN;
+    const top = fitsBelow
+      ? below
+      : Math.max(anchor.top - height - DROPDOWN_GAP, VIEWPORT_MARGIN);
+
+    return { top, left };
+  }, []);
+
+  const mountDropdown = useCallback(
+    (node) => {
+      dropdownNodeRef.current = node;
+      if (!node) return;
+
+      setDropdownPosition(measureDropdown());
+    },
+    [measureDropdown],
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const reposition = () => setDropdownPosition(measureDropdown());
+
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [isOpen, measureDropdown]);
 
   const measurePosition = useCallback(() => {
     const trigger = triggerNodeRef.current;
@@ -178,6 +241,7 @@ export default function CardMenu({ label, items }) {
     <div className="card-menu" ref={wrapRef} onKeyDown={handleKeyDown}>
       <button
         type="button"
+        ref={menuTriggerRef}
         className={`card-menu-trigger${isOpen ? " open" : ""}`}
         title={label}
         aria-label={label}
@@ -188,61 +252,74 @@ export default function CardMenu({ label, items }) {
         <i className="ph-light ph-dots-three" />
       </button>
 
-      <div className={`card-menu-dropdown${isOpen ? " open" : ""}`} role="menu">
-        {items.map((item) => {
-          if (!item.items) return renderItem(item);
+      {isOpen &&
+        createPortal(
+          <div
+            ref={mountDropdown}
+            className="card-menu-dropdown"
+            role="menu"
+            style={{
+              top: dropdownPosition ? `${dropdownPosition.top}px` : 0,
+              left: dropdownPosition ? `${dropdownPosition.left}px` : 0,
+              visibility: dropdownPosition ? "visible" : "hidden",
+            }}
+          >
+            {items.map((item) => {
+              if (!item.items) return renderItem(item);
 
-          const isSubmenuOpen = openSubmenu === item.label;
+              const isSubmenuOpen = openSubmenu === item.label;
 
-          return (
-            <div
-              key={item.label}
-              role="none"
-              className="card-menu-group"
-              onPointerEnter={(event) => {
-                if (event.pointerType !== "mouse" || isSubmenuOpen) return;
+              return (
+                <div
+                  key={item.label}
+                  role="none"
+                  className="card-menu-group"
+                  onPointerEnter={(event) => {
+                    if (event.pointerType !== "mouse" || isSubmenuOpen) return;
 
-                openSubmenuFor(item, event.currentTarget.firstChild, false);
-              }}
-              onPointerLeave={(event) => {
-                if (event.pointerType === "mouse" && isSubmenuOpen) {
-                  scheduleHoverClose();
-                }
-              }}
-            >
-              <button
-                type="button"
-                role="menuitem"
-                className={`card-menu-item${isSubmenuOpen ? " is-open" : ""}`}
-                aria-haspopup="menu"
-                aria-expanded={isSubmenuOpen}
-                onClick={(event) =>
-                  isSubmenuOpen
-                    ? closeSubmenu()
-                    : openSubmenuFor(
-                        item,
-                        event.currentTarget,
-                        event.detail === 0,
-                      )
-                }
-                onKeyDown={(event) => {
-                  if (event.key !== "ArrowRight") return;
+                    openSubmenuFor(item, event.currentTarget.firstChild, false);
+                  }}
+                  onPointerLeave={(event) => {
+                    if (event.pointerType === "mouse" && isSubmenuOpen) {
+                      scheduleHoverClose();
+                    }
+                  }}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`card-menu-item${isSubmenuOpen ? " is-open" : ""}`}
+                    aria-haspopup="menu"
+                    aria-expanded={isSubmenuOpen}
+                    onClick={(event) =>
+                      isSubmenuOpen
+                        ? closeSubmenu()
+                        : openSubmenuFor(
+                            item,
+                            event.currentTarget,
+                            event.detail === 0,
+                          )
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key !== "ArrowRight") return;
 
-                  event.preventDefault();
-                  openSubmenuFor(item, event.currentTarget, true);
-                }}
-              >
-                <i className={`ph-light ${item.icon}`} />
-                <span>{item.label}</span>
-                <i className="ph-light ph-caret-right card-menu-caret" />
-              </button>
+                      event.preventDefault();
+                      openSubmenuFor(item, event.currentTarget, true);
+                    }}
+                  >
+                    <i className={`ph-light ${item.icon}`} />
+                    <span>{item.label}</span>
+                    <i className="ph-light ph-caret-right card-menu-caret" />
+                  </button>
 
-              {isSubmenuOpen &&
-                createPortal(renderSubmenu(item), document.body)}
-            </div>
-          );
-        })}
-      </div>
+                  {isSubmenuOpen &&
+                    createPortal(renderSubmenu(item), document.body)}
+                </div>
+              );
+            })}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

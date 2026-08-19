@@ -12,8 +12,6 @@ export default function DocumentCard({
   onMove,
   onDelete,
 }) {
-  const preview = doc.preview;
-
   const menuItems = [
     {
       label: doc.is_pinned ? "Unpin" : "Pin",
@@ -74,25 +72,20 @@ export default function DocumentCard({
   }
 
   return (
-    <div className="gallery-card gallery-card--document" data-id={doc.id}>
+    <div className="entry-tile entry-tile--document" data-id={doc.id}>
       <button
         type="button"
-        className="gallery-card-open"
+        className="entry-tile-open"
+        title={doc.title}
         onClick={() => onOpen(doc)}
       >
-        <span className="gallery-card-title">
+        <i className="ph-light ph-file-text entry-tile-icon" />
+
+        <span className="entry-tile-name">
           <HighlightText text={doc.title} query={searchQuery} />
         </span>
 
-        {preview ? (
-          <span className="gallery-card-preview">
-            <HighlightText text={preview} query={searchQuery} />
-          </span>
-        ) : (
-          <span className="gallery-card-preview is-empty">Empty document</span>
-        )}
-
-        <span className="gallery-card-meta">
+        <span className="entry-tile-meta">
           {doc.is_pinned && (
             <i className="ph-light ph-push-pin gallery-card-pin" />
           )}
@@ -100,7 +93,7 @@ export default function DocumentCard({
         </span>
       </button>
 
-      <div className="gallery-card-actions">
+      <div className="entry-tile-actions">
         <CardMenu label={`Actions for ${doc.title}`} items={menuItems} />
       </div>
     </div>

@@ -1,6 +1,7 @@
 import CardMenu from "./CardMenu.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
 import { useCopyStatus } from "../hooks/useCopyStatus.js";
+import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 
 const COPY_STATES = {
   copied: { icon: "ph-check-circle", label: "Copied!" },
@@ -84,21 +85,33 @@ function PinnedSnippet({ snippet, isActive, onOpen, onUnpin }) {
   );
 }
 
-function PinnedGroup({ label, list, children }) {
+function PinnedGroup({ label, list, storageKey, children }) {
+  const [collapsed, setCollapsed] = useLocalStorageState(storageKey, "false");
+
+  const isCollapsed = collapsed === "true";
+
   if (list.items.length === 0) return null;
 
   return (
     <section className="pinned-group">
-      <div className="pinned-group-header">
+      <button
+        type="button"
+        className="pinned-group-header"
+        aria-expanded={!isCollapsed}
+        onClick={() => setCollapsed(isCollapsed ? "false" : "true")}
+      >
+        <i
+          className={`ph-light ph-caret-down pinned-group-caret${isCollapsed ? " rotated" : ""}`}
+        />
         <span>{label}</span>
         {list.count > list.items.length && (
           <span className="pinned-group-count">
             {list.items.length} of {list.count}
           </span>
         )}
-      </div>
+      </button>
 
-      {children}
+      {!isCollapsed && children}
     </section>
   );
 }
@@ -137,7 +150,11 @@ export default function SidebarPinned({
         </div>
       )}
 
-      <PinnedGroup label="Documents" list={documents}>
+      <PinnedGroup
+        label="Documents"
+        list={documents}
+        storageKey="devnote_pinned_documents_collapsed"
+      >
         {documents.items.map((doc) => (
           <PinnedDocument
             key={doc.id}
@@ -149,7 +166,11 @@ export default function SidebarPinned({
         ))}
       </PinnedGroup>
 
-      <PinnedGroup label="Snippets" list={snippets}>
+      <PinnedGroup
+        label="Snippets"
+        list={snippets}
+        storageKey="devnote_pinned_snippets_collapsed"
+      >
         {snippets.items.map((snippet) => (
           <PinnedSnippet
             key={snippet.id}

@@ -3,12 +3,11 @@ import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 
 function summarize({ folder_count: folders = 0, document_count: docs = 0 }) {
-  const parts = [];
+  const total = folders + docs;
 
-  if (folders) parts.push(`${folders} folder${folders > 1 ? "s" : ""}`);
-  if (docs) parts.push(`${docs} document${docs > 1 ? "s" : ""}`);
+  if (!total) return "Empty";
 
-  return parts.length ? parts.join(" · ") : "Empty";
+  return `${total} item${total > 1 ? "s" : ""}`;
 }
 
 export default function FolderCard({
@@ -58,36 +57,39 @@ export default function FolderCard({
 
   if (isRenaming) {
     return (
-      <div className="gallery-card gallery-card--folder is-renaming">
-        <i className="ph-light ph-folder gallery-card-icon" />
-        <input
-          ref={inputRef}
-          className="gallery-card-input"
-          value={draft}
-          placeholder="Folder name..."
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={commit}
-        />
+      <div className="entry-tile entry-tile--folder">
+        <div className="entry-tile-open">
+          <i className="ph-light ph-folder entry-tile-icon" />
+          <input
+            ref={inputRef}
+            className="entry-tile-input"
+            value={draft}
+            placeholder="Folder name..."
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={commit}
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="gallery-card gallery-card--folder" data-id={folder.id}>
+    <div className="entry-tile entry-tile--folder" data-id={folder.id}>
       <button
         type="button"
-        className="gallery-card-open"
+        className="entry-tile-open"
+        title={folder.name}
         onClick={() => onOpen(folder)}
       >
-        <i className="ph-light ph-folder gallery-card-icon" />
-        <span className="gallery-card-title">
+        <i className="ph-light ph-folder entry-tile-icon" />
+        <span className="entry-tile-name">
           <HighlightText text={folder.name} query={searchQuery} />
         </span>
-        <span className="gallery-card-meta">{summarize(folder)}</span>
+        <span className="entry-tile-meta">{summarize(folder)}</span>
       </button>
 
-      <div className="gallery-card-actions">
+      <div className="entry-tile-actions">
         <CardMenu
           label={`Actions for ${folder.name}`}
           items={[
