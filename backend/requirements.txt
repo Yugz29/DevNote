@@ -22,7 +22,7 @@ PyJWT==2.13.0
 pytest==8.4.2
 pytest-django==4.7.0
 pytz==2025.2
-sqlparse==0.5.5
+sqlparse==0.6.0
 tomli==2.4.0
 typing_extensions==4.15.0
 uuid6==2025.0.1
