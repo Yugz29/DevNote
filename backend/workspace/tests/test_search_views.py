@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import User
-from workspace.models import TODO, Note, Project, Snippet
+from workspace.models import TODO, Document, Project, Snippet
 
 
 class SearchView(APITestCase):
@@ -26,7 +26,7 @@ class SearchView(APITestCase):
         self.project = Project.objects.create(user=self.user, title="Test Project")
 
         # Test data
-        self.note = Note.objects.create(
+        self.document = Document.objects.create(
             project=self.project,
             title="Authentication Bug",
             content="Fix JWT validation",
@@ -54,31 +54,31 @@ class SearchView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check all types are present
-        self.assertIn("notes", response.data)
+        self.assertIn("documents", response.data)
         self.assertIn("snippets", response.data)
         self.assertIn("todos", response.data)
 
         # Check results
-        self.assertEqual(len(response.data["notes"]), 1)
+        self.assertEqual(len(response.data["documents"]), 1)
         self.assertEqual(len(response.data["snippets"]), 1)
         self.assertEqual(len(response.data["todos"]), 1)
 
         # Verify content
-        self.assertEqual(response.data["notes"][0]["title"], "Authentication Bug")
+        self.assertEqual(response.data["documents"][0]["title"], "Authentication Bug")
         self.assertEqual(response.data["snippets"][0]["title"], "Auth Middleware")
         self.assertEqual(response.data["todos"][0]["title"], "Fix auth system")
 
-    def test_search_note_only(self):
-        """Test : filtered search for notes only"""
-        response = self.client.get(self.url, {"q": "auth", "type": "notes"})
+    def test_search_document_only(self):
+        """Test : filtered search for documents only"""
+        response = self.client.get(self.url, {"q": "auth", "type": "documents"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertIn("notes", response.data)
+        self.assertIn("documents", response.data)
         self.assertNotIn("snippets", response.data)
         self.assertNotIn("todos", response.data)
 
-        self.assertEqual(len(response.data["notes"]), 1)
+        self.assertEqual(len(response.data["documents"]), 1)
 
     def test_search_snippets_only(self):
         """Test : filtered search for snippets only"""
@@ -87,7 +87,7 @@ class SearchView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertIn("snippets", response.data)
-        self.assertNotIn("notes", response.data)
+        self.assertNotIn("documents", response.data)
         self.assertNotIn("todos", response.data)
 
         self.assertEqual(len(response.data["snippets"]), 1)
@@ -100,7 +100,7 @@ class SearchView(APITestCase):
 
         self.assertIn("todos", response.data)
         self.assertNotIn("snippets", response.data)
-        self.assertNotIn("notes", response.data)
+        self.assertNotIn("documents", response.data)
 
         self.assertEqual(len(response.data["todos"]), 1)
 
@@ -120,7 +120,7 @@ class SearchView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
-        self.assertIn("notes, snippets, todos", response.data["error"])
+        self.assertIn("documents, snippets, todos", response.data["error"])
 
     def test_search_user_isolation(self):
         """Test : Users can only search their own data"""
@@ -128,8 +128,10 @@ class SearchView(APITestCase):
             user=self.other_user, title="Other Project"
         )
 
-        Note.objects.create(
-            project=other_project, title="Other auth note", content="Should not appear"
+        Document.objects.create(
+            project=other_project,
+            title="Other auth document",
+            content="Should not appear",
         )
 
         # Search as user 1
@@ -138,8 +140,8 @@ class SearchView(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Should only find user 1's data
-        self.assertEqual(len(response.data["notes"]), 1)
-        self.assertEqual(response.data["notes"][0]["title"], "Authentication Bug")
+        self.assertEqual(len(response.data["documents"]), 1)
+        self.assertEqual(response.data["documents"][0]["title"], "Authentication Bug")
 
     def test_search_no_results(self):
         """Test : search with no matching results"""
@@ -147,6 +149,6 @@ class SearchView(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        self.assertEqual(len(response.data["notes"]), 0)
+        self.assertEqual(len(response.data["documents"]), 0)
         self.assertEqual(len(response.data["snippets"]), 0)
         self.assertEqual(len(response.data["todos"]), 0)

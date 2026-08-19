@@ -1,4 +1,4 @@
-"""Plain-text excerpts derived from the Markdown stored on a note."""
+"""Plain-text excerpts derived from the Markdown stored on a document."""
 
 import re
 
@@ -41,7 +41,7 @@ def markdown_to_plain_text(markdown):
     return WHITESPACE.sub(" ", text).strip()
 
 
-def note_preview(markdown, max_length=MAX_LENGTH):
+def document_preview(markdown, max_length=MAX_LENGTH):
     """Truncate on a word boundary, so cards never cut mid-word."""
     text = markdown_to_plain_text(markdown)
 

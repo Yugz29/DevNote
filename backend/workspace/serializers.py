@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from .models import TODO, Folder, Note, Project, Snippet, TodoList
-from .preview import note_preview
+from .models import TODO, Document, Folder, Project, Snippet, TodoList
+from .preview import document_preview
 
 
 class ScopedFolderField(serializers.PrimaryKeyRelatedField):
@@ -69,7 +69,7 @@ class FolderSerializer(serializers.ModelSerializer):
     project_id = serializers.UUIDField(read_only=True, source="project.id")
     parent = ScopedFolderField(allow_null=True, required=False)
     folder_count = serializers.SerializerMethodField()
-    note_count = serializers.SerializerMethodField()
+    document_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Folder
@@ -79,7 +79,7 @@ class FolderSerializer(serializers.ModelSerializer):
             "project_id",
             "parent",
             "folder_count",
-            "note_count",
+            "document_count",
             "created_at",
             "updated_at",
         ]
@@ -89,9 +89,9 @@ class FolderSerializer(serializers.ModelSerializer):
         count = getattr(obj, "folder_count", None)
         return obj.children.count() if count is None else count
 
-    def get_note_count(self, obj):
-        count = getattr(obj, "note_count", None)
-        return obj.notes.count() if count is None else count
+    def get_document_count(self, obj):
+        count = getattr(obj, "document_count", None)
+        return obj.documents.count() if count is None else count
 
     def validate_name(self, value):
         value = value.strip()
@@ -137,14 +137,14 @@ class FolderSerializer(serializers.ModelSerializer):
         return data
 
 
-class NoteSerializer(serializers.ModelSerializer):
-    """Serializer for Note model"""
+class DocumentSerializer(serializers.ModelSerializer):
+    """Serializer for Document model"""
 
     project_id = serializers.UUIDField(read_only=True, source="project.id")
     folder = ScopedFolderField(allow_null=True, required=False)
 
     class Meta:
-        model = Note
+        model = Document
         fields = [
             "id",
             "title",
@@ -160,7 +160,7 @@ class NoteSerializer(serializers.ModelSerializer):
     def validate_title(self, value):
         value = value.strip()
         if not value:
-            raise serializers.ValidationError("Note title cannot be empty.")
+            raise serializers.ValidationError("Document title cannot be empty.")
         return value
 
     def validate(self, data):
@@ -175,15 +175,15 @@ class NoteSerializer(serializers.ModelSerializer):
             and folder.project_id != project.id
         ):
             raise serializers.ValidationError(
-                {"folder": "Folder must belong to the same project as the note."}
+                {"folder": "Folder must belong to the same project as the document."}
             )
 
         return data
 
 
-class NoteCardSerializer(serializers.ModelSerializer):
+class DocumentCardSerializer(serializers.ModelSerializer):
     """
-    Note as shown in the gallery: carries a plain-text excerpt instead of the
+    Document as shown in the gallery: carries a plain-text excerpt instead of the
     whole Markdown, which a listing never renders.
     """
 
@@ -192,7 +192,7 @@ class NoteCardSerializer(serializers.ModelSerializer):
     preview = serializers.SerializerMethodField()
 
     class Meta:
-        model = Note
+        model = Document
         fields = [
             "id",
             "title",
@@ -206,7 +206,7 @@ class NoteCardSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_preview(self, obj):
-        return note_preview(obj.content)
+        return document_preview(obj.content)
 
 
 class SnippetSerializer(serializers.ModelSerializer):

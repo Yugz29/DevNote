@@ -3,13 +3,13 @@ from types import SimpleNamespace
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from workspace.models import Note, Project
-from workspace.serializers import NoteSerializer
+from workspace.models import Document, Project
+from workspace.serializers import DocumentSerializer
 
 User = get_user_model()
 
 
-class NoteSerializerTest(TestCase):
+class DocumentSerializerTest(TestCase):
     def setUp(self):
         """Set up a user and a project for testing"""
         self.user = User.objects.create_user(
@@ -20,27 +20,27 @@ class NoteSerializerTest(TestCase):
     def get_serializer(self, data=None, instance=None):
         """Helper to get serializer with context"""
         mock_request = SimpleNamespace(user=self.user)
-        return NoteSerializer(
+        return DocumentSerializer(
             data=data, instance=instance, context={"request": mock_request}
         )
 
-    def test_valid_note_data(self):
+    def test_valid_document_data(self):
         """Test serializer with valid data"""
         data = {
-            "title": "Test Note",
-            "content": "This is a test note.",
+            "title": "Test Document",
+            "content": "This is a test document.",
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
         # Project is injected by the view via save(project=...)
-        note = serializer.save(project=self.project)
-        self.assertEqual(note.title, data["title"])
-        self.assertEqual(note.content, data["content"])
-        self.assertEqual(note.project, self.project)
+        document = serializer.save(project=self.project)
+        self.assertEqual(document.title, data["title"])
+        self.assertEqual(document.content, data["content"])
+        self.assertEqual(document.project, self.project)
 
     def test_missing_title(self):
         """Test that title is required"""
-        data = {"content": "This is a test note."}
+        data = {"content": "This is a test document."}
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
         self.assertIn("title", serializer.errors)
@@ -49,7 +49,7 @@ class NoteSerializerTest(TestCase):
         """Test that title exceeding max length is invalid"""
         data = {
             "title": "A" * 256,
-            "content": "This is a test note.",
+            "content": "This is a test document.",
         }
         serializer = self.get_serializer(data=data)
         self.assertFalse(serializer.is_valid())
@@ -58,24 +58,24 @@ class NoteSerializerTest(TestCase):
     def test_empty_content_allowed(self):
         """Test that empty content is valid"""
         data = {
-            "title": "Test Note",
+            "title": "Test Document",
             "content": "",
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save(project=self.project)
-        self.assertEqual(note.content, "")
+        document = serializer.save(project=self.project)
+        self.assertEqual(document.content, "")
 
     def test_title_trimmed(self):
         """Test that title is trimmed of whitespace"""
         data = {
-            "title": "   Trimmed Note Title   ",
+            "title": "   Trimmed Document Title   ",
             "content": "Content here.",
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save(project=self.project)
-        self.assertEqual(note.title, "Trimmed Note Title")
+        document = serializer.save(project=self.project)
+        self.assertEqual(document.title, "Trimmed Document Title")
 
     def test_title_spaces_only(self):
         """Test that title with only spaces is invalid"""
@@ -91,37 +91,37 @@ class NoteSerializerTest(TestCase):
         """Test that read-only fields cannot be set"""
         fake_date = "2024-01-01T00:00:00Z"
         data = {
-            "title": "Test Note",
-            "content": "This is a test note.",
+            "title": "Test Document",
+            "content": "This is a test document.",
             "id": 666,
             "created_at": fake_date,
             "updated_at": fake_date,
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save(project=self.project)
-        self.assertNotEqual(note.id, 666)
-        self.assertNotEqual(str(note.created_at), fake_date)
-        self.assertNotEqual(str(note.updated_at), fake_date)
+        document = serializer.save(project=self.project)
+        self.assertNotEqual(document.id, 666)
+        self.assertNotEqual(str(document.created_at), fake_date)
+        self.assertNotEqual(str(document.updated_at), fake_date)
 
     def test_is_pinned_defaults_to_false(self):
-        """Test that a note serialized without is_pinned comes out unpinned"""
+        """Test that a document serialized without is_pinned comes out unpinned"""
         data = {
-            "title": "Test Note",
-            "content": "This is a test note.",
+            "title": "Test Document",
+            "content": "This is a test document.",
         }
         serializer = self.get_serializer(data=data)
         self.assertTrue(serializer.is_valid())
-        note = serializer.save(project=self.project)
+        document = serializer.save(project=self.project)
 
-        self.assertFalse(note.is_pinned)
+        self.assertFalse(document.is_pinned)
         self.assertFalse(serializer.data["is_pinned"])
 
     def test_is_pinned_is_writable(self):
         """Test that is_pinned can be set through the serializer"""
-        note = Note.objects.create(title="Test Note", project=self.project)
+        document = Document.objects.create(title="Test Document", project=self.project)
         serializer = self.get_serializer(
-            data={"title": note.title, "is_pinned": True}, instance=note
+            data={"title": document.title, "is_pinned": True}, instance=document
         )
 
         self.assertTrue(serializer.is_valid(raise_exception=False))

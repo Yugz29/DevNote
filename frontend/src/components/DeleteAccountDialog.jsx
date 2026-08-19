@@ -53,8 +53,8 @@ export default function DeleteAccountDialog({ email, onCancel, onConfirm }) {
               in it.
             </p>
             <p className="delete-account-scope">
-              Projects, notes, snippets, todos, folders and lists all go with
-              it. This cannot be undone.
+              Projects, documents, snippets, todos, folders and lists all go
+              with it. This cannot be undone.
             </p>
           </div>
         </div>

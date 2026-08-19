@@ -9,17 +9,17 @@ import {
   useCreateBlockNote,
 } from "@blocknote/react";
 import CardMenu from "./CardMenu.jsx";
+import DocumentOutline from "./DocumentOutline.jsx";
 import HighlightText from "./HighlightText.jsx";
 import Modal from "./Modal.jsx";
-import NoteOutline from "./NoteOutline.jsx";
 import { useTheme } from "../contexts/ThemeContext.js";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import {
+  documentExtensions,
+  documentSchema,
   markdownToBlocks,
   pasteHandler,
-  noteExtensions,
-  noteSchema,
 } from "../lib/blocknote.js";
 import { collectHeadings, sameHeadings } from "../lib/outline.js";
 import { applySearchHighlight } from "../lib/searchHighlight.js";
@@ -29,8 +29,8 @@ const MIN_OUTLINE_HEADINGS = 3;
 const WIDE_OUTLINE_QUERY = "(min-width: 1200px)";
 const OUTLINE_HIDDEN_KEY = "devnote_outline_hidden";
 
-export default function NoteBlock({
-  note,
+export default function DocumentBlock({
+  doc,
   searchQuery,
   onSave,
   onDiscard,
@@ -41,7 +41,7 @@ export default function NoteBlock({
   headerSlot,
   ref,
 }) {
-  const isNewNote = !note;
+  const isNewDocument = !doc;
   const { theme } = useTheme();
   const blockRef = useRef(null);
   const titleRef = useRef(null);
@@ -49,7 +49,7 @@ export default function NoteBlock({
   const isSavingRef = useRef(false);
   const skipCommitRef = useRef(false);
   const hasAutoFocused = useRef(false);
-  const [isEditing, setIsEditing] = useState(isNewNote);
+  const [isEditing, setIsEditing] = useState(isNewDocument);
   const [isOutlineOpen, setIsOutlineOpen] = useState(false);
   const [outlineHidden, setOutlineHidden] = useLocalStorageState(
     OUTLINE_HIDDEN_KEY,
@@ -57,14 +57,14 @@ export default function NoteBlock({
   );
   const isWideOutline = useMediaQuery(WIDE_OUTLINE_QUERY);
   const isColumnVisible = outlineHidden !== "true";
-  const [createdAt] = useState(() => note?.created_at ?? Date.now());
+  const [createdAt] = useState(() => doc?.created_at ?? Date.now());
 
-  const [initialContent] = useState(() => markdownToBlocks(note?.content));
+  const [initialContent] = useState(() => markdownToBlocks(doc?.content));
 
   const editor = useCreateBlockNote(
     {
-      schema: noteSchema,
-      extensions: noteExtensions,
+      schema: documentSchema,
+      extensions: documentExtensions,
       initialContent: initialContent ?? undefined,
       pasteHandler,
     },
@@ -101,7 +101,7 @@ export default function NoteBlock({
     if (!container || !target) return;
 
     const containerTop = container.getBoundingClientRect().top;
-    const header = blockRef.current?.querySelector(".note-block-header");
+    const header = blockRef.current?.querySelector(".document-block-header");
     let covered = 0;
 
     if (header) {
@@ -153,12 +153,12 @@ export default function NoteBlock({
   const restore = () => {
     editor.replaceBlocks(
       editor.document,
-      markdownToBlocks(note.content) ?? EMPTY_DOCUMENT,
+      markdownToBlocks(doc.content) ?? EMPTY_DOCUMENT,
     );
 
     if (titleRef.current) {
       titleRef.current.contentEditable = "false";
-      titleRef.current.textContent = note.title;
+      titleRef.current.textContent = doc.title;
     }
   };
 
@@ -171,7 +171,7 @@ export default function NoteBlock({
 
     setIsEditing(false);
 
-    if (isNewNote && !title && !content) {
+    if (isNewDocument && !title && !content) {
       baselineRef.current = null;
       onDiscard();
       return;
@@ -185,11 +185,11 @@ export default function NoteBlock({
     isSavingRef.current = true;
 
     try {
-      const saved = await onSave(note?.id ?? null, title, content);
+      const saved = await onSave(doc?.id ?? null, title, content);
 
       if (saved) {
         baselineRef.current = null;
-        if (isNewNote) onDiscard();
+        if (isNewDocument) onDiscard();
       }
     } finally {
       isSavingRef.current = false;
@@ -235,7 +235,7 @@ export default function NoteBlock({
     baselineRef.current = null;
     setIsEditing(false);
 
-    if (isNewNote) {
+    if (isNewDocument) {
       onDiscard();
       return;
     }
@@ -324,7 +324,7 @@ export default function NoteBlock({
   };
 
   useEffect(() => {
-    if (!isNewNote || hasAutoFocused.current) return;
+    if (!isNewDocument || hasAutoFocused.current) return;
 
     hasAutoFocused.current = true;
     startTitleEdit();
@@ -342,29 +342,29 @@ export default function NoteBlock({
 
   return (
     <div
-      className="note-block"
-      data-id={note?.id ?? ""}
+      className="document-block"
+      data-id={doc?.id ?? ""}
       ref={blockRef}
       onFocus={handleFocusIn}
       onBlur={handleFocusOut}
       onKeyDown={handleKeyDown}
     >
-      <div className={`note-block-header${isEditing ? " editing" : ""}`}>
-        <div className="note-block-title-row">
+      <div className={`document-block-header${isEditing ? " editing" : ""}`}>
+        <div className="document-block-title-row">
           <h3
-            className="note-block-title"
+            className="document-block-title"
             ref={titleRef}
             data-placeholder="Title..."
             onClick={startTitleEdit}
           >
-            <HighlightText text={note?.title ?? ""} query={searchQuery} />
+            <HighlightText text={doc?.title ?? ""} query={searchQuery} />
           </h3>
         </div>
 
-        <div className="note-block-actions">
+        <div className="document-block-actions">
           {hasOutline && (
             <button
-              className={`note-outline-toggle${outlineExpanded ? " is-open" : ""}`}
+              className={`document-outline-toggle${outlineExpanded ? " is-open" : ""}`}
               title={outlineLabel}
               aria-label={outlineLabel}
               aria-expanded={outlineExpanded}
@@ -376,15 +376,15 @@ export default function NoteBlock({
         </div>
       </div>
 
-      <div className="note-block-meta">
+      <div className="document-block-meta">
         <span className="card-date">
           {new Date(createdAt).toLocaleDateString()}
         </span>
       </div>
 
-      <div className="note-block-body">
+      <div className="document-block-body">
         <div
-          className="note-block-content"
+          className="document-block-content"
           onMouseDown={handleContentMouseDown}
         >
           <BlockNoteView
@@ -392,7 +392,7 @@ export default function NoteBlock({
             editor={editor}
             editable={isEditing}
             theme={theme === "light" ? "light" : "dark"}
-            className={`note-block-view${isEditing ? " editing" : ""}`}
+            className={`document-block-view${isEditing ? " editing" : ""}`}
             slashMenu={false}
           >
             <SuggestionMenuController
@@ -411,22 +411,25 @@ export default function NoteBlock({
         </div>
 
         {hasOutline && isColumnVisible && (
-          <div className="note-outline-slot">
-            <div className="note-outline-header">
+          <div className="document-outline-slot">
+            <div className="document-outline-header">
               <i className="ph-light ph-list-dashes" />
               <span>Outline</span>
             </div>
 
-            <NoteOutline headings={headings} onSelect={handleOutlineSelect} />
+            <DocumentOutline
+              headings={headings}
+              onSelect={handleOutlineSelect}
+            />
           </div>
         )}
       </div>
 
       {headerSlot &&
-        !isNewNote &&
+        !isNewDocument &&
         createPortal(
           <CardMenu
-            label={`Actions for ${note.title}`}
+            label={`Actions for ${doc.title}`}
             items={[
               {
                 label: "Export",
@@ -465,8 +468,11 @@ export default function NoteBlock({
         !isWideOutline &&
         createPortal(
           <Modal isOpen title="Outline" onClose={closeOutline}>
-            <div className="note-outline-modal">
-              <NoteOutline headings={headings} onSelect={handleOutlineSelect} />
+            <div className="document-outline-modal">
+              <DocumentOutline
+                headings={headings}
+                onSelect={handleOutlineSelect}
+              />
             </div>
           </Modal>,
           document.body,

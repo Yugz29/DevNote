@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import TODO, Folder, Note, Project, Snippet
+from .models import TODO, Document, Folder, Project, Snippet
 
 
 @admin.register(Project)
@@ -37,15 +37,15 @@ class ProjectAdmin(admin.ModelAdmin):
     user_link.short_description = "Owner"
 
     def items_count(self, obj):
-        """Display count of notes, snippets, and todos"""
-        notes = obj.notes.count()
+        """Display count of documents, snippets, and todos"""
+        documents = obj.documents.count()
         snippets = obj.snippets.count()
         todos = obj.todos.count()
-        total = notes + snippets + todos
+        total = documents + snippets + todos
 
         return format_html(
-            '<span title="Notes: {} | Snippets: {} | TODOs: {}">{} items</span>',
-            notes,
+            '<span title="Documents: {} | Snippets: {} | TODOs: {}">{} items</span>',
+            documents,
             snippets,
             todos,
             total,
@@ -55,11 +55,11 @@ class ProjectAdmin(admin.ModelAdmin):
 
     def items_summary(self, obj):
         """Detailed summary in readonly field"""
-        notes = obj.notes.count()
+        documents = obj.documents.count()
         snippets = obj.snippets.count()
         todos = obj.todos.count()
 
-        return f"📝 {notes} notes | 💻 {snippets} snippets | ✅ {todos} todos"
+        return f"📝 {documents} documents | 💻 {snippets} snippets | ✅ {todos} todos"
 
     items_summary.short_description = "Project Summary"
 
@@ -102,21 +102,21 @@ class FolderAdmin(admin.ModelAdmin):
         counts = obj.cascade_counts()
 
         return format_html(
-            '<span title="Nested folders: {} | Notes: {}">'
-            "{} folder(s), {} note(s)</span>",
+            '<span title="Nested folders: {} | Documents: {}">'
+            "{} folder(s), {} document(s)</span>",
             counts["folders"],
-            counts["notes"],
+            counts["documents"],
             counts["folders"],
-            counts["notes"],
+            counts["documents"],
         )
 
     contents_count.short_description = "Contents"
 
 
-@admin.register(Note)
-class NoteAdmin(admin.ModelAdmin):
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
     """
-    Admin interface for Note model
+    Admin interface for Document model
     - Display with project context
     - Search in title and content
     - Filter by project and dates

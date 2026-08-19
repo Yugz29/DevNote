@@ -32,7 +32,7 @@ export function applyMermaidTheme(theme) {
 
 applyMermaidTheme("dark");
 
-export const noteSchema = BlockNoteSchema.create().extend({
+export const documentSchema = BlockNoteSchema.create().extend({
   blockSpecs: {
     codeBlock: createCodeBlockSpec({
       ...codeBlockOptions,
@@ -42,7 +42,7 @@ export const noteSchema = BlockNoteSchema.create().extend({
   },
 });
 
-export const noteExtensions = [syntaxHighlighter, searchHighlight];
+export const documentExtensions = [syntaxHighlighter, searchHighlight];
 
 const languageIds = new Map();
 
@@ -121,8 +121,8 @@ export function markdownToBlocks(markdown) {
   if (!markdown?.trim()) return null;
 
   parser ??= BlockNoteEditor.create({
-    schema: noteSchema,
-    extensions: noteExtensions,
+    schema: documentSchema,
+    extensions: documentExtensions,
   });
 
   const blocks = normalizeCodeLanguages(

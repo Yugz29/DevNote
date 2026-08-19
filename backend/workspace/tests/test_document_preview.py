@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from workspace.preview import markdown_to_plain_text, note_preview
+from workspace.preview import document_preview, markdown_to_plain_text
 
 
 class MarkdownToPlainTextTest(TestCase):
@@ -71,7 +71,7 @@ class MarkdownToPlainTextTest(TestCase):
         self.assertEqual(markdown_to_plain_text("<div>text</div>"), "text")
 
     def test_hard_line_breaks_from_the_editor(self):
-        """Test the backslash breaks BlockNote writes when saving a note"""
+        """Test the backslash breaks BlockNote writes when saving a document"""
         self.assertEqual(
             markdown_to_plain_text("> **Projet :** DevNote\\\n>  **Période :** 2026"),
             "Projet : DevNote Période : 2026",
@@ -84,27 +84,27 @@ class MarkdownToPlainTextTest(TestCase):
         self.assertEqual(markdown_to_plain_text("---\ntitle: x\n---\nBody"), "Body")
 
 
-class NotePreviewTest(TestCase):
+class DocumentPreviewTest(TestCase):
     """Tests for the truncation applied on top of the stripping"""
 
     def test_short_text_is_untouched(self):
-        self.assertEqual(note_preview("# Hello\n\nWorld"), "Hello World")
+        self.assertEqual(document_preview("# Hello\n\nWorld"), "Hello World")
 
     def test_long_text_is_truncated(self):
-        preview = note_preview("word " * 200, max_length=50)
+        preview = document_preview("word " * 200, max_length=50)
 
         self.assertLessEqual(len(preview), 51)
         self.assertTrue(preview.endswith("…"))
 
     def test_truncation_falls_on_a_word_boundary(self):
-        preview = note_preview("alpha beta gamma delta epsilon", max_length=14)
+        preview = document_preview("alpha beta gamma delta epsilon", max_length=14)
 
         self.assertEqual(preview, "alpha beta…")
 
     def test_truncation_without_usable_space(self):
-        preview = note_preview("a" * 100, max_length=20)
+        preview = document_preview("a" * 100, max_length=20)
 
         self.assertEqual(preview, f"{'a' * 20}…")
 
     def test_empty_content(self):
-        self.assertEqual(note_preview(""), "")
+        self.assertEqual(document_preview(""), "")

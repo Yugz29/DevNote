@@ -1,4 +1,4 @@
-.note-print {
+.document-print {
   position: fixed;
   top: 0;
   left: 0;
@@ -8,7 +8,7 @@
   z-index: -1;
 }
 
-.note-print-title {
+.document-print-title {
   margin: 0 0 8px;
   font-size: 26px;
   font-weight: 600;
@@ -27,11 +27,11 @@
     color: #000 !important;
   }
 
-  body > *:not(.note-print) {
+  body > *:not(.document-print) {
     display: none !important;
   }
 
-  .note-print {
+  .document-print {
     position: static;
     width: auto;
     visibility: visible;
@@ -39,21 +39,21 @@
     z-index: auto;
   }
 
-  .note-print .bn-editor {
+  .document-print .bn-editor {
     padding-inline: 0;
   }
 
-  .note-print .bn-block-content[data-content-type="codeBlock"] {
+  .document-print .bn-block-content[data-content-type="codeBlock"] {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     break-inside: avoid;
   }
 
-  .note-print .bn-block-content[data-content-type="diagram"] {
+  .document-print .bn-block-content[data-content-type="diagram"] {
     break-inside: avoid;
   }
 
-  .note-print .bn-block-content[data-content-type="heading"] {
+  .document-print .bn-block-content[data-content-type="heading"] {
     break-after: avoid;
   }
 }

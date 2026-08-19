@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [hasProjectsError, setHasProjectsError] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
-  const [currentTab, setCurrentTab] = useState("notes");
+  const [currentTab, setCurrentTab] = useState("documents");
   const [view, setView] = useState("projects");
   const [settingsSection, setSettingsSection] = useState(
     DEFAULT_SETTINGS_SECTION,

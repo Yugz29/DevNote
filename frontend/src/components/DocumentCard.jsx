@@ -1,8 +1,8 @@
 import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 
-export default function NoteCard({
-  note,
+export default function DocumentCard({
+  doc,
   searchQuery,
   onOpen,
   onTogglePin,
@@ -12,13 +12,13 @@ export default function NoteCard({
   onMove,
   onDelete,
 }) {
-  const preview = note.preview;
+  const preview = doc.preview;
 
   const menuItems = [
     {
-      label: note.is_pinned ? "Unpin" : "Pin",
-      icon: note.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
-      onSelect: () => onTogglePin(note),
+      label: doc.is_pinned ? "Unpin" : "Pin",
+      icon: doc.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
+      onSelect: () => onTogglePin(doc),
     },
   ];
 
@@ -26,7 +26,7 @@ export default function NoteCard({
     menuItems.push({
       label: "Duplicate",
       icon: "ph-copy",
-      onSelect: () => onDuplicate(note),
+      onSelect: () => onDuplicate(doc),
     });
   }
 
@@ -36,7 +36,7 @@ export default function NoteCard({
     exportItems.push({
       label: "Markdown",
       icon: "ph-file-md",
-      onSelect: () => onExportMarkdown(note),
+      onSelect: () => onExportMarkdown(doc),
     });
   }
 
@@ -44,7 +44,7 @@ export default function NoteCard({
     exportItems.push({
       label: "PDF",
       icon: "ph-file-pdf",
-      onSelect: () => onExportPdf(note),
+      onSelect: () => onExportPdf(doc),
     });
   }
 
@@ -60,7 +60,7 @@ export default function NoteCard({
     menuItems.push({
       label: "Move to…",
       icon: "ph-arrow-elbow-down-right",
-      onSelect: () => onMove(note),
+      onSelect: () => onMove(doc),
     });
   }
 
@@ -69,19 +69,19 @@ export default function NoteCard({
       label: "Delete",
       icon: "ph-trash",
       isDanger: true,
-      onSelect: () => onDelete(note),
+      onSelect: () => onDelete(doc),
     });
   }
 
   return (
-    <div className="gallery-card gallery-card--note" data-id={note.id}>
+    <div className="gallery-card gallery-card--document" data-id={doc.id}>
       <button
         type="button"
         className="gallery-card-open"
-        onClick={() => onOpen(note)}
+        onClick={() => onOpen(doc)}
       >
         <span className="gallery-card-title">
-          <HighlightText text={note.title} query={searchQuery} />
+          <HighlightText text={doc.title} query={searchQuery} />
         </span>
 
         {preview ? (
@@ -89,19 +89,19 @@ export default function NoteCard({
             <HighlightText text={preview} query={searchQuery} />
           </span>
         ) : (
-          <span className="gallery-card-preview is-empty">Empty note</span>
+          <span className="gallery-card-preview is-empty">Empty document</span>
         )}
 
         <span className="gallery-card-meta">
-          {note.is_pinned && (
+          {doc.is_pinned && (
             <i className="ph-light ph-push-pin gallery-card-pin" />
           )}
-          {new Date(note.updated_at).toLocaleDateString()}
+          {new Date(doc.updated_at).toLocaleDateString()}
         </span>
       </button>
 
       <div className="gallery-card-actions">
-        <CardMenu label={`Actions for ${note.title}`} items={menuItems} />
+        <CardMenu label={`Actions for ${doc.title}`} items={menuItems} />
       </div>
     </div>
   );

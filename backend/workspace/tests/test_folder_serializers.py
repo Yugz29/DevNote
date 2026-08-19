@@ -3,8 +3,8 @@ from types import SimpleNamespace
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from workspace.models import Folder, Note, Project
-from workspace.serializers import FolderSerializer, NoteSerializer
+from workspace.models import Document, Folder, Project
+from workspace.serializers import DocumentSerializer, FolderSerializer
 
 User = get_user_model()
 
@@ -84,7 +84,7 @@ class FolderSerializerTest(TestCase):
                 "project_id",
                 "parent",
                 "folder_count",
-                "note_count",
+                "document_count",
                 "created_at",
                 "updated_at",
             },
@@ -160,8 +160,8 @@ class FolderSerializerTest(TestCase):
         self.assertEqual(folder.parent, target)
 
 
-class NoteFolderSerializerTest(TestCase):
-    """Tests for the folder field on NoteSerializer"""
+class DocumentFolderSerializerTest(TestCase):
+    """Tests for the folder field on DocumentSerializer"""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -170,7 +170,7 @@ class NoteFolderSerializerTest(TestCase):
             password="TestPass123!",
         )
         self.project = Project.objects.create(
-            title="Note Folder Project", user=self.user
+            title="Document Folder Project", user=self.user
         )
         self.folder = Folder.objects.create(name="Archives", project=self.project)
 
@@ -186,37 +186,37 @@ class NoteFolderSerializerTest(TestCase):
         if data is not None:
             kwargs["data"] = data
 
-        return NoteSerializer(instance=instance, **kwargs)
+        return DocumentSerializer(instance=instance, **kwargs)
 
-    def test_note_without_folder_still_valid(self):
+    def test_document_without_folder_still_valid(self):
         """Test backward compatibility of the existing payload shape"""
         serializer = self.get_serializer(
-            data={"title": "Loose note", "content": "Body"}, project=self.project
+            data={"title": "Loose document", "content": "Body"}, project=self.project
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        note = serializer.save(project=self.project)
+        document = serializer.save(project=self.project)
 
-        self.assertIsNone(note.folder)
+        self.assertIsNone(document.folder)
 
-    def test_note_created_in_folder(self):
-        """Test creating a note directly inside a folder"""
+    def test_document_created_in_folder(self):
+        """Test creating a document directly inside a folder"""
         serializer = self.get_serializer(
-            data={"title": "Filed note", "folder": str(self.folder.id)},
+            data={"title": "Filed document", "folder": str(self.folder.id)},
             project=self.project,
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        note = serializer.save(project=self.project)
+        document = serializer.save(project=self.project)
 
-        self.assertEqual(note.folder, self.folder)
+        self.assertEqual(document.folder, self.folder)
 
     def test_folder_exposed_in_payload(self):
         """Test that the folder id is serialized"""
-        note = Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+        document = Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
-        data = self.get_serializer(instance=note).data
+        data = self.get_serializer(instance=document).data
 
         self.assertEqual(data["folder"], self.folder.id)
 
@@ -226,20 +226,20 @@ class NoteFolderSerializerTest(TestCase):
         foreign = Folder.objects.create(name="Foreign", project=other_project)
 
         serializer = self.get_serializer(
-            data={"title": "Note", "folder": str(foreign.id)}, project=self.project
+            data={"title": "Document", "folder": str(foreign.id)}, project=self.project
         )
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("folder", serializer.errors)
 
-    def test_note_moved_back_to_root(self):
-        """Test detaching a note from its folder"""
-        note = Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+    def test_document_moved_back_to_root(self):
+        """Test detaching a document from its folder"""
+        document = Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
 
         serializer = self.get_serializer(
-            data={"folder": None}, instance=note, partial=True
+            data={"folder": None}, instance=document, partial=True
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)

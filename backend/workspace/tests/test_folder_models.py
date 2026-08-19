@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from workspace.models import Folder, Note, Project
+from workspace.models import Document, Folder, Project
 
 User = get_user_model()
 
@@ -145,45 +145,49 @@ class FolderModelTest(TestCase):
         self.project.delete()
         self.assertEqual(Folder.objects.count(), 0)
 
-    def test_delete_folder_cascades_to_subfolders_and_notes(self):
+    def test_delete_folder_cascades_to_subfolders_and_documents(self):
         """Test that deleting a folder deletes its whole subtree"""
         root = Folder.objects.create(name="Root", project=self.project)
         child = Folder.objects.create(name="Child", project=self.project, parent=root)
-        Note.objects.create(title="Nested note", project=self.project, folder=child)
-        Note.objects.create(title="Direct note", project=self.project, folder=root)
-        kept = Note.objects.create(title="Root note", project=self.project)
+        Document.objects.create(
+            title="Nested document", project=self.project, folder=child
+        )
+        Document.objects.create(
+            title="Direct document", project=self.project, folder=root
+        )
+        kept = Document.objects.create(title="Root document", project=self.project)
 
         root.delete()
 
         self.assertEqual(Folder.objects.count(), 0)
-        self.assertEqual(Note.objects.count(), 1)
-        self.assertEqual(Note.objects.first().id, kept.id)
+        self.assertEqual(Document.objects.count(), 1)
+        self.assertEqual(Document.objects.first().id, kept.id)
 
     def test_cascade_counts(self):
         """Test the counts reported before a recursive delete"""
         root = Folder.objects.create(name="Root", project=self.project)
         child = Folder.objects.create(name="Child", project=self.project, parent=root)
         Folder.objects.create(name="Grandchild", project=self.project, parent=child)
-        Note.objects.create(title="One", project=self.project, folder=root)
-        Note.objects.create(title="Two", project=self.project, folder=child)
-        Note.objects.create(title="Loose", project=self.project)
+        Document.objects.create(title="One", project=self.project, folder=root)
+        Document.objects.create(title="Two", project=self.project, folder=child)
+        Document.objects.create(title="Loose", project=self.project)
 
         counts = root.cascade_counts()
 
         self.assertEqual(counts["folders"], 2)
-        self.assertEqual(counts["notes"], 2)
+        self.assertEqual(counts["documents"], 2)
         self.assertFalse(root.is_empty())
 
     def test_empty_folder(self):
-        """Test that a folder without children or notes reports as empty"""
+        """Test that a folder without children or documents reports as empty"""
         folder = Folder.objects.create(name="Empty", project=self.project)
 
         self.assertTrue(folder.is_empty())
-        self.assertEqual(folder.cascade_counts(), {"folders": 0, "notes": 0})
+        self.assertEqual(folder.cascade_counts(), {"folders": 0, "documents": 0})
 
 
-class NoteFolderFieldTest(TestCase):
-    """Tests for the folder field added to Note"""
+class DocumentFolderFieldTest(TestCase):
+    """Tests for the folder field added to Document"""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -192,32 +196,34 @@ class NoteFolderFieldTest(TestCase):
             password="TestPass123!",
         )
         self.project = Project.objects.create(
-            title="Note Folder Project", user=self.user
+            title="Document Folder Project", user=self.user
         )
         self.folder = Folder.objects.create(name="Archives", project=self.project)
 
-    def test_note_defaults_to_root(self):
-        """Test that a note created without a folder sits at the root"""
-        note = Note.objects.create(title="Loose note", project=self.project)
-        self.assertIsNone(note.folder)
+    def test_document_defaults_to_root(self):
+        """Test that a document created without a folder sits at the root"""
+        document = Document.objects.create(title="Loose document", project=self.project)
+        self.assertIsNone(document.folder)
 
-    def test_note_inside_folder(self):
-        """Test attaching a note to a folder"""
-        note = Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+    def test_document_inside_folder(self):
+        """Test attaching a document to a folder"""
+        document = Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
 
-        self.assertEqual(note.folder, self.folder)
-        self.assertIn(note, self.folder.notes.all())
+        self.assertEqual(document.folder, self.folder)
+        self.assertIn(document, self.folder.documents.all())
 
-    def test_existing_notes_remain_valid_without_folder(self):
-        """Test backward compatibility: notes without a folder stay usable"""
-        note = Note.objects.create(title="Legacy note", project=self.project)
+    def test_existing_documents_remain_valid_without_folder(self):
+        """Test backward compatibility: documents without a folder stay usable"""
+        document = Document.objects.create(
+            title="Legacy document", project=self.project
+        )
 
-        note.content = "Updated content"
-        note.save()
-        note.refresh_from_db()
+        document.content = "Updated content"
+        document.save()
+        document.refresh_from_db()
 
-        self.assertIsNone(note.folder)
-        self.assertEqual(note.content, "Updated content")
-        self.assertIn(note, self.project.notes.all())
+        self.assertIsNone(document.folder)
+        self.assertEqual(document.content, "Updated content")
+        self.assertIn(document, self.project.documents.all())

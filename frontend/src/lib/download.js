@@ -3,7 +3,7 @@ const RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
 const EDGE_CHARS = /^[.\s]+|[.\s]+$/g;
 const MAX_LENGTH = 100;
 
-export function toFilename(title, extension, fallback = "note") {
+export function toFilename(title, extension, fallback = "document") {
   const cleaned = (title ?? "")
     .replace(INVALID_CHARS, " ")
     .replace(/\s+/g, " ")

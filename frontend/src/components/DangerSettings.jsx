@@ -12,8 +12,8 @@ export default function DangerSettings() {
         <div className="settings-row-text">
           <h3>Delete account</h3>
           <p>
-            Removes your account and every project, note, snippet and todo it
-            holds. There is no way back.
+            Removes your account and every project, document, snippet and todo
+            it holds. There is no way back.
           </p>
         </div>
 

@@ -63,7 +63,7 @@ class Project(models.Model):
 
 class Folder(models.Model):
     """
-    Folder model represents a folder holding notes inside a project.
+    Folder model represents a folder holding documents inside a project.
     Folders nest without depth limit; a null parent means project root.
     """
 
@@ -159,12 +159,14 @@ class Folder(models.Model):
 
         return {
             "folders": len(folder_ids),
-            "notes": Note.objects.filter(folder_id__in=[self.id, *folder_ids]).count(),
+            "documents": Document.objects.filter(
+                folder_id__in=[self.id, *folder_ids]
+            ).count(),
         }
 
     def is_empty(self):
         counts = self.cascade_counts()
-        return counts["folders"] == 0 and counts["notes"] == 0
+        return counts["folders"] == 0 and counts["documents"] == 0
 
     def clean(self):
         super().clean()
@@ -188,9 +190,9 @@ class Folder(models.Model):
         return super().save(*args, **kwargs)
 
 
-class Note(models.Model):
+class Document(models.Model):
     """
-    Note model represents a note linked to a project.
+    Document model represents a document linked to a project.
     """
 
     id = models.UUIDField(
@@ -200,20 +202,20 @@ class Note(models.Model):
         help_text="Unique identifier UUIDv7",
     )
 
-    title = models.CharField(max_length=255, help_text="Title of the note")
+    title = models.CharField(max_length=255, help_text="Title of the document")
 
     content = models.TextField(
         blank=True,
         default="",
         validators=[MaxLengthValidator(100000)],
-        help_text="Content of the note",
+        help_text="Content of the document",
     )
 
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
-        related_name="notes",
-        help_text="Note associated to project",
+        related_name="documents",
+        help_text="Document associated to project",
     )
 
     folder = models.ForeignKey(
@@ -221,24 +223,28 @@ class Note(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name="notes",
-        help_text="Folder holding the note, null for a note at the project root",
+        related_name="documents",
+        help_text=(
+            "Folder holding the document, null for a document at the project root"
+        ),
     )
 
     is_pinned = models.BooleanField(
-        default=False, help_text="Whether the note is pinned for quick access"
+        default=False, help_text="Whether the document is pinned for quick access"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True, help_text="Note creation date")
+    created_at = models.DateTimeField(
+        auto_now_add=True, help_text="Document creation date"
+    )
 
     updated_at = models.DateTimeField(
         auto_now=True, help_text="Date of last modification"
     )
 
     class Meta:
-        db_table = "devnote_notes"
-        verbose_name = "Note"
-        verbose_name_plural = "Notes"
+        db_table = "devnote_documents"
+        verbose_name = "Document"
+        verbose_name_plural = "Documents"
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["project", "-created_at"]),

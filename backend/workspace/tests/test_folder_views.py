@@ -4,7 +4,7 @@ from django.test.utils import CaptureQueriesContext
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from workspace.models import Folder, Note, Project
+from workspace.models import Document, Folder, Project
 
 User = get_user_model()
 
@@ -229,16 +229,18 @@ class FolderViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_contents_endpoint(self):
-        """Test listing the direct subfolders and notes of a folder"""
+        """Test listing the direct subfolders and documents of a folder"""
         child = Folder.objects.create(
             name="Child", project=self.project, parent=self.folder
         )
         Folder.objects.create(name="Grandchild", project=self.project, parent=child)
-        note = Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+        document = Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
-        Note.objects.create(title="Deep note", project=self.project, folder=child)
-        Note.objects.create(title="Root note", project=self.project)
+        Document.objects.create(
+            title="Deep document", project=self.project, folder=child
+        )
+        Document.objects.create(title="Root document", project=self.project)
 
         response = self.client.get(f"/api/folders/{self.folder.id}/contents/")
 
@@ -248,8 +250,8 @@ class FolderViewTest(APITestCase):
         entries = response.data["results"]
         self.assertEqual(entries[0]["type"], "folder")
         self.assertEqual(entries[0]["id"], str(child.id))
-        self.assertEqual(entries[1]["type"], "note")
-        self.assertEqual(entries[1]["id"], str(note.id))
+        self.assertEqual(entries[1]["type"], "document")
+        self.assertEqual(entries[1]["id"], str(document.id))
 
     def test_contents_is_paginated(self):
         """Test that contents follows the pagination shape of the API"""
@@ -284,7 +286,7 @@ class FolderViewTest(APITestCase):
         self.assertIsNotNone(response.data["previous"])
         self.assertEqual(response.data["results"][0]["name"], "Child 20")
 
-    def test_contents_page_spanning_folders_and_notes(self):
+    def test_contents_page_spanning_folders_and_documents(self):
         """Test a page boundary falling across the two underlying lists"""
         for index in range(15):
             Folder.objects.create(
@@ -292,8 +294,8 @@ class FolderViewTest(APITestCase):
             )
 
         for index in range(15):
-            Note.objects.create(
-                title=f"Note {index:02d}", project=self.project, folder=self.folder
+            Document.objects.create(
+                title=f"Document {index:02d}", project=self.project, folder=self.folder
             )
 
         first = self.client.get(f"/api/folders/{self.folder.id}/contents/")
@@ -305,11 +307,11 @@ class FolderViewTest(APITestCase):
 
         types = [entry["type"] for entry in first.data["results"]]
         self.assertEqual(types.count("folder"), 15)
-        self.assertEqual(types.count("note"), 5)
+        self.assertEqual(types.count("document"), 5)
         self.assertEqual(types[:15], ["folder"] * 15)
 
         self.assertTrue(
-            all(entry["type"] == "note" for entry in second.data["results"])
+            all(entry["type"] == "document" for entry in second.data["results"])
         )
 
         ids = [entry["id"] for entry in first.data["results"]]
@@ -322,8 +324,8 @@ class FolderViewTest(APITestCase):
             Folder.objects.create(
                 name=f"Child {index:02d}", project=self.project, parent=self.folder
             )
-            Note.objects.create(
-                title=f"Note {index:02d}", project=self.project, folder=self.folder
+            Document.objects.create(
+                title=f"Document {index:02d}", project=self.project, folder=self.folder
             )
 
         with CaptureQueriesContext(connection) as captured:
@@ -338,7 +340,9 @@ class FolderViewTest(APITestCase):
             query["sql"]
             for query in captured.captured_queries
             if not query["sql"].upper().startswith("SELECT COUNT(*)")
-            and ("devnote_folders" in query["sql"] or "devnote_notes" in query["sql"])
+            and (
+                "devnote_folders" in query["sql"] or "devnote_documents" in query["sql"]
+            )
         ]
 
         self.assertTrue(row_queries)
@@ -379,49 +383,53 @@ class FolderViewTest(APITestCase):
         child = Folder.objects.create(
             name="Child", project=self.project, parent=self.folder
         )
-        Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+        Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
-        Note.objects.create(title="Deep note", project=self.project, folder=child)
+        Document.objects.create(
+            title="Deep document", project=self.project, folder=child
+        )
 
         response = self.client.delete(f"/api/folders/{self.folder.id}/")
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.data["code"], "folder_not_empty")
         self.assertEqual(response.data["folders"], 1)
-        self.assertEqual(response.data["notes"], 2)
+        self.assertEqual(response.data["documents"], 2)
         self.assertEqual(Folder.objects.count(), 2)
-        self.assertEqual(Note.objects.count(), 2)
+        self.assertEqual(Document.objects.count(), 2)
 
     def test_delete_non_empty_folder_with_confirmation(self):
         """Test that confirming deletes the folder and its whole subtree"""
         child = Folder.objects.create(
             name="Child", project=self.project, parent=self.folder
         )
-        Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+        Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
-        Note.objects.create(title="Deep note", project=self.project, folder=child)
-        kept = Note.objects.create(title="Root note", project=self.project)
+        Document.objects.create(
+            title="Deep document", project=self.project, folder=child
+        )
+        kept = Document.objects.create(title="Root document", project=self.project)
 
         response = self.client.delete(f"/api/folders/{self.folder.id}/?confirm=true")
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Folder.objects.count(), 0)
-        self.assertEqual(Note.objects.count(), 1)
-        self.assertEqual(Note.objects.first().id, kept.id)
+        self.assertEqual(Document.objects.count(), 1)
+        self.assertEqual(Document.objects.first().id, kept.id)
 
-    def test_delete_folder_holding_only_notes_requires_confirmation(self):
-        """Test that notes alone are enough to require confirmation"""
-        Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+    def test_delete_folder_holding_only_documents_requires_confirmation(self):
+        """Test that documents alone are enough to require confirmation"""
+        Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
 
         response = self.client.delete(f"/api/folders/{self.folder.id}/")
 
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(response.data["folders"], 0)
-        self.assertEqual(response.data["notes"], 1)
+        self.assertEqual(response.data["documents"], 1)
 
     def test_delete_foreign_folder_denied(self):
         """Test that another user's folder cannot be deleted"""
@@ -454,9 +462,11 @@ class ProjectContentsViewTest(APITestCase):
             title="Root Contents Project", user=self.user
         )
         self.folder = Folder.objects.create(name="Archives", project=self.project)
-        self.root_note = Note.objects.create(title="Root note", project=self.project)
+        self.root_document = Document.objects.create(
+            title="Root document", project=self.project
+        )
 
-    def test_root_contents_lists_folders_then_notes(self):
+    def test_root_contents_lists_folders_then_documents(self):
         """Test that the project root uses the same stream shape"""
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
 
@@ -469,13 +479,13 @@ class ProjectContentsViewTest(APITestCase):
         entries = response.data["results"]
         self.assertEqual(entries[0]["type"], "folder")
         self.assertEqual(entries[0]["id"], str(self.folder.id))
-        self.assertEqual(entries[1]["type"], "note")
-        self.assertEqual(entries[1]["id"], str(self.root_note.id))
+        self.assertEqual(entries[1]["type"], "document")
+        self.assertEqual(entries[1]["id"], str(self.root_document.id))
 
-    def test_root_contents_note_cards_carry_the_pin_state(self):
-        """Test that gallery cards report whether the note is pinned"""
-        pinned = Note.objects.create(
-            title="Pinned note", project=self.project, is_pinned=True
+    def test_root_contents_document_cards_carry_the_pin_state(self):
+        """Test that gallery cards report whether the document is pinned"""
+        pinned = Document.objects.create(
+            title="Pinned document", project=self.project, is_pinned=True
         )
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
@@ -485,18 +495,20 @@ class ProjectContentsViewTest(APITestCase):
         cards = {
             entry["id"]: entry
             for entry in response.data["results"]
-            if entry["type"] == "note"
+            if entry["type"] == "document"
         }
 
         self.assertTrue(cards[str(pinned.id)]["is_pinned"])
-        self.assertFalse(cards[str(self.root_note.id)]["is_pinned"])
+        self.assertFalse(cards[str(self.root_document.id)]["is_pinned"])
 
     def test_root_contents_excludes_nested_entries(self):
         """Test that entries inside folders are not listed at the root"""
         child = Folder.objects.create(
             name="Nested", project=self.project, parent=self.folder
         )
-        Note.objects.create(title="Nested note", project=self.project, folder=child)
+        Document.objects.create(
+            title="Nested document", project=self.project, folder=child
+        )
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
 
@@ -507,7 +519,7 @@ class ProjectContentsViewTest(APITestCase):
     def test_root_contents_is_paginated(self):
         """Test that the root stream paginates like the folder one"""
         for index in range(30):
-            Note.objects.create(title=f"Note {index:02d}", project=self.project)
+            Document.objects.create(title=f"Document {index:02d}", project=self.project)
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
 
@@ -537,7 +549,7 @@ class ProjectContentsViewTest(APITestCase):
 
 
 class ContentsPayloadTest(APITestCase):
-    """Tests for the lightweight note payload used by the gallery"""
+    """Tests for the lightweight document payload used by the gallery"""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -548,17 +560,19 @@ class ContentsPayloadTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         self.project = Project.objects.create(title="Payload Project", user=self.user)
-        self.note = Note.objects.create(
+        self.document = Document.objects.create(
             title="Sprint plan",
             content="# Sprint plan\n\nSome **bold** text and `code`.",
             project=self.project,
         )
 
     def entry(self, response):
-        return next(item for item in response.data["results"] if item["type"] == "note")
+        return next(
+            item for item in response.data["results"] if item["type"] == "document"
+        )
 
-    def test_note_entry_shape(self):
-        """Test that a gallery note carries an excerpt, not its content"""
+    def test_document_entry_shape(self):
+        """Test that a gallery document carries an excerpt, not its content"""
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
         entry = self.entry(response)
 
@@ -586,9 +600,9 @@ class ContentsPayloadTest(APITestCase):
         self.assertEqual(entry["preview"], "Sprint plan Some bold text and code.")
 
     def test_preview_is_bounded(self):
-        """Test that a long note yields a bounded excerpt"""
-        self.note.content = "lorem ipsum " * 500
-        self.note.save()
+        """Test that a long document yields a bounded excerpt"""
+        self.document.content = "lorem ipsum " * 500
+        self.document.save()
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
         entry = self.entry(response)
@@ -596,11 +610,13 @@ class ContentsPayloadTest(APITestCase):
         self.assertLessEqual(len(entry["preview"]), 221)
         self.assertTrue(entry["preview"].endswith("…"))
 
-    def test_payload_stays_small_for_long_notes(self):
-        """Test that the response no longer carries whole note bodies"""
+    def test_payload_stays_small_for_long_documents(self):
+        """Test that the response no longer carries whole document bodies"""
         for index in range(10):
-            Note.objects.create(
-                title=f"Long note {index}", content="x" * 20000, project=self.project
+            Document.objects.create(
+                title=f"Long document {index}",
+                content="x" * 20000,
+                project=self.project,
             )
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
@@ -608,22 +624,22 @@ class ContentsPayloadTest(APITestCase):
         self.assertLess(len(response.content), 20000)
 
     def test_folder_entry_still_carries_counts(self):
-        """Test that the lighter notes did not affect folder entries"""
+        """Test that the lighter documents did not affect folder entries"""
         folder = Folder.objects.create(name="Archives", project=self.project)
-        Note.objects.create(title="Filed", project=self.project, folder=folder)
+        Document.objects.create(title="Filed", project=self.project, folder=folder)
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
         entry = response.data["results"][0]
 
         self.assertEqual(entry["type"], "folder")
-        self.assertEqual(entry["note_count"], 1)
+        self.assertEqual(entry["document_count"], 1)
 
     def test_detail_endpoint_still_returns_content(self):
-        """Test that opening a note still yields its full Markdown"""
-        response = self.client.get(f"/api/notes/{self.note.id}/")
+        """Test that opening a document still yields its full Markdown"""
+        response = self.client.get(f"/api/documents/{self.document.id}/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["content"], self.note.content)
+        self.assertEqual(response.data["content"], self.document.content)
         self.assertNotIn("preview", response.data)
 
 
@@ -647,7 +663,7 @@ class FolderCountsTest(APITestCase):
 
         entry = unwrap(response)[0]
         self.assertEqual(entry["folder_count"], 0)
-        self.assertEqual(entry["note_count"], 0)
+        self.assertEqual(entry["document_count"], 0)
 
     def test_counts_are_direct_children_only(self):
         """Test that the counts do not include nested entries"""
@@ -655,11 +671,13 @@ class FolderCountsTest(APITestCase):
             name="Child", project=self.project, parent=self.folder
         )
         Folder.objects.create(name="Grandchild", project=self.project, parent=child)
-        Note.objects.create(title="Direct", project=self.project, folder=self.folder)
-        Note.objects.create(
+        Document.objects.create(
+            title="Direct", project=self.project, folder=self.folder
+        )
+        Document.objects.create(
             title="Second direct", project=self.project, folder=self.folder
         )
-        Note.objects.create(title="Nested", project=self.project, folder=child)
+        Document.objects.create(title="Nested", project=self.project, folder=child)
 
         response = self.client.get(
             f"/api/projects/{self.project.id}/folders/?parent=null"
@@ -667,19 +685,21 @@ class FolderCountsTest(APITestCase):
 
         entry = unwrap(response)[0]
         self.assertEqual(entry["folder_count"], 1)
-        self.assertEqual(entry["note_count"], 2)
+        self.assertEqual(entry["document_count"], 2)
 
     def test_counts_present_in_contents_stream(self):
         """Test that folders carry their counts inside the mixed stream"""
         Folder.objects.create(name="Child", project=self.project, parent=self.folder)
-        Note.objects.create(title="Direct", project=self.project, folder=self.folder)
+        Document.objects.create(
+            title="Direct", project=self.project, folder=self.folder
+        )
 
         response = self.client.get(f"/api/projects/{self.project.id}/contents/")
 
         entry = response.data["results"][0]
         self.assertEqual(entry["type"], "folder")
         self.assertEqual(entry["folder_count"], 1)
-        self.assertEqual(entry["note_count"], 1)
+        self.assertEqual(entry["document_count"], 1)
 
     def test_counts_do_not_multiply_across_relations(self):
         """Test the classic double-join inflation on two aggregates"""
@@ -688,8 +708,8 @@ class FolderCountsTest(APITestCase):
                 name=f"Child {index}", project=self.project, parent=self.folder
             )
         for index in range(4):
-            Note.objects.create(
-                title=f"Note {index}", project=self.project, folder=self.folder
+            Document.objects.create(
+                title=f"Document {index}", project=self.project, folder=self.folder
             )
 
         response = self.client.get(
@@ -698,22 +718,24 @@ class FolderCountsTest(APITestCase):
 
         entry = unwrap(response)[0]
         self.assertEqual(entry["folder_count"], 3)
-        self.assertEqual(entry["note_count"], 4)
+        self.assertEqual(entry["document_count"], 4)
 
     def test_counts_without_annotation(self):
         """Test the fallback used when the queryset is not annotated"""
         Folder.objects.create(name="Child", project=self.project, parent=self.folder)
-        Note.objects.create(title="Direct", project=self.project, folder=self.folder)
+        Document.objects.create(
+            title="Direct", project=self.project, folder=self.folder
+        )
 
         response = self.client.get(f"/api/folders/{self.folder.id}/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["folder_count"], 1)
-        self.assertEqual(response.data["note_count"], 1)
+        self.assertEqual(response.data["document_count"], 1)
 
 
-class NoteFolderViewTest(APITestCase):
-    """Tests for the folder field on the Note endpoints"""
+class DocumentFolderViewTest(APITestCase):
+    """Tests for the folder field on the Document endpoints"""
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -724,100 +746,102 @@ class NoteFolderViewTest(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         self.project = Project.objects.create(
-            title="Note Folder View Project", user=self.user
+            title="Document Folder View Project", user=self.user
         )
         self.folder = Folder.objects.create(name="Archives", project=self.project)
-        self.root_note = Note.objects.create(title="Root note", project=self.project)
-        self.filed_note = Note.objects.create(
-            title="Filed note", project=self.project, folder=self.folder
+        self.root_document = Document.objects.create(
+            title="Root document", project=self.project
+        )
+        self.filed_document = Document.objects.create(
+            title="Filed document", project=self.project, folder=self.folder
         )
 
-    def test_project_notes_still_returns_every_note(self):
+    def test_project_documents_still_returns_every_document(self):
         """Test backward compatibility: the project listing stays flat"""
-        response = self.client.get(f"/api/projects/{self.project.id}/notes/")
+        response = self.client.get(f"/api/projects/{self.project.id}/documents/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        notes = unwrap(response)
-        self.assertEqual(len(notes), 2)
+        documents = unwrap(response)
+        self.assertEqual(len(documents), 2)
 
     def test_folder_field_exposed(self):
-        """Test that the folder id is present in the note payload"""
-        response = self.client.get(f"/api/notes/{self.filed_note.id}/")
+        """Test that the folder id is present in the document payload"""
+        response = self.client.get(f"/api/documents/{self.filed_document.id}/")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["folder"], self.folder.id)
 
-    def test_filter_notes_by_folder(self):
-        """Test listing the notes of one folder"""
+    def test_filter_documents_by_folder(self):
+        """Test listing the documents of one folder"""
         response = self.client.get(
-            f"/api/projects/{self.project.id}/notes/?folder={self.folder.id}"
+            f"/api/projects/{self.project.id}/documents/?folder={self.folder.id}"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        notes = unwrap(response)
-        self.assertEqual(len(notes), 1)
-        self.assertEqual(notes[0]["id"], str(self.filed_note.id))
+        documents = unwrap(response)
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents[0]["id"], str(self.filed_document.id))
 
-    def test_filter_notes_at_root(self):
-        """Test listing the notes outside any folder"""
+    def test_filter_documents_at_root(self):
+        """Test listing the documents outside any folder"""
         response = self.client.get(
-            f"/api/projects/{self.project.id}/notes/?folder=null"
+            f"/api/projects/{self.project.id}/documents/?folder=null"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        notes = unwrap(response)
-        self.assertEqual(len(notes), 1)
-        self.assertEqual(notes[0]["id"], str(self.root_note.id))
+        documents = unwrap(response)
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents[0]["id"], str(self.root_document.id))
 
-    def test_filter_notes_by_invalid_folder(self):
+    def test_filter_documents_by_invalid_folder(self):
         """Test that a malformed folder id returns 400 rather than 500"""
         response = self.client.get(
-            f"/api/projects/{self.project.id}/notes/?folder=not-a-uuid"
+            f"/api/projects/{self.project.id}/documents/?folder=not-a-uuid"
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_create_note_in_folder(self):
-        """Test creating a note directly inside a folder"""
+    def test_create_document_in_folder(self):
+        """Test creating a document directly inside a folder"""
         response = self.client.post(
-            f"/api/projects/{self.project.id}/notes/",
-            {"title": "New filed note", "folder": str(self.folder.id)},
+            f"/api/projects/{self.project.id}/documents/",
+            {"title": "New filed document", "folder": str(self.folder.id)},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["folder"], self.folder.id)
 
-    def test_create_note_without_folder(self):
+    def test_create_document_without_folder(self):
         """Test backward compatibility of the existing create payload"""
         response = self.client.post(
-            f"/api/projects/{self.project.id}/notes/",
-            {"title": "New loose note", "content": "Body"},
+            f"/api/projects/{self.project.id}/documents/",
+            {"title": "New loose document", "content": "Body"},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIsNone(response.data["folder"])
 
-    def test_move_note_into_folder(self):
-        """Test moving an existing note into a folder"""
+    def test_move_document_into_folder(self):
+        """Test moving an existing document into a folder"""
         response = self.client.patch(
-            f"/api/notes/{self.root_note.id}/",
+            f"/api/documents/{self.root_document.id}/",
             {"folder": str(self.folder.id)},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.root_note.refresh_from_db()
-        self.assertEqual(self.root_note.folder, self.folder)
+        self.root_document.refresh_from_db()
+        self.assertEqual(self.root_document.folder, self.folder)
 
-    def test_move_note_to_foreign_folder_rejected(self):
+    def test_move_document_to_foreign_folder_rejected(self):
         """Test that a folder from another project is rejected"""
         other_project = Project.objects.create(title="Other Project", user=self.user)
         foreign = Folder.objects.create(name="Foreign", project=other_project)
 
         response = self.client.patch(
-            f"/api/notes/{self.root_note.id}/",
+            f"/api/documents/{self.root_document.id}/",
             {"folder": str(foreign.id)},
             format="json",
         )

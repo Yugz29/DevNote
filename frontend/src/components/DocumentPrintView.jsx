@@ -3,22 +3,22 @@ import { createPortal } from "react-dom";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
 import {
+  documentExtensions,
+  documentSchema,
   markdownToBlocks,
-  noteExtensions,
-  noteSchema,
 } from "../lib/blocknote.js";
 
 const SETTLE_DELAY = 250;
 const MAX_WAIT = 5000;
 
-export default function NotePrintView({ title, content, onDone }) {
+export default function DocumentPrintView({ title, content, onDone }) {
   const rootRef = useRef(null);
   const [initialContent] = useState(() => markdownToBlocks(content));
 
   const editor = useCreateBlockNote(
     {
-      schema: noteSchema,
-      extensions: noteExtensions,
+      schema: documentSchema,
+      extensions: documentExtensions,
       initialContent: initialContent ?? undefined,
     },
     [],
@@ -68,14 +68,14 @@ export default function NotePrintView({ title, content, onDone }) {
   }, [onDone]);
 
   return createPortal(
-    <div className="note-print" ref={rootRef}>
-      <h1 className="note-print-title">{title}</h1>
+    <div className="document-print" ref={rootRef}>
+      <h1 className="document-print-title">{title}</h1>
 
       <BlockNoteView
         editor={editor}
         editable={false}
         theme="light"
-        className="note-print-view"
+        className="document-print-view"
         slashMenu={false}
       />
     </div>,

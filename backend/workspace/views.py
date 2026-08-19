@@ -12,11 +12,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import TODO, Folder, Note, Project, Snippet, TodoList
+from .models import TODO, Document, Folder, Project, Snippet, TodoList
 from .serializers import (
+    DocumentCardSerializer,
+    DocumentSerializer,
     FolderSerializer,
-    NoteCardSerializer,
-    NoteSerializer,
     ProjectSerializer,
     SnippetSerializer,
     TodoListSerializer,
@@ -44,27 +44,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
-        """Folders then notes sitting at the root of a project"""
+        """Folders then documents sitting at the root of a project"""
         project = self.get_object()
 
         return paginated_contents(
             self,
             project.folders.filter(parent__isnull=True),
-            project.notes.filter(folder__isnull=True),
+            project.documents.filter(folder__isnull=True),
         )
 
     @action(detail=True, methods=["get"])
     def pinned(self, request, *args, **kwargs):
         """
-        Pinned notes of a project, wherever they sit in the folder tree, in
-        the gallery card shape so they render like any other note.
+        Pinned documents of a project, wherever they sit in the folder tree, in
+        the gallery card shape so they render like any other document.
         """
         project = self.get_object()
 
         return paginated_contents(
             self,
             Folder.objects.none(),
-            project.notes.filter(is_pinned=True),
+            project.documents.filter(is_pinned=True),
         )
 
 
@@ -113,29 +113,32 @@ class ChainedQuerysets:
 
 
 def folders_with_counts(queryset):
-    """Annotate direct children and note counts, for the gallery cards."""
+    """Annotate direct children and document counts, for the gallery cards."""
     return queryset.annotate(
         folder_count=Count("children", distinct=True),
-        note_count=Count("notes", distinct=True),
+        document_count=Count("documents", distinct=True),
     ).order_by("name")
 
 
-def paginated_contents(view, folders, notes):
+def paginated_contents(view, folders, documents):
     """
-    Serialize direct subfolders then direct notes as one paginated stream;
+    Serialize direct subfolders then direct documents as one paginated stream;
     every entry carries a 'type' telling the two apart.
     """
     context = view.get_serializer_context()
     entries = ChainedQuerysets(
         folders_with_counts(folders).select_related("project", "parent"),
-        notes.select_related("project", "folder"),
+        documents.select_related("project", "folder"),
     )
 
     def represent(entry):
         if isinstance(entry, Folder):
             return {"type": "folder", **FolderSerializer(entry, context=context).data}
 
-        return {"type": "note", **NoteCardSerializer(entry, context=context).data}
+        return {
+            "type": "document",
+            **DocumentCardSerializer(entry, context=context).data,
+        }
 
     page = view.paginate_queryset(entries)
 
@@ -230,32 +233,32 @@ class FolderViewSet(ProjectScopedViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        Deleting a folder cascades to its subfolders and their notes, so a
+        Deleting a folder cascades to its subfolders and their documents, so a
         non-empty folder requires ?confirm=true and reports what would go.
         """
         folder = self.get_object()
         counts = folder.cascade_counts()
         confirmed = request.query_params.get("confirm") == "true"
 
-        if not confirmed and (counts["folders"] or counts["notes"]):
+        if not confirmed and (counts["folders"] or counts["documents"]):
             return Response(
                 {
                     "detail": (
                         "This folder is not empty. Deleting it will also delete "
                         f"{counts['folders']} subfolder(s) and "
-                        f"{counts['notes']} note(s). "
+                        f"{counts['documents']} document(s). "
                         "Repeat the request with ?confirm=true to proceed."
                     ),
                     "code": "folder_not_empty",
                     "folders": counts["folders"],
-                    "notes": counts["notes"],
+                    "documents": counts["documents"],
                 },
                 status=status.HTTP_409_CONFLICT,
             )
 
         logger.info(
             f"Folder '{folder.name}' (ID: {folder.id}) deleted with "
-            f"{counts['folders']} subfolder(s) and {counts['notes']} note(s) "
+            f"{counts['folders']} subfolder(s) and {counts['documents']} document(s) "
             f"by user {request.user.username}"
         )
 
@@ -263,10 +266,10 @@ class FolderViewSet(ProjectScopedViewSet):
 
     @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
-        """Direct subfolders then direct notes of a folder"""
+        """Direct subfolders then direct documents of a folder"""
         folder = self.get_object()
 
-        return paginated_contents(self, folder.children.all(), folder.notes.all())
+        return paginated_contents(self, folder.children.all(), folder.documents.all())
 
 
 def copy_title(title, taken, max_length):
@@ -286,13 +289,13 @@ def copy_title(title, taken, max_length):
         index += 1
 
 
-class NoteViewSet(ProjectScopedViewSet):
-    serializer_class = NoteSerializer
+class DocumentViewSet(ProjectScopedViewSet):
+    serializer_class = DocumentSerializer
 
     def get_queryset(self):
-        """Returns only the notes of the logged-in user"""
+        """Returns only the documents of the logged-in user"""
         project_pk = self.kwargs.get("project_pk")
-        queryset = Note.objects.filter(project__user=self.request.user)
+        queryset = Document.objects.filter(project__user=self.request.user)
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
@@ -312,27 +315,27 @@ class NoteViewSet(ProjectScopedViewSet):
 
     @action(detail=True, methods=["post"])
     def duplicate(self, request, *args, **kwargs):
-        """Copy a note, content included, into the folder holding it"""
-        note = self.get_object()
+        """Copy a document, content included, into the folder holding it"""
+        document = self.get_object()
         taken = set(
-            Note.objects.filter(project=note.project, folder=note.folder).values_list(
-                "title", flat=True
-            )
+            Document.objects.filter(
+                project=document.project, folder=document.folder
+            ).values_list("title", flat=True)
         )
 
-        copy = Note.objects.create(
+        copy = Document.objects.create(
             title=copy_title(
-                note.title,
+                document.title,
                 taken,
-                Note._meta.get_field("title").max_length,
+                Document._meta.get_field("title").max_length,
             ),
-            content=note.content,
-            project=note.project,
-            folder=note.folder,
+            content=document.content,
+            project=document.project,
+            folder=document.folder,
         )
 
         logger.info(
-            f"Note '{note.title}' (ID: {note.id}) duplicated as "
+            f"Document '{document.title}' (ID: {document.id}) duplicated as "
             f"'{copy.title}' (ID: {copy.id}) by user {request.user.username}"
         )
 
@@ -541,8 +544,8 @@ class TODOViewSet(ProjectScopedViewSet):
 @method_decorator(ratelimit(key="user", rate="30/m", method="GET"), name="get")
 class SearchView(APIView):
     """
-    Global search across Notes, Snippets and TODOs
-    GET /api/search/?q=<query>&type=<notes|snippets|todos>
+    Global search across Documents, Snippets and TODOs
+    GET /api/search/?q=<query>&type=<documents|snippets|todos>
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -571,7 +574,7 @@ class SearchView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        VALID_TYPES = ["projects", "notes", "snippets", "todos"]
+        VALID_TYPES = ["projects", "documents", "snippets", "todos"]
         if search_type and search_type not in VALID_TYPES:
             return Response(
                 {
@@ -593,14 +596,14 @@ class SearchView(APIView):
 
             results["projects"] = PS(projects, many=True).data
 
-        # Search in Notes
-        if not search_type or search_type == "notes":
-            notes = (
-                Note.objects.filter(project__user=user)
+        # Search in Documents
+        if not search_type or search_type == "documents":
+            documents = (
+                Document.objects.filter(project__user=user)
                 .filter(Q(title__icontains=query) | Q(content__icontains=query))
                 .select_related("project")
             )
-            results["notes"] = NoteSerializer(notes, many=True).data
+            results["documents"] = DocumentSerializer(documents, many=True).data
 
         # Search in Snippets
         if not search_type or search_type == "snippets":

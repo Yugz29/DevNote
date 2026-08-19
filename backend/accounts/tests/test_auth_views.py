@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from workspace.models import TODO, Folder, Note, Project, Snippet, TodoList
+from workspace.models import TODO, Document, Folder, Project, Snippet, TodoList
 
 User = get_user_model()
 
@@ -334,8 +334,8 @@ class DeleteAccountViewTest(APITestCase):
             user=self.user,
         )
         self.folder = Folder.objects.create(name="Docs", project=self.project)
-        Note.objects.create(
-            title="A note", content="...", project=self.project, folder=self.folder
+        Document.objects.create(
+            title="A document", content="...", project=self.project, folder=self.folder
         )
         Snippet.objects.create(
             title="A snippet",
@@ -361,7 +361,7 @@ class DeleteAccountViewTest(APITestCase):
 
         self.assertEqual(Project.objects.count(), 0)
         self.assertEqual(Folder.objects.count(), 0)
-        self.assertEqual(Note.objects.count(), 0)
+        self.assertEqual(Document.objects.count(), 0)
         self.assertEqual(Snippet.objects.count(), 0)
         self.assertEqual(TodoList.objects.count(), 0)
         self.assertEqual(TODO.objects.count(), 0)

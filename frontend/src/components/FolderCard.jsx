@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 
-function summarize({ folder_count: folders = 0, note_count: notes = 0 }) {
+function summarize({ folder_count: folders = 0, document_count: docs = 0 }) {
   const parts = [];
 
   if (folders) parts.push(`${folders} folder${folders > 1 ? "s" : ""}`);
-  if (notes) parts.push(`${notes} note${notes > 1 ? "s" : ""}`);
+  if (docs) parts.push(`${docs} document${docs > 1 ? "s" : ""}`);
 
   return parts.length ? parts.join(" · ") : "Empty";
 }

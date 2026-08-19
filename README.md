@@ -2,28 +2,28 @@
 
 > Your dev knowledge, everywhere, instantly.
 
-A unified web application to centralize, organize, and instantly retrieve technical knowledge for developers — notes, code snippets, and TODOs, all in one place.
+A unified web application to centralize, organize, and instantly retrieve technical knowledge for developers — documents, code snippets, and TODOs, all in one place.
 
 ---
 
 ## 📖 About
 
-**DevNote** addresses a common developer problem: **scattered information**. Code snippets, terminal commands, technical notes, and TODOs often end up fragmented across multiple tools, making it hard to find what you need when you need it.
+**DevNote** addresses a common developer problem: **scattered information**. Code snippets, terminal commands, technical documents, and TODOs often end up fragmented across multiple tools, making it hard to find what you need when you need it.
 
-Everything lives inside a **project**, and every project has three tabs — Notes, Snippets, and TODOs — plus a global search across the whole workspace.
+Everything lives inside a **project**, and every project has three tabs — Documents, Snippets, and TODOs — plus a global search across the whole workspace.
 
 ---
 
 ## ✨ Features
 
-### 📝 Notes
+### 📝 Documents
 
 - **Block editor** built on BlockNote — headings, lists, tables, quotes, checklists, inline links and formatting
 - **Code blocks** with Shiki syntax highlighting, and **Mermaid diagram blocks** via the slash menu
 - **Markdown paste** with automatic language-fence normalization
-- **Outline panel** — an auto-generated table of contents from the note's headings, click to jump
+- **Outline panel** — an auto-generated table of contents from the document's headings, click to jump
 - **Folders** with nested hierarchy, breadcrumb navigation and a *Move to…* dialog
-- **Pin** notes for quick access, **duplicate** them, and **export** to Markdown or PDF
+- **Pin** documents for quick access, **duplicate** them, and **export** to Markdown or PDF
 - The app remembers which folder you were in when you come back to a project
 
 ### 💻 Code Snippets
@@ -44,7 +44,7 @@ Everything lives inside a **project**, and every project has three tabs — Note
 
 ### 🔍 Search
 
-Global overlay searching **projects, notes, snippets and TODOs** at once, with optional filtering by type and highlighted matches.
+Global overlay searching **projects, documents, snippets and TODOs** at once, with optional filtering by type and highlighted matches.
 
 ### ⚙️ Settings
 
@@ -72,9 +72,9 @@ A dedicated screen with four sections:
 ### Frontend
 
 - **React 19** + **React Router 7**, built with **Vite 7**
-- **BlockNote** (+ Mantine) — block-based note editor, with its code-block and diagram-block packages
+- **BlockNote** (+ Mantine) — block-based document editor, with its code-block and diagram-block packages
 - **Shiki** — syntax highlighting for snippets and code blocks
-- **Mermaid** — diagram rendering inside notes
+- **Mermaid** — diagram rendering inside documents
 - **flourite** — language detection for snippets
 - **Axios** — HTTP client with cookie auth, CSRF header and queued token refresh
 - **ESLint** + **Prettier**
@@ -87,7 +87,7 @@ A dedicated screen with four sections:
 DevNote/
 ├── backend/                  # Django project
 │   ├── accounts/             # Custom user model, JWT auth, password change, account deletion
-│   ├── workspace/            # Projects, Folders, Notes, Snippets, TodoLists, TODOs, Search
+│   ├── workspace/            # Projects, Folders, Documents, Snippets, TodoLists, TODOs, Search
 │   │   ├── models.py
 │   │   ├── serializers.py
 │   │   ├── views.py
@@ -98,11 +98,11 @@ DevNote/
 │
 ├── frontend/                 # Vite + React
 │   └── src/
-│       ├── components/       # NotesPanel, SnippetsPanel, TodosPanel, SettingsPanel, modals…
+│       ├── components/       # DocumentsPanel, SnippetsPanel, TodosPanel, SettingsPanel, modals…
 │       ├── contexts/         # Auth, Theme, Dialog providers
 │       ├── hooks/            # useResourceList, useLocalStorageState, useClickOutside…
 │       ├── lib/              # blocknote, highlight, detectLanguage, outline, download…
-│       ├── services/         # API calls (authService, noteService, folderService…)
+│       ├── services/         # API calls (authService, documentService, folderService…)
 │       └── pages/            # Login, Register, Dashboard
 │
 └── docs/                     # Project documentation + GitHub Pages landing page
@@ -196,14 +196,14 @@ Authentication uses **HttpOnly cookies** (`access_token`, `refresh_token`), set 
 |---|---|---|
 | `/projects/` | GET, POST | List / create projects |
 | `/projects/{id}/` | GET, PATCH, DELETE | Project detail |
-| `/projects/{id}/contents/` | GET | Folders and notes at a project's root |
+| `/projects/{id}/contents/` | GET | Folders and documents at a project's root |
 | `/projects/{id}/pinned/` | GET | Pinned items of a project |
 | `/folders/` · `/projects/{id}/folders/` | GET, POST | List / create folders |
 | `/folders/{id}/` | GET, PATCH, DELETE | Folder detail |
-| `/folders/{id}/contents/` | GET | Sub-folders and notes of a folder |
-| `/notes/` · `/projects/{id}/notes/` | GET, POST | List / create notes |
-| `/notes/{id}/` | GET, PATCH, DELETE | Note detail |
-| `/notes/{id}/duplicate/` | POST | Duplicate a note |
+| `/folders/{id}/contents/` | GET | Sub-folders and documents of a folder |
+| `/documents/` · `/projects/{id}/documents/` | GET, POST | List / create documents |
+| `/documents/{id}/` | GET, PATCH, DELETE | Document detail |
+| `/documents/{id}/duplicate/` | POST | Duplicate a document |
 | `/snippets/` · `/projects/{id}/snippets/` | GET, POST | List / create snippets |
 | `/snippets/{id}/` | GET, PATCH, DELETE | Snippet detail |
 | `/snippets/pinned/` | GET | Pinned snippets |

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import DocumentBlock from "./DocumentBlock.jsx";
+import DocumentCard from "./DocumentCard.jsx";
+import DocumentPrintView from "./DocumentPrintView.jsx";
 import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
 import FolderCard from "./FolderCard.jsx";
 import MoveDialog from "./MoveDialog.jsx";
-import NoteBlock from "./NoteBlock.jsx";
-import NoteCard from "./NoteCard.jsx";
-import NotePrintView from "./NotePrintView.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { useTheme } from "../contexts/ThemeContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
@@ -16,34 +16,34 @@ import {
   EMPTY_LOCATION,
   readLocation,
   writeLocation,
-} from "../lib/notesLocation.js";
+} from "../lib/documentsLocation.js";
+import {
+  createDocument,
+  deleteDocument,
+  duplicateDocument,
+  getDocument,
+  getPinnedDocuments,
+  moveDocument,
+  setDocumentPinned,
+  updateDocument,
+} from "../services/documentService.js";
 import {
   createFolder,
   deleteFolder,
   getLevelContents,
   updateFolder,
 } from "../services/folderService.js";
-import {
-  createNote,
-  deleteNote,
-  duplicateNote,
-  getNote,
-  getPinnedNotes,
-  moveNote,
-  setNotePinned,
-  updateNote,
-} from "../services/noteService.js";
 
 const SCROLL_SAVE_DELAY = 150;
 const RESTORE_SCROLL_FRAMES = 30;
 
 function sortEntries(entries, sort) {
   const folders = entries.filter((entry) => entry.type === "folder");
-  const notes = entries.filter((entry) => entry.type !== "folder");
+  const docs = entries.filter((entry) => entry.type !== "folder");
 
   folders.sort((a, b) => a.name.localeCompare(b.name));
 
-  notes.sort((a, b) => {
+  docs.sort((a, b) => {
     if (sort === "updated") {
       return new Date(b.updated_at) - new Date(a.updated_at);
     }
@@ -53,10 +53,10 @@ function sortEntries(entries, sort) {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  return [...folders, ...notes];
+  return [...folders, ...docs];
 }
 
-export default function NotesPanel({
+export default function DocumentsPanel({
   projectId,
   sort,
   scrollRef,
@@ -78,13 +78,15 @@ export default function NotesPanel({
   );
   const scrollTopRef = useRef(initialLocation.scrollTop);
   const restoreScrollRef = useRef(
-    initialLocation.noteId ? initialLocation.scrollTop : 0,
+    initialLocation.documentId ? initialLocation.scrollTop : 0,
   );
   const [path, setPath] = useState(initialLocation.path);
-  const [openNote, setOpenNote] = useState(null);
-  const [pendingNoteId, setPendingNoteId] = useState(initialLocation.noteId);
+  const [openDocument, setOpenDocument] = useState(null);
+  const [pendingDocumentId, setPendingDocumentId] = useState(
+    initialLocation.documentId,
+  );
   const [unreachableFolderId, setUnreachableFolderId] = useState(null);
-  const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [isCreatingDocument, setIsCreatingDocument] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [movingEntry, setMovingEntry] = useState(null);
@@ -93,7 +95,7 @@ export default function NotesPanel({
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
-  const locatedNoteId = openNote?.id ?? pendingNoteId;
+  const locatedDocumentId = openDocument?.id ?? pendingDocumentId;
 
   const fetchContents = useMemo(
     () => (id, url) => getLevelContents(projectId, currentFolderId, url),
@@ -131,13 +133,13 @@ export default function NotesPanel({
   const loadPinned = useCallback(() => {
     if (!projectId) return Promise.resolve();
 
-    return getPinnedNotes(projectId)
+    return getPinnedDocuments(projectId)
       .then((data) => {
         const results = data.results ?? data;
         setPinned({ items: results, count: data.count ?? results.length });
       })
       .catch((pinnedError) => {
-        console.error("Error loading pinned notes:", pinnedError);
+        console.error("Error loading pinned documents:", pinnedError);
         setPinned({ items: [], count: 0 });
       });
   }, [projectId]);
@@ -151,50 +153,50 @@ export default function NotesPanel({
   }, [loadPinned]);
 
   useEffect(() => {
-    if (!pendingNoteId) return;
+    if (!pendingDocumentId) return;
 
     let isStale = false;
 
-    getNote(pendingNoteId)
-      .then((note) => {
+    getDocument(pendingDocumentId)
+      .then((doc) => {
         if (isStale) return;
-        setOpenNote(note);
-        setPendingNoteId(null);
+        setOpenDocument(doc);
+        setPendingDocumentId(null);
       })
       .catch(() => {
-        if (!isStale) setPendingNoteId(null);
+        if (!isStale) setPendingDocumentId(null);
       });
 
     return () => {
       isStale = true;
     };
-  }, [pendingNoteId]);
+  }, [pendingDocumentId]);
 
   useEffect(() => {
     writeLocation(projectId, {
       path,
-      noteId: locatedNoteId,
+      documentId: locatedDocumentId,
       scrollTop: scrollTopRef.current,
     });
-  }, [projectId, path, locatedNoteId]);
+  }, [projectId, path, locatedDocumentId]);
 
   const flushDetail = async () => {
     await detailRef.current?.flush();
   };
 
-  const openNoteCard = async (card) => {
+  const openDocumentCard = async (card) => {
     try {
-      setOpenNote(await getNote(card.id));
+      setOpenDocument(await getDocument(card.id));
     } catch (openError) {
-      console.error("Error opening note:", openError);
-      await showAlert("Unable to open the note");
+      console.error("Error opening document:", openError);
+      await showAlert("Unable to open the document");
     }
   };
 
   const leaveDetail = async () => {
     await flushDetail();
-    setOpenNote(null);
-    setIsCreatingNote(false);
+    setOpenDocument(null);
+    setIsCreatingDocument(false);
     await Promise.all([reload(), loadPinned()]);
   };
 
@@ -260,7 +262,7 @@ export default function NotesPanel({
       if (isFolder) {
         await updateFolder(entry.id, { parent: destinationId });
       } else {
-        await moveNote(entry.id, destinationId);
+        await moveDocument(entry.id, destinationId);
       }
     } catch (moveError) {
       console.error("Error moving entry:", moveError);
@@ -269,7 +271,7 @@ export default function NotesPanel({
       const reason = data?.parent?.[0] ?? data?.folder?.[0] ?? data?.name?.[0];
 
       await showAlert(
-        reason ?? `Unable to move the ${isFolder ? "folder" : "note"}`,
+        reason ?? `Unable to move the ${isFolder ? "folder" : "document"}`,
       );
       return;
     }
@@ -283,7 +285,7 @@ export default function NotesPanel({
             ? {
                 ...item,
                 folder_count: item.folder_count + (isFolder ? 1 : 0),
-                note_count: item.note_count + (isFolder ? 0 : 1),
+                document_count: item.document_count + (isFolder ? 0 : 1),
               }
             : item,
         ),
@@ -309,8 +311,10 @@ export default function NotesPanel({
       if (data.folders) {
         parts.push(`${data.folders} subfolder${data.folders > 1 ? "s" : ""}`);
       }
-      if (data.notes) {
-        parts.push(`${data.notes} note${data.notes > 1 ? "s" : ""}`);
+      if (data.documents) {
+        parts.push(
+          `${data.documents} document${data.documents > 1 ? "s" : ""}`,
+        );
       }
 
       const confirmed = await showConfirm(
@@ -331,7 +335,7 @@ export default function NotesPanel({
     }
   };
 
-  const handleSave = async (noteId, title, content) => {
+  const handleSave = async (documentId, title, content) => {
     const trimmedTitle = title.trim();
 
     if (!trimmedTitle) {
@@ -340,39 +344,39 @@ export default function NotesPanel({
     }
 
     try {
-      if (noteId) {
-        const updated = await updateNote(noteId, trimmedTitle, content);
-        setOpenNote((current) =>
-          current && current.id === noteId
+      if (documentId) {
+        const updated = await updateDocument(documentId, trimmedTitle, content);
+        setOpenDocument((current) =>
+          current && current.id === documentId
             ? { ...current, ...updated }
             : current,
         );
       } else {
-        await createNote(projectId, trimmedTitle, content, currentFolderId);
+        await createDocument(projectId, trimmedTitle, content, currentFolderId);
       }
 
       return true;
     } catch (saveError) {
-      console.error("Error saving note:", saveError);
-      await showAlert("Unable to save the note");
+      console.error("Error saving document:", saveError);
+      await showAlert("Unable to save the document");
       return false;
     }
   };
 
-  const handleTogglePin = async (note) => {
-    const nextPinned = !note.is_pinned;
+  const handleTogglePin = async (doc) => {
+    const nextPinned = !doc.is_pinned;
 
     try {
-      await setNotePinned(note.id, nextPinned);
+      await setDocumentPinned(doc.id, nextPinned);
     } catch (pinError) {
-      console.error("Error pinning note:", pinError);
-      await showAlert(`Unable to ${nextPinned ? "pin" : "unpin"} the note`);
+      console.error("Error pinning document:", pinError);
+      await showAlert(`Unable to ${nextPinned ? "pin" : "unpin"} the document`);
       return;
     }
 
     setItems((current) =>
       current.map((entry) =>
-        entry.type !== "folder" && entry.id === note.id
+        entry.type !== "folder" && entry.id === doc.id
           ? { ...entry, is_pinned: nextPinned }
           : entry,
       ),
@@ -384,12 +388,10 @@ export default function NotesPanel({
     }
 
     setPinned((current) => {
-      const without = current.items.filter((entry) => entry.id !== note.id);
+      const without = current.items.filter((entry) => entry.id !== doc.id);
 
       return {
-        items: nextPinned
-          ? [{ ...note, is_pinned: true }, ...without]
-          : without,
+        items: nextPinned ? [{ ...doc, is_pinned: true }, ...without] : without,
         count: current.count + (nextPinned ? 1 : -1),
       };
     });
@@ -410,53 +412,54 @@ export default function NotesPanel({
     setPrintTarget(null);
   }, []);
 
-  const withNoteContent = async (note, action) => {
+  const withDocumentContent = async (doc, action) => {
     try {
-      const full = await getNote(note.id);
+      const full = await getDocument(doc.id);
       action(full.title, full.content);
     } catch (exportError) {
-      console.error("Error exporting note:", exportError);
-      await showAlert("Unable to export the note");
+      console.error("Error exporting document:", exportError);
+      await showAlert("Unable to export the document");
     }
   };
 
-  const handleExportMarkdown = (note) => withNoteContent(note, exportMarkdown);
+  const handleExportMarkdown = (doc) =>
+    withDocumentContent(doc, exportMarkdown);
 
-  const handleExportPdf = (note) => withNoteContent(note, exportPdf);
+  const handleExportPdf = (doc) => withDocumentContent(doc, exportPdf);
 
-  const handleDuplicateNote = async (note) => {
+  const handleDuplicateDocument = async (doc) => {
     try {
-      await duplicateNote(note.id);
+      await duplicateDocument(doc.id);
       await reload();
     } catch (duplicateError) {
-      console.error("Error duplicating note:", duplicateError);
-      await showAlert("Unable to duplicate the note");
+      console.error("Error duplicating document:", duplicateError);
+      await showAlert("Unable to duplicate the document");
     }
   };
 
-  const handleDeleteNote = async (note) => {
-    const confirmed = await showConfirm(`Delete "${note.title}"?`);
+  const handleDeleteDocument = async (doc) => {
+    const confirmed = await showConfirm(`Delete "${doc.title}"?`);
     if (!confirmed) return;
 
     try {
-      await deleteNote(note.id);
-      dropEntry(note.id);
+      await deleteDocument(doc.id);
+      dropEntry(doc.id);
       setPinned((current) => {
-        const items = current.items.filter((entry) => entry.id !== note.id);
+        const items = current.items.filter((entry) => entry.id !== doc.id);
 
         return items.length === current.items.length
           ? current
           : { items, count: current.count - 1 };
       });
-      if (openNote?.id === note.id) setOpenNote(null);
+      if (openDocument?.id === doc.id) setOpenDocument(null);
     } catch (deleteError) {
-      console.error("Error deleting note:", deleteError);
-      await showAlert("Unable to delete the note");
+      console.error("Error deleting document:", deleteError);
+      await showAlert("Unable to delete the document");
     }
   };
 
-  const detailNote = isCreatingNote ? null : openNote;
-  const isDetail = isCreatingNote || Boolean(openNote);
+  const detailDocument = isCreatingDocument ? null : openDocument;
+  const isDetail = isCreatingDocument || Boolean(openDocument);
 
   useEffect(() => {
     const target = restoreScrollRef.current;
@@ -488,7 +491,7 @@ export default function NotesPanel({
   useEffect(() => {
     const container = scrollRef?.current;
 
-    if (!locatedNoteId) {
+    if (!locatedDocumentId) {
       scrollTopRef.current = 0;
       return;
     }
@@ -501,7 +504,7 @@ export default function NotesPanel({
       timer = null;
       writeLocation(projectId, {
         path,
-        noteId: locatedNoteId,
+        documentId: locatedDocumentId,
         scrollTop: scrollTopRef.current,
       });
     };
@@ -522,7 +525,7 @@ export default function NotesPanel({
         persist();
       }
     };
-  }, [isDetail, locatedNoteId, path, projectId, scrollRef]);
+  }, [isDetail, locatedDocumentId, path, projectId, scrollRef]);
 
   const isSortable =
     !isDetail &&
@@ -535,7 +538,7 @@ export default function NotesPanel({
   }, [onSortableChange, isSortable]);
 
   return (
-    <div id="notes-list" className="notes-list" ref={containerRef}>
+    <div id="documents-list" className="documents-list" ref={containerRef}>
       {breadcrumbSlot &&
         createPortal(
           <FolderBreadcrumb
@@ -547,14 +550,16 @@ export default function NotesPanel({
         )}
 
       {isDetail ? (
-        <NoteBlock
-          key={openNote?.id ?? "new"}
+        <DocumentBlock
+          key={openDocument?.id ?? "new"}
           ref={detailRef}
-          note={detailNote}
+          doc={detailDocument}
           searchQuery={searchQuery}
           onSave={handleSave}
           onDiscard={leaveDetail}
-          onDelete={() => detailNote && handleDeleteNote(detailNote)}
+          onDelete={() =>
+            detailDocument && handleDeleteDocument(detailDocument)
+          }
           onExportMarkdown={exportMarkdown}
           onExportPdf={exportPdf}
           scrollRef={scrollRef}
@@ -576,11 +581,11 @@ export default function NotesPanel({
 
               <div className="gallery-grid">
                 {pinnedEntries.map((entry) => (
-                  <NoteCard
+                  <DocumentCard
                     key={`pinned:${entry.id}`}
-                    note={entry}
+                    doc={entry}
                     searchQuery={searchQuery}
-                    onOpen={openNoteCard}
+                    onOpen={openDocumentCard}
                     onTogglePin={handleTogglePin}
                     onExportMarkdown={handleExportMarkdown}
                     onExportPdf={handleExportPdf}
@@ -602,10 +607,10 @@ export default function NotesPanel({
             <button
               type="button"
               className="gallery-action"
-              onClick={() => setIsCreatingNote(true)}
+              onClick={() => setIsCreatingDocument(true)}
             >
               <i className="ph-light ph-plus" />
-              <span>New note</span>
+              <span>New document</span>
             </button>
           </div>
 
@@ -644,17 +649,17 @@ export default function NotesPanel({
                     onDelete={handleDeleteFolder}
                   />
                 ) : (
-                  <NoteCard
-                    key={`note:${entry.id}`}
-                    note={entry}
+                  <DocumentCard
+                    key={`document:${entry.id}`}
+                    doc={entry}
                     searchQuery={searchQuery}
-                    onOpen={openNoteCard}
+                    onOpen={openDocumentCard}
                     onTogglePin={handleTogglePin}
-                    onDuplicate={handleDuplicateNote}
+                    onDuplicate={handleDuplicateDocument}
                     onExportMarkdown={handleExportMarkdown}
                     onExportPdf={handleExportPdf}
                     onMove={setMovingEntry}
-                    onDelete={handleDeleteNote}
+                    onDelete={handleDeleteDocument}
                   />
                 ),
               )}
@@ -668,7 +673,7 @@ export default function NotesPanel({
       )}
 
       {printTarget && (
-        <NotePrintView
+        <DocumentPrintView
           key={printTarget.key}
           title={printTarget.title}
           content={printTarget.content}

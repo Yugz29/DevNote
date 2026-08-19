@@ -3,14 +3,14 @@ import { search } from "../services/searchService.js";
 
 const SECTIONS = [
   { key: "projects", label: "Projects" },
-  { key: "notes", label: "Notes" },
+  { key: "documents", label: "Documents" },
   { key: "snippets", label: "Snippets" },
   { key: "todos", label: "TODOs" },
 ];
 
 const ICONS = {
   projects: "ph-light ph-folder",
-  notes: "ph-light ph-note",
+  documents: "ph-light ph-note",
   snippets: "ph-light ph-code",
   todos: "ph-light ph-check-square",
 };
@@ -128,7 +128,7 @@ export default function SearchOverlay({ isOpen, onClose, onSelectResult }) {
         <div id="search-results" className="search-results">
           {status === "hint" && (
             <p className="search-hint">
-              Search projects, notes, snippets and todos...
+              Search projects, documents, snippets and todos...
             </p>
           )}
 

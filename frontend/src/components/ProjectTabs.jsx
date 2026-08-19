@@ -1,23 +1,23 @@
 import { useCallback, useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
-import NotesPanel from "./NotesPanel.jsx";
+import DocumentsPanel from "./DocumentsPanel.jsx";
 import SnippetsPanel from "./SnippetsPanel.jsx";
 import TodosPanel from "./TodosPanel.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 
 const TABS = [
-  { key: "notes", label: "Notes" },
+  { key: "documents", label: "Documents" },
   { key: "snippets", label: "Code Snippets" },
   { key: "todos", label: "TODOs" },
 ];
 
-const NOTE_SORT_OPTIONS = [
+const DOCUMENT_SORT_OPTIONS = [
   { value: "created", label: "Created" },
   { value: "updated", label: "Updated" },
   { value: "title", label: "Title A → Z" },
 ];
 
-const SNIPPET_SORT_OPTIONS = NOTE_SORT_OPTIONS;
+const SNIPPET_SORT_OPTIONS = DOCUMENT_SORT_OPTIONS;
 
 const TODO_SORT_OPTIONS = [
   { value: "priority", label: "Priority" },
@@ -46,8 +46,8 @@ export default function ProjectTabs({
 
   const handleSortableChange = useCallback((value) => setIsSortable(value), []);
 
-  const [noteSort, setNoteSort] = useLocalStorageState(
-    "devnote_note_sort",
+  const [documentSort, setDocumentSort] = useLocalStorageState(
+    "devnote_document_sort",
     "created",
   );
   const [snippetSort, setSnippetSort] = useLocalStorageState(
@@ -89,17 +89,17 @@ export default function ProjectTabs({
         </div>
 
         <div
-          className={`note-controls${currentTab === "notes" ? " visible" : ""}`}
+          className={`document-controls${currentTab === "documents" ? " visible" : ""}`}
         >
           {isSortable && (
             <ContentSortDropdown
-              id="note"
-              options={NOTE_SORT_OPTIONS}
-              sort={noteSort}
+              id="document"
+              options={DOCUMENT_SORT_OPTIONS}
+              sort={documentSort}
               defaultSort="created"
-              isOpen={openDropdown === "note"}
-              onToggle={toggleDropdown("note")}
-              onSortChange={setNoteSort}
+              isOpen={openDropdown === "document"}
+              onToggle={toggleDropdown("document")}
+              onSortChange={setDocumentSort}
             />
           )}
         </div>
@@ -177,14 +177,14 @@ export default function ProjectTabs({
 
       <div className="tab-content" ref={tabContentRef}>
         <div
-          id="tab-notes"
-          className={`tab-pane${currentTab === "notes" ? " active" : ""}`}
+          id="tab-documents"
+          className={`tab-pane${currentTab === "documents" ? " active" : ""}`}
         >
-          {currentTab === "notes" && (
-            <NotesPanel
+          {currentTab === "documents" && (
+            <DocumentsPanel
               key={projectId}
               projectId={projectId}
-              sort={noteSort}
+              sort={documentSort}
               scrollRef={tabContentRef}
               headerSlot={headerSlot}
               breadcrumbSlot={breadcrumbSlot}
