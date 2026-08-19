@@ -92,7 +92,7 @@
 
 .btn-sidebar-toggle:hover {
     color: var(--dash-text);
-    background: var(--dash-glass-raised);
+    background: var(--dash-lift-hover);
 }
 
 /* Mobile */
@@ -800,7 +800,7 @@
 
 .project-description-toggle:hover {
     color: var(--dash-text-dim);
-    background: var(--dash-glass);
+    background: var(--dash-lift);
 }
 
 .project-description-toggle i {
@@ -833,12 +833,12 @@
 
 #project-title:hover,
 #project-description:hover {
-    background: var(--dash-glass);
+    background: var(--dash-lift);
 }
 
 #project-title[contenteditable=true],
 #project-description[contenteditable=true] {
-    background: var(--dash-glass-hover);
+    background: var(--dash-lift-hover);
     box-shadow: 0 0 0 1px var(--dash-shadow-inset);
     cursor: text;
 }
@@ -906,7 +906,7 @@
 }
 
 .tab.active {
-    background: var(--dash-glass-raised-hover);
+    background: var(--dash-lift-active);
     color: var(--dash-text);
     box-shadow: 0 1px 4px var(--dash-shadow-soft);
 }
@@ -983,7 +983,7 @@
 
 .folder-crumb:hover:not(:disabled) {
     color: var(--dash-text);
-    background: var(--dash-glass-raised);
+    background: var(--dash-lift-hover);
 }
 
 .folder-crumb:disabled {
@@ -1019,7 +1019,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--dash-glass);
+    background: var(--dash-lift);
     border: 1px solid var(--dash-glass-border);
     border-radius: 6px;
     padding: 6px 11px;
@@ -1032,7 +1032,7 @@
 
 .gallery-action:hover {
     color: var(--dash-text);
-    background: var(--dash-glass-raised);
+    background: var(--dash-lift-hover);
     border-color: var(--dash-glass-border-hover);
 }
 
@@ -1070,7 +1070,7 @@
 }
 
 .entry-tile-open:hover {
-    background: var(--dash-glass);
+    background: var(--dash-lift);
     border-color: var(--dash-glass-border);
 }
 
@@ -1084,7 +1084,7 @@
 }
 
 .entry-tile--document .entry-tile-icon {
-    color: var(--dash-text-muted);
+    color: var(--dash-icon-neutral);
 }
 
 .entry-tile-name {
@@ -1542,7 +1542,7 @@
 .document-outline-toggle.is-open {
     color: var(--dash-text);
     border-color: var(--dash-border-emphasis);
-    background: var(--dash-glass-raised);
+    background: var(--dash-lift-hover);
 }
 
 .document-outline-slot {
@@ -1605,7 +1605,7 @@
 .document-outline-item:hover {
     color: var(--dash-text);
     border-left-color: var(--accent-primary);
-    background: var(--dash-glass);
+    background: var(--dash-lift);
 }
 
 @media (min-width: 1200px) {
@@ -1905,8 +1905,8 @@
 }
 
 .snippet-card {
-    background: var(--dash-surface-raised);
-    border: 1px solid var(--dash-border-strong);
+    background: var(--dash-card-surface);
+    border: 1px solid var(--dash-card-border);
     border-radius: 8px;
     padding: 1rem;
     display: flex;
@@ -2224,7 +2224,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--dash-glass);
+    background: var(--dash-lift);
     border: 1px solid var(--dash-glass-border);
     border-radius: 999px;
     padding: 0 4px 0 12px;
@@ -2243,13 +2243,13 @@
 
 .todo-list-tab:hover {
     color: var(--dash-text);
-    background: var(--dash-glass-raised);
+    background: var(--dash-lift-hover);
     border-color: var(--dash-glass-border-hover);
 }
 
 .todo-list-tab.active {
     color: var(--dash-text);
-    background: var(--dash-glass-raised-hover);
+    background: var(--dash-lift-active);
     border-color: var(--dash-border-emphasis);
 }
 
@@ -2570,8 +2570,8 @@
 
 .todo-card {
     position: relative;
-    background: var(--dash-surface-raised);
-    border: 1px solid var(--dash-border-strong);
+    background: var(--dash-card-surface);
+    border: 1px solid var(--dash-card-border);
     border-radius: 8px;
     padding: 1rem;
     display: flex;

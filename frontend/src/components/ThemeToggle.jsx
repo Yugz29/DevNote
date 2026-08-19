@@ -1,37 +1,4 @@
-import { useState } from "react";
 import { useTheme } from "../contexts/ThemeContext.js";
-
-const COLORS = {
-  dark: {
-    background: "#161b22",
-    border: "1px solid #30363d",
-    color: "#8b949e",
-    boxShadow: "none",
-  },
-  light: {
-    background: "#ffffff",
-    border: "1px solid rgba(0,0,0,0.12)",
-    color: "#475569",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-  },
-};
-
-const BASE_STYLE = {
-  position: "fixed",
-  bottom: "24px",
-  right: "24px",
-  zIndex: 9999,
-  width: "40px",
-  height: "40px",
-  borderRadius: "50%",
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "16px",
-  outline: "none",
-  transition: "transform 0.15s",
-};
 
 function SunIcon() {
   return (
@@ -77,20 +44,13 @@ function MoonIcon() {
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
-  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <button
       id="theme-toggle"
+      type="button"
       aria-label="Toggle theme"
       onClick={toggleTheme}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        ...BASE_STYLE,
-        ...COLORS[theme],
-        transform: isHovered ? "scale(1.1)" : "scale(1)",
-      }}
     >
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>

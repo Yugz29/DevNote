@@ -4,16 +4,16 @@
    ========================================== */
 
 [data-theme="light"] {
-  --bg-primary: #f5f7fa;
+  --bg-primary: #e7eaf0;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #eef1f6;
+  --bg-tertiary: #e2e7ef;
 
   --text-primary: #1a1a2e;
   --text-secondary: #475569;
   --text-muted: #55667f;
 
-  --border-default: rgba(0,0,0,0.1);
-  --border-muted: rgba(0,0,0,0.06);
+  --border-default: rgba(15,23,42,0.12);
+  --border-muted: rgba(15,23,42,0.07);
 
   --accent-primary: #2563eb;
   --accent-hover: #1d4ed8;
@@ -40,60 +40,66 @@
   --dash-text-faint: #5d6b7c;
   --dash-text-ghost: #606f81;
   --dash-text-disabled: #606e83;
+  --dash-icon-neutral: #8d99ac;
 
   /* Dashboard — surfaces */
-  --dash-ground: #f5f7fa;
-  --dash-surface-sunken: #eef2f7;
-  --dash-surface-sunken-alt: #edf1f6;
-  --dash-surface-deep: #eff3f8;
+  --dash-ground: #e7eaf0;
+  --dash-surface-sunken: #eaeef4;
+  --dash-surface-sunken-alt: #e9edf3;
+  --dash-surface-deep: #edf0f6;
   --dash-surface: #ffffff;
   --dash-surface-raised: #eef1f6;
-  --dash-surface-muted: #e9edf3;
-  --dash-surface-line: #e4e9f0;
-  --dash-surface-hover: #e2e8f0;
-  --dash-surface-strong: #d8dfe8;
-  --dash-surface-stronger: #cbd5e1;
-  --dash-popover: rgba(255, 255, 255, 0.85);
-  --dash-popover-strong: rgba(255, 255, 255, 0.92);
+  --dash-surface-muted: #e6eaf1;
+  --dash-surface-line: #dfe4ec;
+  --dash-surface-hover: #dde3ec;
+  --dash-surface-strong: #e2e7ef;
+  --dash-surface-stronger: #d6dde7;
+  --dash-popover: rgba(255, 255, 255, 0.92);
+  --dash-popover-strong: rgba(255, 255, 255, 0.96);
 
   /* Dashboard — glass surfaces */
-  --dash-glass-subtle: rgba(255, 255, 255, 0.5);
-  --dash-glass-panel: rgba(255, 255, 255, 0.75);
-  --dash-sidebar-glass: rgba(255, 255, 255, 0.55);
+  /* Panels lift off the ground with white; states on top of a white panel
+     tint with slate instead — white on white would be invisible. */
+  --dash-glass-subtle: rgba(255, 255, 255, 0.62);
+  --dash-glass-panel: rgba(15, 23, 42, 0.04);
+  --dash-sidebar-glass: rgba(255, 255, 255, 0.78);
   --dash-sidebar-blur: 30px;
-  --dash-glass: rgba(255, 255, 255, 0.68);
-  --dash-card-surface: rgba(255, 255, 255, 0.92);
+  --dash-lift: rgba(255, 255, 255, 0.8);
+  --dash-lift-hover: rgba(255, 255, 255, 0.95);
+  --dash-lift-active: #ffffff;
+  --dash-card-surface: #ffffff;
   --dash-card-surface-hover: #ffffff;
-  --dash-card-border: rgba(0, 0, 0, 0.09);
-  --dash-glass-hover: rgba(255, 255, 255, 0.78);
-  --dash-glass-raised: rgba(255, 255, 255, 0.85);
-  --dash-glass-raised-hover: rgba(255, 255, 255, 0.92);
-  --dash-glass-strong: rgba(255, 255, 255, 0.95);
-  --dash-glass-stronger: rgba(255, 255, 255, 1);
-  --dash-glass-active: rgba(226, 232, 240, 0.9);
-  --dash-glass-max: rgba(226, 232, 240, 1);
+  --dash-card-border: rgba(15, 23, 42, 0.1);
+  --dash-glass: rgba(15, 23, 42, 0.05);
+  --dash-glass-hover: rgba(15, 23, 42, 0.06);
+  --dash-glass-raised: rgba(15, 23, 42, 0.055);
+  --dash-glass-raised-hover: rgba(15, 23, 42, 0.085);
+  --dash-glass-strong: rgba(15, 23, 42, 0.12);
+  --dash-glass-stronger: rgba(15, 23, 42, 0.12);
+  --dash-glass-active: rgba(15, 23, 42, 0.13);
+  --dash-glass-max: rgba(15, 23, 42, 0.18);
 
   /* Dashboard — borders */
-  --dash-border-subtle: rgba(0, 0, 0, 0.05);
-  --dash-border-faint: rgba(0, 0, 0, 0.06);
-  --dash-border: rgba(0, 0, 0, 0.1);
-  --dash-border-muted: rgba(0, 0, 0, 0.08);
-  --dash-border-strong: rgba(0, 0, 0, 0.14);
-  --dash-border-emphasis: rgba(0, 0, 0, 0.2);
-  --dash-border-hover: rgba(0, 0, 0, 0.32);
-  --dash-glass-border-subtle: rgba(0, 0, 0, 0.05);
-  --dash-glass-border-soft: rgba(0, 0, 0, 0.06);
-  --dash-glass-border: rgba(0, 0, 0, 0.09);
-  --dash-glass-border-hover: rgba(0, 0, 0, 0.14);
-  --dash-glass-border-active: rgba(0, 0, 0, 0.16);
-  --dash-glass-border-warm: rgba(0, 0, 0, 0.12);
-  --dash-glass-border-strong: rgba(0, 0, 0, 0.18);
-  --dash-glass-border-stronger: rgba(0, 0, 0, 0.22);
-  --dash-glass-border-max: rgba(0, 0, 0, 0.26);
-  --dash-glass-border-focus: rgba(0, 0, 0, 0.32);
+  --dash-border-subtle: rgba(15, 23, 42, 0.05);
+  --dash-border-faint: rgba(15, 23, 42, 0.07);
+  --dash-border: rgba(15, 23, 42, 0.1);
+  --dash-border-muted: rgba(15, 23, 42, 0.08);
+  --dash-border-strong: rgba(15, 23, 42, 0.14);
+  --dash-border-emphasis: rgba(15, 23, 42, 0.2);
+  --dash-border-hover: rgba(15, 23, 42, 0.32);
+  --dash-glass-border-subtle: rgba(15, 23, 42, 0.06);
+  --dash-glass-border-soft: rgba(15, 23, 42, 0.07);
+  --dash-glass-border: rgba(15, 23, 42, 0.1);
+  --dash-glass-border-hover: rgba(15, 23, 42, 0.14);
+  --dash-glass-border-active: rgba(15, 23, 42, 0.16);
+  --dash-glass-border-warm: rgba(15, 23, 42, 0.12);
+  --dash-glass-border-strong: rgba(15, 23, 42, 0.18);
+  --dash-glass-border-stronger: rgba(15, 23, 42, 0.22);
+  --dash-glass-border-max: rgba(15, 23, 42, 0.26);
+  --dash-glass-border-focus: rgba(15, 23, 42, 0.32);
 
   /* Dashboard — scrims & shadows */
-  --dash-scrim-soft: rgba(15, 23, 42, 0.12);
+  --dash-scrim-soft: rgba(15, 23, 42, 0.07);
   --dash-scrim: rgba(15, 23, 42, 0.28);
   --dash-scrim-strong: rgba(15, 23, 42, 0.35);
   --dash-shadow-soft: rgba(15, 23, 42, 0.08);
@@ -103,13 +109,17 @@
   --dash-shadow-inset: rgba(255, 255, 255, 0.8);
 
   /* Dashboard — accent & status tints */
-  --dash-accent-tint: rgba(37, 99, 235, 0.08);
+  --dash-accent-tint: rgba(37, 99, 235, 0.1);
   --dash-accent-tint-strong: rgba(37, 99, 235, 0.16);
   --dash-accent-border-soft: rgba(37, 99, 235, 0.22);
   --dash-accent-border: rgba(37, 99, 235, 0.45);
   --dash-accent-glow: rgba(37, 99, 235, 0.4);
   --dash-accent-glow-soft: rgba(37, 99, 235, 0.2);
   --dash-accent-glow-none: rgba(37, 99, 235, 0);
+  --dash-auth-glow: rgba(37, 99, 235, 0.05);
+  --dash-auth-glow-soft: rgba(37, 99, 235, 0.03);
+  --dash-auth-glow-warm: rgba(220, 38, 38, 0.03);
+  --dash-auth-grid: rgba(15, 23, 42, 0.04);
   --dash-danger-dim: #d19a9a;
   --dash-danger-tint: rgba(220, 38, 38, 0.07);
   --dash-danger-tint-hover: rgba(220, 38, 38, 0.1);
