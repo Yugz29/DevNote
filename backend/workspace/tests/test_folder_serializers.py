@@ -81,10 +81,12 @@ class FolderSerializerTest(TestCase):
             {
                 "id",
                 "name",
+                "resource_type",
                 "project_id",
                 "parent",
                 "folder_count",
                 "document_count",
+                "snippet_count",
                 "created_at",
                 "updated_at",
             },
@@ -246,3 +248,128 @@ class DocumentFolderSerializerTest(TestCase):
         updated = serializer.save()
 
         self.assertIsNone(updated.folder)
+
+
+class TypedFolderSerializerTest(TestCase):
+    """Tests for the resource type through the folder serializer"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="typedfolderserializeruser",
+            email="typedfolderserializer@test.com",
+            password="TestPass123!",
+        )
+        self.project = Project.objects.create(
+            title="Typed Serializer Project", user=self.user
+        )
+
+    def get_serializer(self, data=None, instance=None, project=None, partial=False):
+        mock_request = SimpleNamespace(user=self.user)
+        context = {"request": mock_request}
+
+        if project is not None:
+            context["project"] = project
+
+        kwargs = {"context": context, "partial": partial}
+
+        if data is not None:
+            kwargs["data"] = data
+
+        return FolderSerializer(instance=instance, **kwargs)
+
+    def test_create_snippet_folder(self):
+        """Test creating a snippet folder through the serializer"""
+        serializer = self.get_serializer(
+            data={"name": "Helpers", "resource_type": "snippets"},
+            project=self.project,
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        folder = serializer.save(project=self.project)
+
+        self.assertEqual(folder.resource_type, "snippets")
+
+    def test_unknown_resource_type_rejected(self):
+        """Test that only the known resource types are accepted"""
+        serializer = self.get_serializer(
+            data={"name": "Helpers", "resource_type": "todos"}, project=self.project
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("resource_type", serializer.errors)
+
+    def test_resource_type_cannot_change(self):
+        """Test that a folder keeps the kind of resource it was created for"""
+        folder = Folder.objects.create(name="Archives", project=self.project)
+
+        serializer = self.get_serializer(
+            data={"resource_type": "snippets"}, instance=folder, partial=True
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("resource_type", serializer.errors)
+
+    def test_unchanged_resource_type_accepted(self):
+        """Test that resending the current type is not treated as a change"""
+        folder = Folder.objects.create(name="Archives", project=self.project)
+
+        serializer = self.get_serializer(
+            data={"name": "Renamed", "resource_type": "documents"},
+            instance=folder,
+            partial=True,
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_parent_of_another_type_rejected(self):
+        """Test that the serializer refuses to mix types in a branch"""
+        parent = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+
+        serializer = self.get_serializer(
+            data={"name": "Child", "parent": str(parent.id)}, project=self.project
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("parent", serializer.errors)
+
+    def test_same_name_allowed_across_types_at_root(self):
+        """Test that the name collision check is scoped to one type"""
+        Folder.objects.create(name="Utils", project=self.project)
+
+        serializer = self.get_serializer(
+            data={"name": "Utils", "resource_type": "snippets"}, project=self.project
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_same_name_rejected_within_a_type(self):
+        """Test that the name collision check still applies inside a type"""
+        Folder.objects.create(
+            name="Utils", project=self.project, resource_type="snippets"
+        )
+
+        serializer = self.get_serializer(
+            data={"name": "Utils", "resource_type": "snippets"}, project=self.project
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("name", serializer.errors)
+
+    def test_document_rejected_in_a_snippet_folder(self):
+        """Test that a document cannot land in a folder holding snippets"""
+        folder = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+
+        serializer = DocumentSerializer(
+            data={"title": "Notes", "folder": str(folder.id)},
+            context={
+                "request": SimpleNamespace(user=self.user),
+                "project": self.project,
+            },
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("folder", serializer.errors)

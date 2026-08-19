@@ -453,6 +453,7 @@ class SnippetPinnedViewTest(APITestCase):
                 "language",
                 "description",
                 "project_id",
+                "folder",
                 "is_pinned",
                 "created_at",
                 "updated_at",
@@ -492,7 +493,7 @@ class SnippetPinnedViewTest(APITestCase):
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["id"], str(mine.id))
 
-    def test_pinned_of_foreign_project_is_empty(self):
+    def test_pinned_of_foreign_project_is_denied(self):
         """Test : users cannot read another user's pinned snippets"""
         other_user = User.objects.create_user(
             username="pinnedforeigndev",
@@ -508,8 +509,7 @@ class SnippetPinnedViewTest(APITestCase):
             f"/api/projects/{foreign_project.id}/snippets/pinned/"
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["count"], 0)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_pinned_unauthenticated(self):
         """Test : the pinned stream requires authentication"""

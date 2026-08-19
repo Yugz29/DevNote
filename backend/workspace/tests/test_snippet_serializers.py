@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import TestCase
 
-from workspace.models import Project, Snippet
+from workspace.models import Folder, Project, Snippet
 from workspace.serializers import SnippetSerializer
 
 User = get_user_model()
@@ -212,3 +212,123 @@ class SnippetSerializerTestCase(TestCase):
         updated = serializer.save()
 
         self.assertTrue(updated.is_pinned)
+
+
+class SnippetFolderFieldTest(TestCase):
+    """Tests for the folder field added to Snippet"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="snippetfolderuser",
+            email="snippetfolder@test.com",
+            password="TestPass123!",
+        )
+        self.project = Project.objects.create(
+            title="Snippet Folder Project", user=self.user
+        )
+        self.snippet_folder = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+        self.document_folder = Folder.objects.create(
+            name="Archives", project=self.project
+        )
+
+    def get_serializer(self, data=None, instance=None, project=None, partial=False):
+        mock_request = SimpleNamespace(user=self.user)
+        context = {"request": mock_request}
+
+        if project is not None:
+            context["project"] = project
+
+        return SnippetSerializer(
+            data=data, instance=instance, context=context, partial=partial
+        )
+
+    def payload(self, **overrides):
+        return {
+            "title": "Helper",
+            "content": "pass",
+            "language": "python",
+            **overrides,
+        }
+
+    def test_folder_exposed(self):
+        """Test that the serialized payload carries the folder"""
+        snippet = Snippet.objects.create(
+            title="Helper",
+            content="pass",
+            project=self.project,
+            folder=self.snippet_folder,
+        )
+
+        data = SnippetSerializer(
+            snippet, context={"request": SimpleNamespace(user=self.user)}
+        ).data
+
+        self.assertEqual(data["folder"], self.snippet_folder.id)
+
+    def test_create_in_a_snippet_folder(self):
+        """Test that a snippet can be created inside a snippet folder"""
+        serializer = self.get_serializer(
+            data=self.payload(folder=str(self.snippet_folder.id)),
+            project=self.project,
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        snippet = serializer.save(project=self.project)
+
+        self.assertEqual(snippet.folder, self.snippet_folder)
+
+    def test_create_without_folder_stays_at_root(self):
+        """Test that the folder is optional"""
+        serializer = self.get_serializer(data=self.payload(), project=self.project)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        snippet = serializer.save(project=self.project)
+
+        self.assertIsNone(snippet.folder)
+
+    def test_document_folder_rejected(self):
+        """Test that a snippet cannot land in a folder holding documents"""
+        serializer = self.get_serializer(
+            data=self.payload(folder=str(self.document_folder.id)),
+            project=self.project,
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("folder", serializer.errors)
+
+    def test_folder_of_another_project_rejected(self):
+        """Test that the folder must belong to the project of the snippet"""
+        other_project = Project.objects.create(
+            title="Other Snippet Folder Project", user=self.user
+        )
+        other_folder = Folder.objects.create(
+            name="Elsewhere", project=other_project, resource_type="snippets"
+        )
+
+        serializer = self.get_serializer(
+            data=self.payload(folder=str(other_folder.id)), project=self.project
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("folder", serializer.errors)
+
+    def test_folder_of_another_user_is_unknown(self):
+        """Test that the folder field only sees the folders of the caller"""
+        stranger = User.objects.create_user(
+            username="snippetfolderstranger",
+            email="snippetfolderstranger@test.com",
+            password="TestPass123!",
+        )
+        stranger_project = Project.objects.create(title="Stranger", user=stranger)
+        stranger_folder = Folder.objects.create(
+            name="Private", project=stranger_project, resource_type="snippets"
+        )
+
+        serializer = self.get_serializer(
+            data=self.payload(folder=str(stranger_folder.id)), project=self.project
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("folder", serializer.errors)

@@ -201,6 +201,7 @@ export default function ProjectTabs({
               sort={snippetSort}
               view={snippetView}
               scrollRef={tabContentRef}
+              breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
               openTarget={openTarget?.tab === "snippets" ? openTarget : null}

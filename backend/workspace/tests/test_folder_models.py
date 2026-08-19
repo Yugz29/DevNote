@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from workspace.models import Document, Folder, Project
+from workspace.models import Document, Folder, Project, Snippet
 
 User = get_user_model()
 
@@ -183,7 +183,10 @@ class FolderModelTest(TestCase):
         folder = Folder.objects.create(name="Empty", project=self.project)
 
         self.assertTrue(folder.is_empty())
-        self.assertEqual(folder.cascade_counts(), {"folders": 0, "documents": 0})
+        self.assertEqual(
+            folder.cascade_counts(),
+            {"folders": 0, "documents": 0, "snippets": 0},
+        )
 
 
 class DocumentFolderFieldTest(TestCase):
@@ -227,3 +230,116 @@ class DocumentFolderFieldTest(TestCase):
         self.assertIsNone(document.folder)
         self.assertEqual(document.content, "Updated content")
         self.assertIn(document, self.project.documents.all())
+
+
+class TypedFolderModelTest(TestCase):
+    """Tests for the resource type carried by a folder"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="typedfolderuser",
+            email="typedfolder@test.com",
+            password="TestPass123!",
+        )
+        self.project = Project.objects.create(
+            title="Typed Folder Project", user=self.user
+        )
+
+    def test_folder_holds_documents_by_default(self):
+        """Test that a folder created without a type holds documents"""
+        folder = Folder.objects.create(name="Archives", project=self.project)
+
+        self.assertEqual(folder.resource_type, "documents")
+
+    def test_create_snippet_folder(self):
+        """Test creating a folder holding snippets"""
+        folder = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+
+        self.assertEqual(folder.resource_type, "snippets")
+
+    def test_parent_of_another_type_rejected(self):
+        """Test that a branch cannot mix documents and snippets"""
+        parent = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+
+        with self.assertRaises(ValidationError) as context:
+            Folder.objects.create(name="Child", project=self.project, parent=parent)
+
+        self.assertIn("parent", context.exception.message_dict)
+
+    def test_same_name_allowed_across_types_at_root(self):
+        """Test that each type has its own root namespace"""
+        documents = Folder.objects.create(name="Utils", project=self.project)
+        snippets = Folder.objects.create(
+            name="Utils", project=self.project, resource_type="snippets"
+        )
+
+        self.assertNotEqual(documents.id, snippets.id)
+        self.assertEqual(
+            Folder.objects.filter(project=self.project, name="Utils").count(), 2
+        )
+
+    def test_same_name_still_rejected_within_a_type(self):
+        """Test that the root namespace of a type stays unique"""
+        Folder.objects.create(
+            name="Utils", project=self.project, resource_type="snippets"
+        )
+
+        with self.assertRaises(ValidationError):
+            Folder.objects.create(
+                name="Utils", project=self.project, resource_type="snippets"
+            )
+
+    def test_cascade_counts_of_a_snippet_folder(self):
+        """Test that a snippet folder counts snippets, never documents"""
+        folder = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+        child = Folder.objects.create(
+            name="Nested",
+            project=self.project,
+            parent=folder,
+            resource_type="snippets",
+        )
+        Snippet.objects.create(
+            title="Root snippet",
+            content="pass",
+            project=self.project,
+            folder=folder,
+        )
+        Snippet.objects.create(
+            title="Nested snippet",
+            content="pass",
+            project=self.project,
+            folder=child,
+        )
+
+        self.assertEqual(
+            folder.cascade_counts(),
+            {"folders": 1, "documents": 0, "snippets": 2},
+        )
+        self.assertFalse(folder.is_empty())
+
+    def test_deleting_a_snippet_folder_cascades_to_its_snippets(self):
+        """Test that snippets go with the folder holding them"""
+        folder = Folder.objects.create(
+            name="Helpers", project=self.project, resource_type="snippets"
+        )
+        Snippet.objects.create(
+            title="Doomed", content="pass", project=self.project, folder=folder
+        )
+
+        folder.delete()
+
+        self.assertEqual(Snippet.objects.count(), 0)
+
+    def test_snippet_at_root_has_no_folder(self):
+        """Test that a snippet created without a folder sits at the root"""
+        snippet = Snippet.objects.create(
+            title="Loose", content="pass", project=self.project
+        )
+
+        self.assertIsNone(snippet.folder)

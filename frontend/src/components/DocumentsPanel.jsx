@@ -16,7 +16,7 @@ import {
   EMPTY_LOCATION,
   readLocation,
   writeLocation,
-} from "../lib/documentsLocation.js";
+} from "../lib/resourceLocation.js";
 import {
   createDocument,
   deleteDocument,
@@ -79,16 +79,16 @@ export default function DocumentsPanel({
   const versionRef = useRef(contentVersion);
 
   const [initialLocation] = useState(() =>
-    searchItemId ? EMPTY_LOCATION : readLocation(projectId),
+    searchItemId ? EMPTY_LOCATION : readLocation("documents", projectId),
   );
   const scrollTopRef = useRef(initialLocation.scrollTop);
   const restoreScrollRef = useRef(
-    initialLocation.documentId ? initialLocation.scrollTop : 0,
+    initialLocation.itemId ? initialLocation.scrollTop : 0,
   );
   const [path, setPath] = useState(initialLocation.path);
   const [openDocument, setOpenDocument] = useState(null);
   const [pendingDocumentId, setPendingDocumentId] = useState(
-    initialLocation.documentId,
+    initialLocation.itemId,
   );
   const [unreachableFolderId, setUnreachableFolderId] = useState(null);
   const [isCreatingDocument, setIsCreatingDocument] = useState(false);
@@ -113,7 +113,8 @@ export default function DocumentsPanel({
   const locatedDocumentId = openDocument?.id ?? pendingDocumentId;
 
   const fetchContents = useMemo(
-    () => (id, url) => getLevelContents(projectId, currentFolderId, url),
+    () => (id, url) =>
+      getLevelContents(projectId, currentFolderId, url, "documents"),
     [projectId, currentFolderId],
   );
 
@@ -178,9 +179,9 @@ export default function DocumentsPanel({
   }, [contentVersion, reload]);
 
   useEffect(() => {
-    writeLocation(projectId, {
+    writeLocation("documents", projectId, {
       path,
-      documentId: locatedDocumentId,
+      itemId: locatedDocumentId,
       scrollTop: scrollTopRef.current,
     });
   }, [projectId, path, locatedDocumentId]);
@@ -227,7 +228,12 @@ export default function DocumentsPanel({
     if (!trimmed) return;
 
     try {
-      const created = await createFolder(projectId, trimmed, currentFolderId);
+      const created = await createFolder(
+        projectId,
+        trimmed,
+        currentFolderId,
+        "documents",
+      );
       setItems((current) => [{ type: "folder", ...created }, ...current]);
     } catch (createError) {
       console.error("Error creating folder:", createError);
@@ -490,9 +496,9 @@ export default function DocumentsPanel({
 
     const persist = () => {
       timer = null;
-      writeLocation(projectId, {
+      writeLocation("documents", projectId, {
         path,
-        documentId: locatedDocumentId,
+        itemId: locatedDocumentId,
         scrollTop: scrollTopRef.current,
       });
     };
@@ -643,6 +649,7 @@ export default function DocumentsPanel({
         <MoveDialog
           entry={movingEntry}
           projectId={projectId}
+          resourceType="documents"
           originId={currentFolderId}
           onCancel={() => setMovingEntry(null)}
           onMove={handleMove}

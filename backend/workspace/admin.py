@@ -76,6 +76,7 @@ class FolderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "resource_type",
         "project_link",
         "parent",
         "contents_count",
@@ -83,7 +84,7 @@ class FolderAdmin(admin.ModelAdmin):
         "updated_at",
     )
     search_fields = ("name", "project__title")
-    list_filter = ("created_at", "updated_at", "project")
+    list_filter = ("resource_type", "created_at", "updated_at", "project")
     readonly_fields = ("id", "created_at", "updated_at")
     raw_id_fields = ("project", "parent")
 
@@ -100,14 +101,18 @@ class FolderAdmin(admin.ModelAdmin):
     def contents_count(self, obj):
         """Display what a recursive delete would remove"""
         counts = obj.cascade_counts()
+        held = "document" if obj.resource_type == "documents" else "snippet"
+        held_count = counts[f"{held}s"]
 
         return format_html(
-            '<span title="Nested folders: {} | Documents: {}">'
-            "{} folder(s), {} document(s)</span>",
+            '<span title="Nested folders: {} | {}s: {}">'
+            "{} folder(s), {} {}(s)</span>",
             counts["folders"],
-            counts["documents"],
+            held.capitalize(),
+            held_count,
             counts["folders"],
-            counts["documents"],
+            held_count,
+            held,
         )
 
     contents_count.short_description = "Contents"
@@ -174,13 +179,14 @@ class SnippetAdmin(admin.ModelAdmin):
         "title",
         "language_badge",
         "project_link",
+        "folder",
         "created_at",
         "updated_at",
     )
     search_fields = ("title", "content", "language", "description", "project__title")
-    list_filter = ("language", "created_at", "updated_at", "project")
+    list_filter = ("language", "created_at", "updated_at", "project", "folder")
     readonly_fields = ("id", "created_at", "updated_at", "code_stats")
-    raw_id_fields = ("project",)
+    raw_id_fields = ("project", "folder")
 
     def project_link(self, obj):
         """Display project as clickable link"""

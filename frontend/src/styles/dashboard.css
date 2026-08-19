@@ -2114,6 +2114,13 @@
     margin-bottom: 0;
 }
 
+.snippets-list .gallery-grid,
+.snippets-list > .empty,
+.snippets-list > .loading,
+.snippets-list > .error {
+    grid-column: 1 / -1;
+}
+
 .snippet-card {
     background: var(--dash-card-surface);
     border: 1px solid var(--dash-card-border);

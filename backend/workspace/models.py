@@ -63,9 +63,16 @@ class Project(models.Model):
 
 class Folder(models.Model):
     """
-    Folder model represents a folder holding documents inside a project.
-    Folders nest without depth limit; a null parent means project root.
+    Folder model represents a folder holding documents or snippets inside a
+    project. Folders nest without depth limit; a null parent means project root.
+    A folder holds one kind of resource, told by resource_type, and a whole
+    branch shares the type of its root.
     """
+
+    RESOURCE_TYPE_CHOICES = [
+        ("documents", "Documents"),
+        ("snippets", "Snippets"),
+    ]
 
     id = models.UUIDField(
         primary_key=True,
@@ -75,6 +82,13 @@ class Folder(models.Model):
     )
 
     name = models.CharField(max_length=255, help_text="Name of the folder")
+
+    resource_type = models.CharField(
+        max_length=20,
+        choices=RESOURCE_TYPE_CHOICES,
+        default="documents",
+        help_text="Kind of resource the folder holds",
+    )
 
     project = models.ForeignKey(
         Project,
@@ -113,13 +127,13 @@ class Folder(models.Model):
                 name="unique_folder_name_in_parent",
             ),
             models.UniqueConstraint(
-                fields=["project", "name"],
+                fields=["project", "resource_type", "name"],
                 condition=models.Q(parent__isnull=True),
                 name="unique_folder_name_at_root",
             ),
         ]
         indexes = [
-            models.Index(fields=["project", "parent"]),
+            models.Index(fields=["project", "resource_type", "parent"]),
         ]
 
     def __str__(self):
@@ -154,19 +168,31 @@ class Folder(models.Model):
         return ids
 
     def cascade_counts(self):
-        """What a recursive delete of this folder would remove."""
+        """
+        What a recursive delete of this folder would remove. Both item counts
+        are always reported; the one the folder cannot hold stays at zero.
+        """
         folder_ids = self.descendant_ids()
+        branch = [self.id, *folder_ids]
+        holds_documents = self.resource_type == "documents"
 
         return {
             "folders": len(folder_ids),
-            "documents": Document.objects.filter(
-                folder_id__in=[self.id, *folder_ids]
-            ).count(),
+            "documents": (
+                Document.objects.filter(folder_id__in=branch).count()
+                if holds_documents
+                else 0
+            ),
+            "snippets": (
+                0
+                if holds_documents
+                else Snippet.objects.filter(folder_id__in=branch).count()
+            ),
         }
 
     def is_empty(self):
         counts = self.cascade_counts()
-        return counts["folders"] == 0 and counts["documents"] == 0
+        return not any(counts.values())
 
     def clean(self):
         super().clean()
@@ -180,6 +206,11 @@ class Folder(models.Model):
         if self.parent.project_id != self.project_id:
             raise ValidationError(
                 {"parent": "Parent folder must belong to the same project."}
+            )
+
+        if self.parent.resource_type != self.resource_type:
+            raise ValidationError(
+                {"parent": "Parent folder must hold the same kind of resource."}
             )
 
         if self.id in self.parent.ancestor_ids():
@@ -276,6 +307,16 @@ class Snippet(models.Model):
         related_name="snippets",
         help_text="Snippet associated to project",
     )
+    folder = models.ForeignKey(
+        Folder,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="snippets",
+        help_text=(
+            "Folder holding the snippet, null for a snippet at the project root"
+        ),
+    )
     is_pinned = models.BooleanField(
         default=False, help_text="Whether the snippet is pinned for quick access"
     )
@@ -291,6 +332,7 @@ class Snippet(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["project", "-created_at"]),
+            models.Index(fields=["folder", "-created_at"]),
             models.Index(fields=["project", "is_pinned"]),
         ]
 

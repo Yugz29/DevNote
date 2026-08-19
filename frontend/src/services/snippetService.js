@@ -1,24 +1,26 @@
 import api from "./api.js";
 
-export const getSnippets = async (projectId, url = null) => {
-  const response = url
-    ? await api.get(url)
-    : await api.get(`/projects/${projectId}/snippets/`);
-  return response.data;
-};
-
 export const createSnippet = async (
   projectId,
   title,
   language,
   content,
   description,
+  folderId = null,
 ) => {
   const response = await api.post(`/projects/${projectId}/snippets/`, {
     title,
     language,
     content,
     description,
+    folder: folderId,
+  });
+  return response.data;
+};
+
+export const moveSnippet = async (snippetId, folderId) => {
+  const response = await api.patch(`/snippets/${snippetId}/`, {
+    folder: folderId,
   });
   return response.data;
 };

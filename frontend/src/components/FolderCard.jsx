@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import CardMenu from "./CardMenu.jsx";
 import HighlightText from "./HighlightText.jsx";
 
-function summarize({ folder_count: folders = 0, document_count: docs = 0 }) {
-  const total = folders + docs;
+function summarize({
+  folder_count: folders = 0,
+  document_count: documents = 0,
+  snippet_count: snippets = 0,
+}) {
+  const total = folders + documents + snippets;
 
   if (!total) return "Empty";
 

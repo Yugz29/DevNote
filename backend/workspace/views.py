@@ -44,12 +44,28 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
-        """Folders then documents sitting at the root of a project"""
+        """
+        Folders then items sitting at the root of a project, for the resource
+        asked by ?resource_type= (documents by default).
+        """
         project = self.get_object()
+        resource_type = read_resource_type(request)
+        folders = project.folders.filter(
+            parent__isnull=True, resource_type=resource_type
+        )
+
+        if resource_type == "snippets":
+            return paginated_contents(
+                self,
+                folders,
+                project.snippets.filter(folder__isnull=True),
+                "snippet",
+                SnippetSerializer,
+            )
 
         return paginated_contents(
             self,
-            project.folders.filter(parent__isnull=True),
+            folders,
             project.documents.filter(folder__isnull=True),
         )
 
@@ -112,23 +128,44 @@ class ChainedQuerysets:
         return items
 
 
+RESOURCE_TYPES = [choice[0] for choice in Folder.RESOURCE_TYPE_CHOICES]
+
+
+def read_resource_type(request):
+    """The ?resource_type= a listing is asked for, documents by default."""
+    value = request.query_params.get("resource_type")
+
+    if value is None:
+        return "documents"
+
+    if value not in RESOURCE_TYPES:
+        raise ValidationError(
+            {"resource_type": f"Must be one of: {', '.join(RESOURCE_TYPES)}."}
+        )
+
+    return value
+
+
 def folders_with_counts(queryset):
-    """Annotate direct children and document counts, for the gallery cards."""
+    """Annotate direct children and item counts, for the gallery cards."""
     return queryset.annotate(
         folder_count=Count("children", distinct=True),
         document_count=Count("documents", distinct=True),
+        snippet_count=Count("snippets", distinct=True),
     ).order_by("name")
 
 
-def paginated_contents(view, folders, documents):
+def paginated_contents(
+    view, folders, items, item_type="document", item_serializer=DocumentCardSerializer
+):
     """
-    Serialize direct subfolders then direct documents as one paginated stream;
+    Serialize direct subfolders then direct items as one paginated stream;
     every entry carries a 'type' telling the two apart.
     """
     context = view.get_serializer_context()
     entries = ChainedQuerysets(
         folders_with_counts(folders).select_related("project", "parent"),
-        documents.select_related("project", "folder"),
+        items.select_related("project", "folder"),
     )
 
     def represent(entry):
@@ -136,8 +173,8 @@ def paginated_contents(view, folders, documents):
             return {"type": "folder", **FolderSerializer(entry, context=context).data}
 
         return {
-            "type": "document",
-            **DocumentCardSerializer(entry, context=context).data,
+            "type": item_type,
+            **item_serializer(entry, context=context).data,
         }
 
     page = view.paginate_queryset(entries)
@@ -202,6 +239,7 @@ class FolderViewSet(ProjectScopedViewSet):
     ViewSet for Folder CRUD operations
     - Nested under /api/projects/{id}/folders/
     - ?parent=<uuid> or ?parent=null narrows the listing to one level
+    - ?resource_type=documents|snippets narrows it to one kind of folder
     """
 
     serializer_class = FolderSerializer
@@ -213,6 +251,9 @@ class FolderViewSet(ProjectScopedViewSet):
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
+
+        if self.request.query_params.get("resource_type") is not None:
+            queryset = queryset.filter(resource_type=read_resource_type(self.request))
 
         queryset = self.filter_by_relation(queryset, "parent", "parent")
 
@@ -239,26 +280,29 @@ class FolderViewSet(ProjectScopedViewSet):
         folder = self.get_object()
         counts = folder.cascade_counts()
         confirmed = request.query_params.get("confirm") == "true"
+        held = "document" if folder.resource_type == "documents" else "snippet"
+        held_count = counts[f"{held}s"]
 
-        if not confirmed and (counts["folders"] or counts["documents"]):
+        if not confirmed and (counts["folders"] or held_count):
             return Response(
                 {
                     "detail": (
                         "This folder is not empty. Deleting it will also delete "
                         f"{counts['folders']} subfolder(s) and "
-                        f"{counts['documents']} document(s). "
+                        f"{held_count} {held}(s). "
                         "Repeat the request with ?confirm=true to proceed."
                     ),
                     "code": "folder_not_empty",
                     "folders": counts["folders"],
                     "documents": counts["documents"],
+                    "snippets": counts["snippets"],
                 },
                 status=status.HTTP_409_CONFLICT,
             )
 
         logger.info(
             f"Folder '{folder.name}' (ID: {folder.id}) deleted with "
-            f"{counts['folders']} subfolder(s) and {counts['documents']} document(s) "
+            f"{counts['folders']} subfolder(s) and {held_count} {held}(s) "
             f"by user {request.user.username}"
         )
 
@@ -266,8 +310,20 @@ class FolderViewSet(ProjectScopedViewSet):
 
     @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
-        """Direct subfolders then direct documents of a folder"""
+        """
+        Direct subfolders then direct items of a folder. The folder knows the
+        kind of resource it holds, so this takes no parameter.
+        """
         folder = self.get_object()
+
+        if folder.resource_type == "snippets":
+            return paginated_contents(
+                self,
+                folder.children.all(),
+                folder.snippets.all(),
+                "snippet",
+                SnippetSerializer,
+            )
 
         return paginated_contents(self, folder.children.all(), folder.documents.all())
 
@@ -344,15 +400,15 @@ class DocumentViewSet(ProjectScopedViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class SnippetViewSet(viewsets.ModelViewSet):
+class SnippetViewSet(ProjectScopedViewSet):
     """
     ViewSet for Snippet CRUD operations
     - Nested under /api/projects/{id}/snippets/
     - User isolation via project ownership
+    - ?folder=<uuid> or ?folder=null narrows the listing to one level
     """
 
     serializer_class = SnippetSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """Returns only the snippet of the logged_in user"""
@@ -361,19 +417,16 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
-        return queryset.select_related("project")
+
+        queryset = self.filter_by_relation(queryset, "folder", "folder")
+
+        return queryset.select_related("project", "folder")
 
     def perform_create(self, serializer):
         """Inject project from URL and verify ownership"""
-        project_pk = self.kwargs.get("project_pk")
+        project = self.get_project()
 
-        try:
-            project = Project.objects.get(id=project_pk, user=self.request.user)
-        except Project.DoesNotExist:
-            logger.warning(
-                f"User {self.request.user.username} tried to access "
-                f"non-existent project {project_pk}"
-            )
+        if project is None:
             raise PermissionDenied("Project not found or access denied.")
 
         snippet = serializer.save(project=project)
@@ -400,12 +453,12 @@ class SnippetViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def duplicate(self, request, *args, **kwargs):
-        """Copy a snippet, code included, into the project holding it"""
+        """Copy a snippet, code included, into the folder holding it"""
         snippet = self.get_object()
         taken = set(
-            Snippet.objects.filter(project=snippet.project).values_list(
-                "title", flat=True
-            )
+            Snippet.objects.filter(
+                project=snippet.project, folder=snippet.folder
+            ).values_list("title", flat=True)
         )
 
         copy = Snippet.objects.create(
@@ -418,6 +471,7 @@ class SnippetViewSet(viewsets.ModelViewSet):
             language=snippet.language,
             description=snippet.description,
             project=snippet.project,
+            folder=snippet.folder,
         )
 
         logger.info(

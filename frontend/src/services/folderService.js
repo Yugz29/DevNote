@@ -1,9 +1,15 @@
 import api from "./api.js";
 
-export const createFolder = async (projectId, name, parentId = null) => {
+export const createFolder = async (
+  projectId,
+  name,
+  parentId = null,
+  resourceType = "documents",
+) => {
   const response = await api.post(`/projects/${projectId}/folders/`, {
     name,
     parent: parentId,
+    resource_type: resourceType,
   });
   return response.data;
 };
@@ -20,19 +26,29 @@ export const deleteFolder = async (folderId, { confirm = false } = {}) => {
   return response.data;
 };
 
-export const getFolders = async (projectId, parentId = null, url = null) => {
+export const getFolders = async (
+  projectId,
+  parentId = null,
+  url = null,
+  resourceType = "documents",
+) => {
   if (url) {
     const response = await api.get(url);
     return response.data;
   }
 
   const response = await api.get(`/projects/${projectId}/folders/`, {
-    params: { parent: parentId ?? "null" },
+    params: { parent: parentId ?? "null", resource_type: resourceType },
   });
   return response.data;
 };
 
-export const getLevelContents = async (projectId, folderId, url = null) => {
+export const getLevelContents = async (
+  projectId,
+  folderId,
+  url = null,
+  resourceType = "documents",
+) => {
   if (url) {
     const response = await api.get(url);
     return response.data;
@@ -40,6 +56,8 @@ export const getLevelContents = async (projectId, folderId, url = null) => {
 
   const response = folderId
     ? await api.get(`/folders/${folderId}/contents/`)
-    : await api.get(`/projects/${projectId}/contents/`);
+    : await api.get(`/projects/${projectId}/contents/`, {
+        params: { resource_type: resourceType },
+      });
   return response.data;
 };

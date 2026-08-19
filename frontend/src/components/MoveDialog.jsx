@@ -7,6 +7,7 @@ import { getFolders } from "../services/folderService.js";
 export default function MoveDialog({
   entry,
   projectId,
+  resourceType,
   originId,
   onCancel,
   onMove,
@@ -28,7 +29,7 @@ export default function MoveDialog({
   useEffect(() => {
     let isStale = false;
 
-    getFolders(projectId, destinationId)
+    getFolders(projectId, destinationId, null, resourceType)
       .then((data) => {
         if (isStale) return;
 
@@ -50,13 +51,18 @@ export default function MoveDialog({
     return () => {
       isStale = true;
     };
-  }, [projectId, destinationId]);
+  }, [projectId, destinationId, resourceType]);
 
   const loadMore = async () => {
     if (!nextUrl) return;
 
     try {
-      const data = await getFolders(projectId, destinationId, nextUrl);
+      const data = await getFolders(
+        projectId,
+        destinationId,
+        nextUrl,
+        resourceType,
+      );
       setFolders((current) => [...current, ...(data.results ?? data)]);
       setNextUrl(data.next ?? null);
     } catch (loadMoreError) {

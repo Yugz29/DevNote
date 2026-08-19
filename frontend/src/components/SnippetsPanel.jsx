@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
+import FolderCard from "./FolderCard.jsx";
+import MoveDialog from "./MoveDialog.jsx";
 import SnippetCard from "./SnippetCard.jsx";
 import SnippetEditor from "./SnippetEditor.jsx";
 import SnippetModal from "./SnippetModal.jsx";
@@ -6,14 +10,25 @@ import LanguageIcon from "./LanguageIcon.jsx";
 import { useDialog } from "../contexts/DialogContext.js";
 import { downloadTextFile, toFilename } from "../lib/download.js";
 import { languageExtension } from "../lib/languages.js";
+import {
+  EMPTY_LOCATION,
+  readLocation,
+  writeLocation,
+} from "../lib/resourceLocation.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
+import {
+  createFolder,
+  deleteFolder,
+  getLevelContents,
+  updateFolder,
+} from "../services/folderService.js";
 import {
   createSnippet,
   deleteSnippet,
   duplicateSnippet,
   getSnippet,
-  getSnippets,
+  moveSnippet,
   setSnippetPinned,
   updateSnippet,
 } from "../services/snippetService.js";
@@ -52,6 +67,7 @@ export default function SnippetsPanel({
   sort,
   view,
   scrollRef,
+  breadcrumbSlot,
   searchQuery,
   searchItemId,
   openTarget,
@@ -65,7 +81,15 @@ export default function SnippetsPanel({
   const containerRef = useRef(null);
   const versionRef = useRef(contentVersion);
 
+  const [initialLocation] = useState(() =>
+    searchItemId ? EMPTY_LOCATION : readLocation("snippets", projectId),
+  );
+  const [path, setPath] = useState(initialLocation.path);
+  const [unreachableFolderId, setUnreachableFolderId] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [renamingFolderId, setRenamingFolderId] = useState(null);
+  const [movingEntry, setMovingEntry] = useState(null);
   const [viewingId, setViewingId] = useState(null);
   const [isEditingViewed, setIsEditingViewed] = useState(false);
   const [draft, setDraft] = useState(null);
@@ -74,14 +98,53 @@ export default function SnippetsPanel({
   );
   const [externalSnippet, setExternalSnippet] = useState(null);
 
+  const currentFolder = path.length ? path[path.length - 1] : null;
+  const currentFolderId = currentFolder?.id ?? null;
+
+  const fetchContents = useMemo(
+    () => (id, url) =>
+      getLevelContents(projectId, currentFolderId, url, "snippets"),
+    [projectId, currentFolderId],
+  );
+
   const { items, isLoading, error, reload, setItems } = useResourceList({
     projectId,
-    fetchPage: getSnippets,
+    fetchPage: fetchContents,
     scrollRef,
+    resetKey: currentFolderId,
   });
 
-  const snippets = useMemo(() => sortSnippets(items, sort), [items, sort]);
+  const restoredFolderId = initialLocation.path.at(-1)?.id ?? null;
+
+  if (
+    error &&
+    currentFolderId &&
+    currentFolderId === restoredFolderId &&
+    unreachableFolderId !== currentFolderId
+  ) {
+    setUnreachableFolderId(currentFolderId);
+    setPath([]);
+  }
+
+  const folders = useMemo(
+    () =>
+      items
+        .filter((entry) => entry.type === "folder")
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [items],
+  );
+
+  const snippets = useMemo(
+    () =>
+      sortSnippets(
+        items.filter((entry) => entry.type !== "folder"),
+        sort,
+      ),
+    [items, sort],
+  );
+
   const groups = useMemo(() => groupByLanguage(snippets), [snippets]);
+
   const viewedSnippet =
     snippets.find((snippet) => snippet.id === viewingId) ??
     (externalSnippet?.id === viewingId ? externalSnippet : null);
@@ -130,6 +193,10 @@ export default function SnippetsPanel({
     reload();
   }, [contentVersion, reload]);
 
+  useEffect(() => {
+    writeLocation("snippets", projectId, { path });
+  }, [projectId, path]);
+
   useSearchTarget(
     containerRef,
     searchItemId,
@@ -158,6 +225,146 @@ export default function SnippetsPanel({
     setCollapsedGroups(next);
   };
 
+  const leaveCreation = () => {
+    setIsCreating(false);
+    setIsCreatingFolder(false);
+    setRenamingFolderId(null);
+  };
+
+  const openFolder = (folder) => {
+    leaveCreation();
+    setPath((current) => [...current, { id: folder.id, name: folder.name }]);
+  };
+
+  const navigateTo = (index) => {
+    leaveCreation();
+    setPath((current) => current.slice(0, index + 1));
+  };
+
+  const dropEntry = (id) =>
+    setItems((current) => current.filter((entry) => entry.id !== id));
+
+  const handleCreateFolder = async (name) => {
+    const trimmed = name.trim();
+    setIsCreatingFolder(false);
+
+    if (!trimmed) return;
+
+    try {
+      const created = await createFolder(
+        projectId,
+        trimmed,
+        currentFolderId,
+        "snippets",
+      );
+      setItems((current) => [{ type: "folder", ...created }, ...current]);
+    } catch (createError) {
+      console.error("Error creating folder:", createError);
+      await showAlert(
+        createError.response?.data?.name?.[0] ?? "Unable to create the folder",
+      );
+    }
+  };
+
+  const handleRenameFolder = async (folder, name) => {
+    setRenamingFolderId(null);
+
+    try {
+      const updated = await updateFolder(folder.id, { name });
+      setItems((current) =>
+        current.map((entry) =>
+          entry.type === "folder" && entry.id === folder.id
+            ? { ...entry, ...updated }
+            : entry,
+        ),
+      );
+    } catch (renameError) {
+      console.error("Error renaming folder:", renameError);
+      await showAlert(
+        renameError.response?.data?.name?.[0] ?? "Unable to rename the folder",
+      );
+    }
+  };
+
+  const handleDeleteFolder = async (folder) => {
+    try {
+      await deleteFolder(folder.id);
+      dropEntry(folder.id);
+      onPinnedChanged();
+      return;
+    } catch (deleteError) {
+      const data = deleteError.response?.data;
+
+      if (deleteError.response?.status !== 409 || !data) {
+        console.error("Error deleting folder:", deleteError);
+        await showAlert("Unable to delete the folder");
+        return;
+      }
+
+      const parts = [];
+      if (data.folders) {
+        parts.push(`${data.folders} subfolder${data.folders > 1 ? "s" : ""}`);
+      }
+      if (data.snippets) {
+        parts.push(`${data.snippets} snippet${data.snippets > 1 ? "s" : ""}`);
+      }
+
+      const confirmed = await showConfirm(
+        `"${folder.name}" is not empty. Deleting it will also delete ${parts.join(" and ")}. This cannot be undone.`,
+        "Delete everything",
+      );
+
+      if (!confirmed) return;
+
+      try {
+        await deleteFolder(folder.id, { confirm: true });
+        dropEntry(folder.id);
+        onPinnedChanged();
+      } catch (forcedError) {
+        console.error("Error deleting folder:", forcedError);
+        await showAlert("Unable to delete the folder");
+      }
+    }
+  };
+
+  const handleMove = async (destinationId) => {
+    const entry = movingEntry;
+    const isFolder = entry.type === "folder";
+
+    try {
+      if (isFolder) {
+        await updateFolder(entry.id, { parent: destinationId });
+      } else {
+        await moveSnippet(entry.id, destinationId);
+      }
+    } catch (moveError) {
+      console.error("Error moving entry:", moveError);
+
+      const data = moveError.response?.data;
+      const reason = data?.parent?.[0] ?? data?.folder?.[0] ?? data?.name?.[0];
+
+      await showAlert(
+        reason ?? `Unable to move the ${isFolder ? "folder" : "snippet"}`,
+      );
+      return;
+    }
+
+    setMovingEntry(null);
+    setItems((current) =>
+      current
+        .filter((item) => item.id !== entry.id)
+        .map((item) =>
+          item.type === "folder" && item.id === destinationId
+            ? {
+                ...item,
+                folder_count: item.folder_count + (isFolder ? 1 : 0),
+                snippet_count: item.snippet_count + (isFolder ? 0 : 1),
+              }
+            : item,
+        ),
+    );
+  };
+
   const handleSave = async (snippetId, values) => {
     const title = values.title.trim();
     const language = values.language.trim() || "text";
@@ -178,7 +385,14 @@ export default function SnippetsPanel({
       if (snippetId) {
         await updateSnippet(snippetId, title, language, content, description);
       } else {
-        await createSnippet(projectId, title, language, content, description);
+        await createSnippet(
+          projectId,
+          title,
+          language,
+          content,
+          description,
+          currentFolderId,
+        );
       }
 
       setIsCreating(false);
@@ -231,7 +445,9 @@ export default function SnippetsPanel({
 
     setItems((current) =>
       current.map((entry) =>
-        entry.id === snippet.id ? { ...entry, is_pinned: nextPinned } : entry,
+        entry.type !== "folder" && entry.id === snippet.id
+          ? { ...entry, is_pinned: nextPinned }
+          : entry,
       ),
     );
 
@@ -256,13 +472,30 @@ export default function SnippetsPanel({
       onDuplicate={() => handleDuplicate(snippet.id)}
       onTogglePin={() => handleTogglePin(snippet)}
       onExport={() => handleExport(snippet)}
+      onMove={() => setMovingEntry(snippet)}
       onDelete={() => handleDelete(snippet.id)}
     />
   );
 
+  const isEmpty = folders.length === 0 && snippets.length === 0;
+
   return (
     <div id="snippets-list" className="snippets-list" ref={containerRef}>
+      {breadcrumbSlot &&
+        createPortal(
+          <FolderBreadcrumb path={path} onNavigate={navigateTo} />,
+          breadcrumbSlot,
+        )}
+
       <div className="gallery-toolbar">
+        <button
+          type="button"
+          className="gallery-action"
+          onClick={() => setIsCreatingFolder(true)}
+        >
+          <i className="ph-light ph-folder-plus" />
+          <span>New folder</span>
+        </button>
         <button
           type="button"
           className="gallery-action"
@@ -281,6 +514,39 @@ export default function SnippetsPanel({
 
       {!isLoading && !error && (
         <>
+          {(isCreatingFolder || folders.length > 0) && (
+            <div className="gallery-grid">
+              {isCreatingFolder && (
+                <FolderCard
+                  folder={{ id: "new", name: "" }}
+                  searchQuery={null}
+                  isRenaming
+                  onOpen={() => {}}
+                  onStartRename={() => {}}
+                  onRename={(_, name) => handleCreateFolder(name)}
+                  onCancelRename={() => setIsCreatingFolder(false)}
+                  onMove={() => {}}
+                  onDelete={() => {}}
+                />
+              )}
+
+              {folders.map((folder) => (
+                <FolderCard
+                  key={`folder:${folder.id}:${folder.name}`}
+                  folder={folder}
+                  searchQuery={searchQuery}
+                  isRenaming={renamingFolderId === folder.id}
+                  onOpen={openFolder}
+                  onStartRename={setRenamingFolderId}
+                  onRename={handleRenameFolder}
+                  onCancelRename={() => setRenamingFolderId(null)}
+                  onMove={setMovingEntry}
+                  onDelete={handleDeleteFolder}
+                />
+              ))}
+            </div>
+          )}
+
           {isCreating && (
             <SnippetEditor
               snippet={null}
@@ -293,8 +559,10 @@ export default function SnippetsPanel({
             />
           )}
 
-          {snippets.length === 0 && !isCreating && (
-            <p className="empty">No snippets yet</p>
+          {isEmpty && !isCreating && !isCreatingFolder && (
+            <p className="empty">
+              {currentFolderId ? "This folder is empty" : "No snippets yet"}
+            </p>
           )}
 
           {snippets.length > 0 && view === "grouped" && (
@@ -339,6 +607,17 @@ export default function SnippetsPanel({
             view !== "grouped" &&
             snippets.map(renderSnippet)}
         </>
+      )}
+
+      {movingEntry && (
+        <MoveDialog
+          entry={movingEntry}
+          projectId={projectId}
+          resourceType="snippets"
+          originId={currentFolderId}
+          onCancel={() => setMovingEntry(null)}
+          onMove={handleMove}
+        />
       )}
 
       {draft && (

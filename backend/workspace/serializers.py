@@ -70,16 +70,19 @@ class FolderSerializer(serializers.ModelSerializer):
     parent = ScopedFolderField(allow_null=True, required=False)
     folder_count = serializers.SerializerMethodField()
     document_count = serializers.SerializerMethodField()
+    snippet_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Folder
         fields = [
             "id",
             "name",
+            "resource_type",
             "project_id",
             "parent",
             "folder_count",
             "document_count",
+            "snippet_count",
             "created_at",
             "updated_at",
         ]
@@ -93,10 +96,22 @@ class FolderSerializer(serializers.ModelSerializer):
         count = getattr(obj, "document_count", None)
         return obj.documents.count() if count is None else count
 
+    def get_snippet_count(self, obj):
+        count = getattr(obj, "snippet_count", None)
+        return obj.snippets.count() if count is None else count
+
     def validate_name(self, value):
         value = value.strip()
         if not value:
             raise serializers.ValidationError("Folder name cannot be empty.")
+        return value
+
+    def validate_resource_type(self, value):
+        if self.instance is not None and value != self.instance.resource_type:
+            raise serializers.ValidationError(
+                "A folder cannot change the kind of resource it holds."
+            )
+
         return value
 
     def validate(self, data):
@@ -105,11 +120,20 @@ class FolderSerializer(serializers.ModelSerializer):
         )
         parent = data.get("parent", self.instance.parent if self.instance else None)
         name = data.get("name", self.instance.name if self.instance else None)
+        resource_type = data.get(
+            "resource_type",
+            self.instance.resource_type if self.instance else "documents",
+        )
 
         if parent is not None:
             if project is not None and parent.project_id != project.id:
                 raise serializers.ValidationError(
                     {"parent": "Parent folder must belong to the same project."}
+                )
+
+            if parent.resource_type != resource_type:
+                raise serializers.ValidationError(
+                    {"parent": "Parent folder must hold the same kind of resource."}
                 )
 
             if self.instance is not None:
@@ -125,6 +149,9 @@ class FolderSerializer(serializers.ModelSerializer):
 
         if project is not None and name:
             siblings = Folder.objects.filter(project=project, parent=parent, name=name)
+
+            if parent is None:
+                siblings = siblings.filter(resource_type=resource_type)
 
             if self.instance is not None:
                 siblings = siblings.exclude(id=self.instance.id)
@@ -169,14 +196,20 @@ class DocumentSerializer(serializers.ModelSerializer):
         )
         folder = data.get("folder", self.instance.folder if self.instance else None)
 
-        if (
-            folder is not None
-            and project is not None
-            and folder.project_id != project.id
-        ):
-            raise serializers.ValidationError(
-                {"folder": "Folder must belong to the same project as the document."}
-            )
+        if folder is not None:
+            if project is not None and folder.project_id != project.id:
+                raise serializers.ValidationError(
+                    {
+                        "folder": (
+                            "Folder must belong to the same project as the document."
+                        )
+                    }
+                )
+
+            if folder.resource_type != "documents":
+                raise serializers.ValidationError(
+                    {"folder": "Folder does not hold documents."}
+                )
 
         return data
 
@@ -213,6 +246,7 @@ class SnippetSerializer(serializers.ModelSerializer):
     """Serializer for Snippet model"""
 
     project_id = serializers.UUIDField(read_only=True, source="project.id")
+    folder = ScopedFolderField(allow_null=True, required=False)
 
     class Meta:
         model = Snippet
@@ -223,6 +257,7 @@ class SnippetSerializer(serializers.ModelSerializer):
             "language",
             "description",
             "project_id",
+            "folder",
             "is_pinned",
             "created_at",
             "updated_at",
@@ -251,6 +286,29 @@ class SnippetSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             return "text"
         return value.strip().lower()
+
+    def validate(self, data):
+        project = (
+            self.instance.project if self.instance else self.context.get("project")
+        )
+        folder = data.get("folder", self.instance.folder if self.instance else None)
+
+        if folder is not None:
+            if project is not None and folder.project_id != project.id:
+                raise serializers.ValidationError(
+                    {
+                        "folder": (
+                            "Folder must belong to the same project as the snippet."
+                        )
+                    }
+                )
+
+            if folder.resource_type != "snippets":
+                raise serializers.ValidationError(
+                    {"folder": "Folder does not hold snippets."}
+                )
+
+        return data
 
 
 class TodoListSerializer(serializers.ModelSerializer):
