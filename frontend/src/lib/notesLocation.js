@@ -2,7 +2,7 @@ const KEY_PREFIX = "devnote_notes_location_";
 
 const storageKey = (projectId) => `${KEY_PREFIX}${projectId}`;
 
-export const EMPTY_LOCATION = { path: [], noteId: null };
+export const EMPTY_LOCATION = { path: [], noteId: null, scrollTop: 0 };
 
 export function readLocation(projectId) {
   if (!projectId) return EMPTY_LOCATION;
@@ -16,13 +16,18 @@ export function readLocation(projectId) {
           .map((entry) => ({ id: entry.id, name: entry.name }))
       : [];
 
-    return { path, noteId: stored?.noteId ?? null };
+    const scrollTop =
+      Number.isFinite(stored?.scrollTop) && stored.scrollTop > 0
+        ? stored.scrollTop
+        : 0;
+
+    return { path, noteId: stored?.noteId ?? null, scrollTop };
   } catch {
     return EMPTY_LOCATION;
   }
 }
 
-export function writeLocation(projectId, { path, noteId }) {
+export function writeLocation(projectId, { path, noteId, scrollTop = 0 }) {
   if (!projectId) return;
 
   if (!path.length && !noteId) {
@@ -30,5 +35,8 @@ export function writeLocation(projectId, { path, noteId }) {
     return;
   }
 
-  localStorage.setItem(storageKey(projectId), JSON.stringify({ path, noteId }));
+  localStorage.setItem(
+    storageKey(projectId),
+    JSON.stringify({ path, noteId, scrollTop }),
+  );
 }

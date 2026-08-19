@@ -34,6 +34,9 @@ import {
   updateNote,
 } from "../services/noteService.js";
 
+const SCROLL_SAVE_DELAY = 150;
+const RESTORE_SCROLL_FRAMES = 30;
+
 function sortEntries(entries, sort) {
   const folders = entries.filter((entry) => entry.type === "folder");
   const notes = entries.filter((entry) => entry.type !== "folder");
@@ -73,6 +76,10 @@ export default function NotesPanel({
   const [initialLocation] = useState(() =>
     searchItemId ? EMPTY_LOCATION : readLocation(projectId),
   );
+  const scrollTopRef = useRef(initialLocation.scrollTop);
+  const restoreScrollRef = useRef(
+    initialLocation.noteId ? initialLocation.scrollTop : 0,
+  );
   const [path, setPath] = useState(initialLocation.path);
   const [openNote, setOpenNote] = useState(null);
   const [pendingNoteId, setPendingNoteId] = useState(initialLocation.noteId);
@@ -86,6 +93,7 @@ export default function NotesPanel({
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
+  const locatedNoteId = openNote?.id ?? pendingNoteId;
 
   const fetchContents = useMemo(
     () => (id, url) => getLevelContents(projectId, currentFolderId, url),
@@ -165,9 +173,10 @@ export default function NotesPanel({
   useEffect(() => {
     writeLocation(projectId, {
       path,
-      noteId: openNote?.id ?? pendingNoteId,
+      noteId: locatedNoteId,
+      scrollTop: scrollTopRef.current,
     });
-  }, [projectId, path, openNote, pendingNoteId]);
+  }, [projectId, path, locatedNoteId]);
 
   const flushDetail = async () => {
     await detailRef.current?.flush();
@@ -448,6 +457,72 @@ export default function NotesPanel({
 
   const detailNote = isCreatingNote ? null : openNote;
   const isDetail = isCreatingNote || Boolean(openNote);
+
+  useEffect(() => {
+    const target = restoreScrollRef.current;
+    const container = scrollRef?.current;
+
+    if (!isDetail || !target || !container) return;
+
+    restoreScrollRef.current = 0;
+
+    let frame = 0;
+    let remaining = RESTORE_SCROLL_FRAMES;
+
+    const apply = () => {
+      container.scrollTop = target;
+      remaining -= 1;
+
+      const maxScroll = container.scrollHeight - container.clientHeight;
+
+      if (maxScroll < target && remaining > 0) {
+        frame = requestAnimationFrame(apply);
+      }
+    };
+
+    frame = requestAnimationFrame(apply);
+
+    return () => cancelAnimationFrame(frame);
+  }, [isDetail, scrollRef]);
+
+  useEffect(() => {
+    const container = scrollRef?.current;
+
+    if (!locatedNoteId) {
+      scrollTopRef.current = 0;
+      return;
+    }
+
+    if (!isDetail || !container) return;
+
+    let timer = null;
+
+    const persist = () => {
+      timer = null;
+      writeLocation(projectId, {
+        path,
+        noteId: locatedNoteId,
+        scrollTop: scrollTopRef.current,
+      });
+    };
+
+    const onScroll = () => {
+      scrollTopRef.current = container.scrollTop;
+
+      if (!timer) timer = setTimeout(persist, SCROLL_SAVE_DELAY);
+    };
+
+    container.addEventListener("scroll", onScroll);
+
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+
+      if (timer) {
+        clearTimeout(timer);
+        persist();
+      }
+    };
+  }, [isDetail, locatedNoteId, path, projectId, scrollRef]);
 
   const isSortable =
     !isDetail &&
