@@ -26,24 +26,32 @@ export default function TodoCard({
     <div
       className={`todo-card ${todo.status === "done" ? "is-done" : ""}`}
       data-id={todo.id}
+      data-priority={todo.priority}
       onClick={onOpen}
     >
       <div
-        className="todo-card-header"
+        className="todo-card-meta"
         onClick={(event) => event.stopPropagation()}
       >
+        <DnSelect
+          value={todo.priority}
+          options={PRIORITY_OPTIONS}
+          onChange={onPriorityChange}
+          usePortal={usePortal}
+          label={`Priority: ${priority.label}`}
+          triggerClassName="todo-meta-priority"
+        />
+
+        <span className="todo-meta-sep">/</span>
+
         <DnSelect
           value={todo.status}
           options={STATUS_OPTIONS}
           onChange={onStatusChange}
           usePortal={usePortal}
           label={`Status: ${status.label}`}
-          triggerClassName={`todo-badge-select badge ${status.class}`}
+          triggerClassName="todo-meta-status"
         />
-
-        <button type="button" className="todo-title-btn" onClick={onOpen}>
-          <HighlightText text={todo.title} query={searchQuery} />
-        </button>
 
         <div className="item-actions">
           <CardMenu
@@ -70,6 +78,10 @@ export default function TodoCard({
         </div>
       </div>
 
+      <button type="button" className="todo-title-btn" onClick={onOpen}>
+        <HighlightText text={todo.title} query={searchQuery} />
+      </button>
+
       {todo.description && (
         <p className="todo-description">
           <HighlightText text={todo.description} query={searchQuery} />
@@ -77,19 +89,6 @@ export default function TodoCard({
       )}
 
       <div className="todo-card-footer">
-        <div
-          className="todo-card-priority"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <DnSelect
-            value={todo.priority}
-            options={PRIORITY_OPTIONS}
-            onChange={onPriorityChange}
-            usePortal={usePortal}
-            label={`Priority: ${priority.label}`}
-            triggerClassName={`todo-badge-select badge ${priority.class}`}
-          />
-        </div>
         <span className="card-date">
           {todo.is_pinned && (
             <i className="ph-light ph-push-pin gallery-card-pin" />

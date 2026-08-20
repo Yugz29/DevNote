@@ -2812,20 +2812,24 @@
 }
 
 .todo-title-btn {
-    flex: 1;
-    min-width: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    width: 100%;
     background: none;
     border: none;
     padding: 0;
     margin: 0;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
     font-family: inherit;
     color: var(--dash-text);
     text-align: left;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
     cursor: pointer;
 }
 
@@ -2834,12 +2838,12 @@
     background: var(--dash-card-surface);
     border: 1px solid var(--dash-card-border);
     border-radius: 8px;
-    padding: 1rem;
+    padding: 14px 16px 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 8px;
-    transition: border-color 0.2s;
+    gap: 6px;
+    transition: border-color 0.2s, background 0.2s;
     min-width: 200px;
 }
 
@@ -2847,13 +2851,27 @@
     border-color: var(--dash-glass-border-stronger);
 }
 
+.todo-card:not(.is-done)[data-priority="high"]:hover {
+    border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+
+.todo-card:not(.is-done)[data-priority="medium"]:hover {
+    border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+}
+
+.todo-card:not(.is-done)[data-priority="low"]:hover {
+    border-color: var(--dash-border-hover);
+}
+
 .todo-card.is-done {
     border-color: var(--dash-border-faint);
     background: var(--dash-surface-deep);
 }
 
-.todo-card.is-done .todo-title {
+.todo-card.is-done .todo-title-btn {
     color: var(--dash-text-dim);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
 }
 
 .todo-card.is-done .todo-description {
@@ -2864,12 +2882,8 @@
     color: var(--dash-text-disabled);
 }
 
-.todo-card.is-done .badge-low,
-.todo-card.is-done .badge-medium,
-.todo-card.is-done .badge-high {
-    background: var(--dash-surface-muted);
+.todo-card.is-done .todo-card-meta .dn-select-btn {
     color: var(--dash-text-faint);
-    border-color: var(--dash-border);
 }
 
 .todo-card-header {
@@ -2909,19 +2923,79 @@
 }
 
 .todo-description {
-    font-size: 13px;
-    color: var(--dash-text-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--dash-text-quote);
 }
 
 .todo-card-footer {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px solid var(--dash-border-faint);
 }
 
-.todo-card-priority {
+/* Priority and status read as one line of small caps above the title, the
+   priority being the only word that carries a colour. */
+.todo-card-meta {
     display: flex;
-    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.todo-card-meta .dn-select-btn {
+    gap: 3px;
+    padding: 1px 4px;
+    margin-left: -4px;
+    background: none;
+    border-color: transparent;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dash-text-subtle);
+}
+
+.todo-card-meta .dn-select-btn:hover {
+    background: var(--dash-glass);
+    border-color: transparent;
+    color: var(--dash-text);
+}
+
+.todo-card-meta .dn-select-chevron {
+    font-size: 9px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.todo-card:hover .todo-card-meta .dn-select-chevron,
+.todo-card-meta .dn-select-btn[aria-expanded="true"] .dn-select-chevron {
+    opacity: 1;
+}
+
+.todo-meta-sep {
+    font-size: 9.5px;
+    color: var(--dash-text-ghost);
+}
+
+.todo-card[data-priority="high"] .todo-meta-priority {
+    color: var(--danger);
+}
+
+.todo-card[data-priority="medium"] .todo-meta-priority {
+    color: var(--warning);
+}
+
+.todo-card[data-priority="low"] .todo-meta-priority {
+    color: var(--dash-text-subtle);
+}
+
+.todo-card-meta .item-actions {
+    margin-left: auto;
 }
 
 
