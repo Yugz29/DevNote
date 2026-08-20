@@ -1495,6 +1495,38 @@
     margin-bottom: 10px;
 }
 
+.move-dialog-project {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--dash-border);
+}
+
+.move-dialog-project-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dash-text-dim);
+}
+
+.move-dialog-project .dn-select-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.move-dialog-project-select {
+    width: 100%;
+    justify-content: space-between;
+}
+
+.move-dialog-project-loading {
+    font-size: 13px;
+    color: var(--dash-text-dim);
+}
+
 .move-dialog-list {
     display: flex;
     flex-direction: column;
@@ -2912,6 +2944,10 @@
 
 .dn-select-dropdown.open {
     display: flex;
+}
+
+.dn-select-dropdown.is-floating {
+    z-index: 1100;
 }
 
 .dn-select-option {

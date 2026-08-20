@@ -19,6 +19,14 @@ export const updateFolder = async (folderId, data) => {
   return response.data;
 };
 
+export const moveFolder = async (folderId, { project, parent }) => {
+  const response = await api.post(`/folders/${folderId}/move/`, {
+    project,
+    parent,
+  });
+  return response.data;
+};
+
 export const deleteFolder = async (folderId, { confirm = false } = {}) => {
   const response = await api.delete(`/folders/${folderId}/`, {
     params: confirm ? { confirm: "true" } : undefined,

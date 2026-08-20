@@ -73,8 +73,8 @@ export const setTodoPinned = async (todoId, isPinned) => {
   return response.data;
 };
 
-export const moveTodo = async (todoId, listId) => {
-  const response = await api.patch(`/todos/${todoId}/`, { list: listId });
+export const moveTodo = async (todoId, { project, list }) => {
+  const response = await api.post(`/todos/${todoId}/move/`, { project, list });
   return response.data;
 };
 

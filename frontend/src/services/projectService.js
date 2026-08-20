@@ -5,6 +5,20 @@ export const getProjects = async (url = null) => {
   return response.data;
 };
 
+export const getAllProjects = async () => {
+  const projects = [];
+  let data = await getProjects();
+
+  projects.push(...(data.results ?? data));
+
+  while (data.next) {
+    data = await getProjects(data.next);
+    projects.push(...(data.results ?? data));
+  }
+
+  return projects;
+};
+
 export const createProject = async (title, description) => {
   const response = await api.post("/projects/", {
     title,

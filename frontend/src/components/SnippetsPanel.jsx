@@ -21,6 +21,7 @@ import {
   createFolder,
   deleteFolder,
   getLevelContents,
+  moveFolder,
   updateFolder,
 } from "../services/folderService.js";
 import {
@@ -327,21 +328,25 @@ export default function SnippetsPanel({
     }
   };
 
-  const handleMove = async (destinationId) => {
+  const handleMove = async ({ project, folder }) => {
     const entry = movingEntry;
     const isFolder = entry.type === "folder";
 
     try {
       if (isFolder) {
-        await updateFolder(entry.id, { parent: destinationId });
+        await moveFolder(entry.id, { project, parent: folder });
       } else {
-        await moveSnippet(entry.id, destinationId);
+        await moveSnippet(entry.id, { project, folder });
       }
     } catch (moveError) {
       console.error("Error moving entry:", moveError);
 
       const data = moveError.response?.data;
-      const reason = data?.parent?.[0] ?? data?.folder?.[0] ?? data?.name?.[0];
+      const reason =
+        data?.parent?.[0] ??
+        data?.folder?.[0] ??
+        data?.name?.[0] ??
+        data?.detail;
 
       await showAlert(
         reason ?? `Unable to move the ${isFolder ? "folder" : "snippet"}`,
@@ -354,7 +359,7 @@ export default function SnippetsPanel({
       current
         .filter((item) => item.id !== entry.id)
         .map((item) =>
-          item.type === "folder" && item.id === destinationId
+          item.type === "folder" && item.id === folder
             ? {
                 ...item,
                 folder_count: item.folder_count + (isFolder ? 1 : 0),
@@ -363,6 +368,7 @@ export default function SnippetsPanel({
             : item,
         ),
     );
+    onPinnedChanged();
   };
 
   const handleSave = async (snippetId, values) => {

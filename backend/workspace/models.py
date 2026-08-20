@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
-from django.db import models
+from django.db import models, transaction
 from uuid6 import uuid7
 
 
@@ -193,6 +193,24 @@ class Folder(models.Model):
     def is_empty(self):
         counts = self.cascade_counts()
         return not any(counts.values())
+
+    def move_to(self, project, parent):
+        """
+        Reassign this folder, and everything nested under it, to another parent
+        or another project. The branch changes project before the folder does,
+        so the parent checks of save() see a consistent tree.
+        """
+        with transaction.atomic():
+            if project.id != self.project_id:
+                branch = [self.id, *self.descendant_ids()]
+
+                Folder.objects.filter(id__in=branch).update(project=project)
+                Document.objects.filter(folder_id__in=branch).update(project=project)
+                Snippet.objects.filter(folder_id__in=branch).update(project=project)
+
+            self.project = project
+            self.parent = parent
+            self.save()
 
     def clean(self):
         super().clean()

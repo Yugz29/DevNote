@@ -56,9 +56,10 @@ export const setDocumentPinned = async (documentId, isPinned) => {
   return response.data;
 };
 
-export const moveDocument = async (documentId, folderId) => {
-  const response = await api.patch(`/documents/${documentId}/`, {
-    folder: folderId,
+export const moveDocument = async (documentId, { project, folder }) => {
+  const response = await api.post(`/documents/${documentId}/move/`, {
+    project,
+    folder,
   });
   return response.data;
 };

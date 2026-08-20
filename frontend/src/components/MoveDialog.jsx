@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import DnSelect from "./DnSelect.jsx";
 import FolderBreadcrumb from "./FolderBreadcrumb.jsx";
 import Modal from "./Modal.jsx";
 import { getFolders } from "../services/folderService.js";
+import { getAllProjects } from "../services/projectService.js";
 
 export default function MoveDialog({
   entry,
@@ -12,16 +14,19 @@ export default function MoveDialog({
   onCancel,
   onMove,
 }) {
+  const [projects, setProjects] = useState([]);
+  const [destinationProjectId, setDestinationProjectId] = useState(projectId);
   const [path, setPath] = useState([]);
   const [folders, setFolders] = useState([]);
   const [nextUrl, setNextUrl] = useState(null);
-  const [loadedId, setLoadedId] = useState(undefined);
+  const [loadedKey, setLoadedKey] = useState(null);
   const [error, setError] = useState(null);
   const [isMoving, setIsMoving] = useState(false);
 
   const destination = path.length ? path[path.length - 1] : null;
   const destinationId = destination?.id ?? null;
-  const isLoading = loadedId !== destinationId;
+  const levelKey = `${destinationProjectId}|${destinationId ?? ""}`;
+  const isLoading = loadedKey !== levelKey;
 
   const isFolder = entry.type === "folder";
   const entryLabel = isFolder ? entry.name : entry.title;
@@ -29,14 +34,31 @@ export default function MoveDialog({
   useEffect(() => {
     let isStale = false;
 
-    getFolders(projectId, destinationId, null, resourceType)
+    getAllProjects()
+      .then((all) => {
+        if (!isStale) setProjects(all);
+      })
+      .catch((loadError) => {
+        console.error("Error loading projects:", loadError);
+        if (!isStale) setProjects([]);
+      });
+
+    return () => {
+      isStale = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isStale = false;
+
+    getFolders(destinationProjectId, destinationId, null, resourceType)
       .then((data) => {
         if (isStale) return;
 
         setFolders(data.results ?? data);
         setNextUrl(data.next ?? null);
         setError(null);
-        setLoadedId(destinationId);
+        setLoadedKey(levelKey);
       })
       .catch((loadError) => {
         if (isStale) return;
@@ -45,20 +67,20 @@ export default function MoveDialog({
         setFolders([]);
         setNextUrl(null);
         setError("Unable to load folders");
-        setLoadedId(destinationId);
+        setLoadedKey(levelKey);
       });
 
     return () => {
       isStale = true;
     };
-  }, [projectId, destinationId, resourceType]);
+  }, [destinationProjectId, destinationId, levelKey, resourceType]);
 
   const loadMore = async () => {
     if (!nextUrl) return;
 
     try {
       const data = await getFolders(
-        projectId,
+        destinationProjectId,
         destinationId,
         nextUrl,
         resourceType,
@@ -71,10 +93,27 @@ export default function MoveDialog({
     }
   };
 
+  const changeProject = (nextProjectId) => {
+    if (nextProjectId === destinationProjectId) return;
+
+    setDestinationProjectId(nextProjectId);
+    setPath([]);
+  };
+
   const navigateTo = (index) =>
     setPath((current) => current.slice(0, index + 1));
 
-  const isAlreadyHere = destinationId === originId;
+  const projectOptions = projects.map((project) => ({
+    value: project.id,
+    label: project.title,
+  }));
+
+  const destinationProject = projects.find(
+    (project) => project.id === destinationProjectId,
+  );
+
+  const isSameProject = destinationProjectId === projectId;
+  const isAlreadyHere = isSameProject && destinationId === originId;
 
   const takenName =
     isFolder &&
@@ -88,13 +127,22 @@ export default function MoveDialog({
       ? `A folder named "${entry.name}" already exists here.`
       : null;
 
+  const targetLabel = destination
+    ? `"${destination.name}"`
+    : destinationProject && !isSameProject
+      ? `"${destinationProject.title}"`
+      : "Root";
+
   const handleMove = async () => {
     if (isMoving) return;
 
     setIsMoving(true);
 
     try {
-      await onMove(destinationId);
+      await onMove({
+        project: destinationProjectId,
+        folder: destinationId,
+      });
     } finally {
       setIsMoving(false);
     }
@@ -103,6 +151,25 @@ export default function MoveDialog({
   return createPortal(
     <Modal isOpen title={`Move "${entryLabel}"`} onClose={onCancel}>
       <div className="move-dialog">
+        <div className="move-dialog-project">
+          <span className="move-dialog-project-label">Project</span>
+
+          {projectOptions.length > 0 ? (
+            <DnSelect
+              value={destinationProjectId}
+              options={projectOptions}
+              onChange={changeProject}
+              usePortal
+              label="Destination project"
+              triggerClassName="move-dialog-project-select"
+            />
+          ) : (
+            <span className="move-dialog-project-loading">
+              Loading projects...
+            </span>
+          )}
+        </div>
+
         <FolderBreadcrumb path={path} onNavigate={navigateTo} />
 
         <div className="move-dialog-list">
@@ -172,7 +239,7 @@ export default function MoveDialog({
             }
             onClick={handleMove}
           >
-            {destination ? `Move to "${destination.name}"` : "Move to Root"}
+            Move to {targetLabel}
           </button>
         </div>
       </div>

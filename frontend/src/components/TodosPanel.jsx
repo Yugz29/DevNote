@@ -371,20 +371,28 @@ export default function TodosPanel({
     onPinnedChanged();
   };
 
-  const handleMoveTodo = async (listId) => {
+  const handleMoveTodo = async ({ project, list }) => {
     const todo = movingTodo;
 
     try {
-      await moveTodo(todo.id, listId);
+      await moveTodo(todo.id, { project, list });
       setItems((current) =>
-        current.map((item) =>
-          item.id === todo.id ? { ...item, list: listId } : item,
-        ),
+        project === projectId
+          ? current.map((item) =>
+              item.id === todo.id ? { ...item, list } : item,
+            )
+          : current.filter((item) => item.id !== todo.id),
       );
       setMovingTodo(null);
+      onPinnedChanged();
     } catch (moveError) {
       console.error("Error moving todo:", moveError);
-      await showAlert("Unable to move the todo");
+
+      const data = moveError.response?.data;
+
+      await showAlert(
+        data?.list?.[0] ?? data?.detail ?? "Unable to move the todo",
+      );
     }
   };
 
@@ -604,6 +612,7 @@ export default function TodosPanel({
       {movingTodo && (
         <TodoMoveDialog
           todo={movingTodo}
+          projectId={projectId}
           lists={lists}
           onCancel={() => setMovingTodo(null)}
           onMove={handleMoveTodo}

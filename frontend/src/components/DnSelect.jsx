@@ -70,7 +70,7 @@ export default function DnSelect({
       role="listbox"
       aria-label={label}
       onKeyDown={handleKeyDown}
-      className={`dn-select-dropdown${isOpen ? " open" : ""}`}
+      className={`dn-select-dropdown${isOpen ? " open" : ""}${usePortal ? " is-floating" : ""}`}
       style={
         isPortalOpen
           ? {

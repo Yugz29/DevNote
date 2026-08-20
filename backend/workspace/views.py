@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.db.models import Count, Q
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
@@ -144,6 +145,91 @@ def read_resource_type(request):
         )
 
     return value
+
+
+def read_uuid(value, field):
+    """The value of an id sent in a move payload, or a 400."""
+    try:
+        return UUID(str(value))
+    except ValueError:
+        raise ValidationError({field: f"Invalid {field} id."})
+
+
+def resolve_move_project(request, current_project):
+    """
+    Destination project of a move. An absent project keeps the resource where
+    it is, so the same endpoint serves both kinds of move.
+    """
+    value = request.data.get("project")
+
+    if value in (None, ""):
+        return current_project
+
+    try:
+        return Project.objects.get(id=read_uuid(value, "project"), user=request.user)
+    except Project.DoesNotExist:
+        raise PermissionDenied("Project not found or access denied.")
+
+
+def resolve_move_folder(request, field, project, resource_type):
+    """Destination folder of a move, None for the root of the project."""
+    value = request.data.get(field)
+
+    if value in (None, ""):
+        return None
+
+    folder = Folder.objects.filter(
+        id=read_uuid(value, field), project__user=request.user
+    ).first()
+
+    if folder is None:
+        raise ValidationError({field: "Folder not found."})
+
+    if folder.project_id != project.id:
+        raise ValidationError({field: "Folder must belong to the destination project."})
+
+    if folder.resource_type != resource_type:
+        raise ValidationError({field: f"Folder does not hold {resource_type}."})
+
+    return folder
+
+
+def resolve_move_list(request, project):
+    """
+    Destination list of a todo move, None for the unclassified ones. A todo
+    landing in another project cannot keep a list of the one it leaves.
+    """
+    value = request.data.get("list")
+
+    if value in (None, ""):
+        return None
+
+    todo_list = TodoList.objects.filter(
+        id=read_uuid(value, "list"), project__user=request.user
+    ).first()
+
+    if todo_list is None:
+        raise ValidationError({"list": "List not found."})
+
+    if todo_list.project_id != project.id:
+        raise ValidationError({"list": "List must belong to the destination project."})
+
+    return todo_list
+
+
+def guard_folder_name(folder, project, parent):
+    """A folder cannot join a place where its name is already taken."""
+    siblings = Folder.objects.filter(
+        project=project, parent=parent, name=folder.name
+    ).exclude(id=folder.id)
+
+    if parent is None:
+        siblings = siblings.filter(resource_type=folder.resource_type)
+
+    if siblings.exists():
+        raise ValidationError(
+            {"name": f"A folder named '{folder.name}' already exists here."}
+        )
 
 
 def folders_with_counts(queryset):
@@ -327,6 +413,39 @@ class FolderViewSet(ProjectScopedViewSet):
 
         return paginated_contents(self, folder.children.all(), folder.documents.all())
 
+    @action(detail=True, methods=["post"])
+    def move(self, request, *args, **kwargs):
+        """
+        Move a folder, with everything nested under it, to another parent or
+        another project.
+        """
+        folder = self.get_object()
+        project = resolve_move_project(request, folder.project)
+        parent = resolve_move_folder(request, "parent", project, folder.resource_type)
+
+        if parent is not None:
+            if parent.id == folder.id:
+                raise ValidationError({"parent": "A folder cannot be its own parent."})
+
+            if folder.id in parent.ancestor_ids():
+                raise ValidationError(
+                    {"parent": "A folder cannot be its own ancestor."}
+                )
+
+        guard_folder_name(folder, project, parent)
+
+        counts = folder.cascade_counts()
+        folder.move_to(project, parent)
+
+        logger.info(
+            f"Folder '{folder.name}' (ID: {folder.id}) moved to project "
+            f"{project.id} with {counts['folders']} subfolder(s), "
+            f"{counts['documents']} document(s) and {counts['snippets']} snippet(s) "
+            f"by user {request.user.username}"
+        )
+
+        return Response(self.get_serializer(folder).data)
+
 
 def copy_title(title, taken, max_length):
     """
@@ -398,6 +517,20 @@ class DocumentViewSet(ProjectScopedViewSet):
         serializer = self.get_serializer(copy)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def move(self, request, *args, **kwargs):
+        """Move a document to another folder, another project, or both"""
+        document = self.get_object()
+        project = resolve_move_project(request, document.project)
+        folder = resolve_move_folder(request, "folder", project, "documents")
+
+        with transaction.atomic():
+            document.project = project
+            document.folder = folder
+            document.save()
+
+        return Response(self.get_serializer(document).data)
 
 
 class SnippetViewSet(ProjectScopedViewSet):
@@ -482,6 +615,20 @@ class SnippetViewSet(ProjectScopedViewSet):
         serializer = self.get_serializer(copy)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def move(self, request, *args, **kwargs):
+        """Move a snippet to another folder, another project, or both"""
+        snippet = self.get_object()
+        project = resolve_move_project(request, snippet.project)
+        folder = resolve_move_folder(request, "folder", project, "snippets")
+
+        with transaction.atomic():
+            snippet.project = project
+            snippet.folder = folder
+            snippet.save()
+
+        return Response(self.get_serializer(snippet).data)
 
 
 class TodoListViewSet(ProjectScopedViewSet):
@@ -596,6 +743,23 @@ class TODOViewSet(ProjectScopedViewSet):
             )
 
         return Response(self.get_serializer(queryset, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def move(self, request, *args, **kwargs):
+        """
+        Move a TODO to another list, another project, or both. A TODO landing
+        in another project without a list of its own becomes unclassified.
+        """
+        todo = self.get_object()
+        project = resolve_move_project(request, todo.project)
+        todo_list = resolve_move_list(request, project)
+
+        with transaction.atomic():
+            todo.project = project
+            todo.list = todo_list
+            todo.save()
+
+        return Response(self.get_serializer(todo).data)
 
 
 @method_decorator(ratelimit(key="user", rate="30/m", method="GET"), name="get")

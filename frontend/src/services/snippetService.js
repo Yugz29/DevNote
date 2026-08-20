@@ -18,9 +18,10 @@ export const createSnippet = async (
   return response.data;
 };
 
-export const moveSnippet = async (snippetId, folderId) => {
-  const response = await api.patch(`/snippets/${snippetId}/`, {
-    folder: folderId,
+export const moveSnippet = async (snippetId, { project, folder }) => {
+  const response = await api.post(`/snippets/${snippetId}/move/`, {
+    project,
+    folder,
   });
   return response.data;
 };
