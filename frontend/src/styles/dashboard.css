@@ -56,7 +56,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: width 0.3s ease, min-width 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+    transition: width 0.3s ease, min-width 0.3s ease, opacity 0.3s ease, margin 0.3s ease,
+        border-color 0.15s ease;
 }
 
 .layout.sidebar-hidden .sidebar {
@@ -67,10 +68,16 @@
     border: none;
 }
 
+.sidebar:has(.sidebar-resizer:hover),
+.sidebar:has(.sidebar-resizer:focus-visible) {
+    border-color: var(--dash-accent-border);
+}
+
 /* Resizing writes the width straight to the CSS variable, so the width
    transition has to stand down for the duration of the drag. */
 .layout.is-resizing .sidebar {
     transition: none;
+    border-color: var(--accent-primary);
 }
 
 .layout.is-resizing {
@@ -86,25 +93,6 @@
     width: 6px;
     cursor: col-resize;
     touch-action: none;
-}
-
-.sidebar-resizer::after {
-    content: "";
-    position: absolute;
-    top: 12px;
-    bottom: 12px;
-    right: 2px;
-    width: 2px;
-    border-radius: 2px;
-    background: var(--accent-primary);
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.sidebar-resizer:hover::after,
-.sidebar-resizer:focus-visible::after,
-.layout.is-resizing .sidebar-resizer::after {
-    opacity: 1;
 }
 
 .sidebar-resizer:focus-visible {
