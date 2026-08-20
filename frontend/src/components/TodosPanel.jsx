@@ -8,12 +8,7 @@ import { useDialog } from "../contexts/DialogContext.js";
 import { useResourceList } from "../hooks/useResourceList.js";
 import { shouldUnpinOnDone } from "../lib/todoPinRule.js";
 import { useSearchTarget } from "../hooks/useSearchTarget.js";
-import {
-  PRIORITY_ORDER,
-  STATUSES,
-  STATUS_BADGES,
-  STATUS_LABELS,
-} from "../lib/todos.js";
+import { PRIORITY_ORDER, STATUSES, STATUS_BADGES } from "../lib/todos.js";
 import {
   createTodo,
   deleteTodo,
@@ -47,9 +42,27 @@ function sortTodos(todos, sort) {
   });
 }
 
+const LIST_SECTIONS = [
+  {
+    key: "active",
+    label: "Active",
+    badgeClass: "badge-in-progress",
+    statuses: ["pending", "in_progress"],
+  },
+  {
+    key: "done",
+    label: "Done",
+    badgeClass: "badge-done",
+    statuses: ["done"],
+  },
+];
+
 function readCollapsedGroups(projectId) {
   const stored = localStorage.getItem(`devnote_todo_collapsed_${projectId}`);
-  return new Set(stored ? JSON.parse(stored) : []);
+
+  if (stored === null) return new Set(["done"]);
+
+  return new Set(JSON.parse(stored));
 }
 
 function readActiveList(projectId) {
@@ -199,6 +212,17 @@ export default function TodosPanel({
     [visibleTodos],
   );
 
+  const listSections = useMemo(
+    () =>
+      LIST_SECTIONS.map((section) => ({
+        ...section,
+        items: visibleTodos.filter((todo) =>
+          section.statuses.includes(todo.status),
+        ),
+      })),
+    [visibleTodos],
+  );
+
   const storeCollapsedGroups = (next) => {
     localStorage.setItem(
       `devnote_todo_collapsed_${projectId}`,
@@ -220,9 +244,11 @@ export default function TodosPanel({
   };
 
   const startCreating = () => {
-    if (collapsedGroups.has("pending")) {
+    const section = view === "kanban" ? "pending" : "active";
+
+    if (collapsedGroups.has(section)) {
       const next = new Set(collapsedGroups);
-      next.delete("pending");
+      next.delete(section);
       storeCollapsedGroups(next);
     }
 
@@ -442,23 +468,22 @@ export default function TodosPanel({
     />
   );
 
-  const renderGroupHeader = (status, count, className) => {
-    const badge = STATUS_BADGES[status];
-    const isCollapsed = collapsedGroups.has(status);
+  const renderGroupHeader = (section, count, className) => {
+    const isCollapsed = collapsedGroups.has(section.key);
 
     return (
       <div className={className}>
         <button
           className="btn-toggle-group"
-          data-status={status}
+          data-status={section.key}
           title="Toggle"
-          onClick={() => toggleGroup(status)}
+          onClick={() => toggleGroup(section.key)}
         >
           <i
             className={`ph-light ph-caret-down${isCollapsed ? " rotated" : ""}`}
           />
         </button>
-        <span className={`badge ${badge.class}`}>{badge.label}</span>
+        <span className={`badge ${section.badgeClass}`}>{section.label}</span>
         <span className="todo-group-count">{count}</span>
       </div>
     );
@@ -521,7 +546,11 @@ export default function TodosPanel({
                 data-status={status}
               >
                 {renderGroupHeader(
-                  status,
+                  {
+                    key: status,
+                    label: STATUS_BADGES[status].label,
+                    badgeClass: STATUS_BADGES[status].class,
+                  },
                   groupItems.length,
                   "kanban-column-header",
                 )}
@@ -543,29 +572,32 @@ export default function TodosPanel({
 
       {!isLoading && !error && view !== "kanban" && (
         <div className="todo-list-view">
-          {STATUSES.map((status) => {
-            const groupItems = groups[status];
-            const isCollapsed = collapsedGroups.has(status);
+          {listSections.map((section) => {
+            const isCollapsed = collapsedGroups.has(section.key);
+            const isActive = section.key === "active";
 
             return (
-              <div key={status} className="todo-group" data-status={status}>
+              <div
+                key={section.key}
+                className="todo-group"
+                data-status={section.key}
+              >
                 {renderGroupHeader(
-                  status,
-                  groupItems.length,
+                  section,
+                  section.items.length,
                   "todo-group-header",
                 )}
 
                 <div
                   className={`todo-group-items${isCollapsed ? " collapsed" : ""}`}
                 >
-                  {status === "pending" && renderCreateCard()}
-                  {groupItems.map(renderTodo)}
-                  {groupItems.length === 0 &&
-                    !(status === "pending" && isCreating) && (
-                      <p className="todo-group-empty">
-                        No {STATUS_LABELS[status].toLowerCase()} todos
-                      </p>
-                    )}
+                  {isActive && renderCreateCard()}
+                  {section.items.map(renderTodo)}
+                  {section.items.length === 0 && !(isActive && isCreating) && (
+                    <p className="todo-group-empty">
+                      No {section.label.toLowerCase()} todos
+                    </p>
+                  )}
                 </div>
               </div>
             );
