@@ -404,12 +404,21 @@
 }
 
 .project-item-actions {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 2px;
-    margin-right: -4px;
     opacity: 0;
     pointer-events: none;
+}
+
+.project-item:hover,
+.project-item:focus-within,
+.project-item:has(.card-menu-trigger.open) {
+    padding-right: 54px;
 }
 
 .project-item:hover .project-item-actions,
@@ -446,6 +455,7 @@
 }
 
 .pinned-group-header {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -650,11 +660,39 @@
 
 .pinned-item-actions,
 .pinned-group-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
     gap: 2px;
     opacity: 0;
     pointer-events: none;
+}
+
+.pinned-item-actions {
+    right: 6px;
+}
+
+.pinned-group-actions {
+    right: 8px;
+}
+
+.pinned-todo .pinned-item-actions {
+    top: 5px;
+    transform: none;
+}
+
+.pinned-item:hover,
+.pinned-item:focus-within,
+.pinned-item:has(.card-menu-trigger.open) {
+    padding-right: 52px;
+}
+
+.pinned-group-header:hover,
+.pinned-group-header:focus-within,
+.pinned-group-header:has(.card-menu-trigger.open) {
+    padding-right: 54px;
 }
 
 .pinned-item:hover .pinned-item-actions,
@@ -1354,6 +1392,55 @@
 
 .entry-tile-actions .card-menu-trigger i {
     font-size: 15px;
+}
+
+.gallery-grid.is-list {
+    grid-template-columns: 1fr;
+    gap: 1px;
+}
+
+.gallery-grid.is-list .entry-tile-open {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    text-align: left;
+    border-radius: 8px;
+}
+
+.gallery-grid.is-list .entry-tile-icon {
+    font-size: 20px;
+}
+
+.gallery-grid.is-list .entry-tile-name {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    flex: 1;
+    min-width: 0;
+}
+
+.gallery-grid.is-list .entry-tile-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.gallery-grid.is-list .entry-tile-input {
+    text-align: left;
+}
+
+.gallery-grid.is-list .entry-tile-actions {
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+}
+
+.gallery-grid.is-list .entry-tile:hover .entry-tile-open,
+.gallery-grid.is-list .entry-tile:focus-within .entry-tile-open,
+.gallery-grid.is-list .entry-tile:has(.card-menu-trigger.open) .entry-tile-open {
+    padding-right: 38px;
 }
 
 .gallery-grid .empty {
@@ -3983,29 +4070,6 @@ mark.search-highlight {
 
 .settings-nav-item.is-danger.active::before {
     background: var(--danger);
-}
-
-.settings-back-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: inherit;
-    font-size: 13px;
-    color: var(--dash-text-muted);
-    cursor: pointer;
-    transition: color 0.15s;
-}
-
-.settings-back-link:hover {
-    color: var(--dash-text);
-}
-
-.settings-back-link i {
-    font-size: 16px;
-    line-height: 1;
 }
 
 .settings-view {

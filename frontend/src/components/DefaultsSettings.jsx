@@ -1,8 +1,22 @@
 import SettingsChoice from "./SettingsChoice.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 import { DONE_PINNED_DEFAULT, DONE_PINNED_KEY } from "../lib/todoPinRule.js";
+import {
+  PINNED_TODO_SORT_DEFAULT,
+  PINNED_TODO_SORT_KEY,
+} from "../lib/todos.js";
 
 const PREFERENCES = [
+  {
+    storageKey: "devnote_document_view",
+    fallback: "grid",
+    title: "Documents view",
+    hint: "How the Documents tab opens.",
+    options: [
+      { value: "grid", label: "Icons", icon: "ph-squares-four" },
+      { value: "list", label: "List", icon: "ph-list-bullets" },
+    ],
+  },
   {
     storageKey: "devnote_snippet_view",
     fallback: "grid",
@@ -21,6 +35,16 @@ const PREFERENCES = [
     options: [
       { value: "list", label: "List", icon: "ph-list-bullets" },
       { value: "kanban", label: "Kanban", icon: "ph-columns" },
+    ],
+  },
+  {
+    storageKey: PINNED_TODO_SORT_KEY,
+    fallback: PINNED_TODO_SORT_DEFAULT,
+    title: "Pinned todos order",
+    hint: "How the sidebar arranges pinned todos, until you drag them yourself.",
+    options: [
+      { value: "auto", label: "Status, priority", icon: "ph-sort-ascending" },
+      { value: "manual", label: "As pinned", icon: "ph-push-pin" },
     ],
   },
   {

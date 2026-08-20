@@ -35,6 +35,9 @@ export default function DocumentBlock({
   onSave,
   onDiscard,
   onDelete,
+  onDuplicate,
+  onTogglePin,
+  onMove,
   onExportMarkdown,
   onExportPdf,
   scrollRef,
@@ -431,6 +434,24 @@ export default function DocumentBlock({
           <CardMenu
             label={`Actions for ${doc.title}`}
             items={[
+              ...(onTogglePin
+                ? [
+                    {
+                      label: doc.is_pinned ? "Unpin" : "Pin",
+                      icon: doc.is_pinned ? "ph-push-pin-slash" : "ph-push-pin",
+                      onSelect: () => runHeaderAction(onTogglePin),
+                    },
+                  ]
+                : []),
+              ...(onDuplicate
+                ? [
+                    {
+                      label: "Duplicate",
+                      icon: "ph-copy",
+                      onSelect: () => runHeaderAction(onDuplicate),
+                    },
+                  ]
+                : []),
               {
                 label: "Export",
                 icon: "ph-export",
@@ -453,6 +474,15 @@ export default function DocumentBlock({
                   },
                 ],
               },
+              ...(onMove
+                ? [
+                    {
+                      label: "Move to…",
+                      icon: "ph-arrow-elbow-down-right",
+                      onSelect: () => runHeaderAction(onMove),
+                    },
+                  ]
+                : []),
               {
                 label: "Delete",
                 icon: "ph-trash",

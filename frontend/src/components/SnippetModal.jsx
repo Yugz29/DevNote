@@ -15,6 +15,7 @@ export default function SnippetModal({
   onDuplicate,
   onTogglePin,
   onExport,
+  onReveal,
   onDelete,
   onClose,
 }) {
@@ -106,6 +107,16 @@ export default function SnippetModal({
                     onClick={onExport}
                   >
                     <i className="ph-light ph-export" />
+                  </button>
+                )}
+                {onReveal && (
+                  <button
+                    type="button"
+                    className="btn-card-icon-action"
+                    title="Go to location"
+                    onClick={onReveal}
+                  >
+                    <i className="ph-light ph-arrow-square-out" />
                   </button>
                 )}
                 <button

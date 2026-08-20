@@ -59,6 +59,7 @@ function sortEntries(entries, sort) {
 export default function DocumentsPanel({
   projectId,
   sort,
+  view,
   scrollRef,
   headerSlot,
   breadcrumbSlot,
@@ -294,6 +295,9 @@ export default function DocumentsPanel({
     }
 
     setMovingEntry(null);
+
+    if (openDocument?.id === entry.id) setOpenDocument(null);
+
     setItems((current) =>
       current
         .filter((item) => item.id !== entry.id)
@@ -398,6 +402,12 @@ export default function DocumentsPanel({
           ? { ...entry, is_pinned: nextPinned }
           : entry,
       ),
+    );
+
+    setOpenDocument((current) =>
+      current && current.id === doc.id
+        ? { ...current, is_pinned: nextPinned }
+        : current,
     );
 
     onPinnedChanged();
@@ -556,6 +566,11 @@ export default function DocumentsPanel({
           onDelete={() =>
             detailDocument && handleDeleteDocument(detailDocument)
           }
+          onDuplicate={() =>
+            detailDocument && handleDuplicateDocument(detailDocument)
+          }
+          onTogglePin={() => detailDocument && handleTogglePin(detailDocument)}
+          onMove={() => detailDocument && setMovingEntry(detailDocument)}
           onExportMarkdown={exportMarkdown}
           onExportPdf={exportPdf}
           scrollRef={scrollRef}
@@ -589,7 +604,7 @@ export default function DocumentsPanel({
           {!isLoading && error && <p className="error">{error}</p>}
 
           {!isLoading && !error && (
-            <div className="gallery-grid">
+            <div className={`gallery-grid${view === "list" ? " is-list" : ""}`}>
               {isCreatingFolder && (
                 <FolderCard
                   folder={{ id: "new", name: "" }}

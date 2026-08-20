@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   DndContext,
@@ -23,6 +23,7 @@ import DnSelect from "./DnSelect.jsx";
 import LanguageIcon from "./LanguageIcon.jsx";
 import SidebarGroup from "./SidebarGroup.jsx";
 import { useCopyStatus } from "../hooks/useCopyStatus.js";
+import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
 import { useOrder } from "../hooks/useOrder.js";
 import {
   PINNED_SECTIONS,
@@ -30,9 +31,12 @@ import {
   itemsOrderKey,
 } from "../lib/pinnedSections.js";
 import {
+  PINNED_TODO_SORT_DEFAULT,
+  PINNED_TODO_SORT_KEY,
   PRIORITY_BADGES,
   STATUS_BADGES,
   STATUS_OPTIONS,
+  sortByStatusThenPriority,
 } from "../lib/todos.js";
 
 const COPY_STATES = {
@@ -255,7 +259,20 @@ export default function SidebarPinned({
     itemsOrderKey("snippets", projectId),
     snippets.items,
   );
-  const todosOrder = useOrder(itemsOrderKey("todos", projectId), todos.items);
+  const [pinnedTodoSort] = useLocalStorageState(
+    PINNED_TODO_SORT_KEY,
+    PINNED_TODO_SORT_DEFAULT,
+  );
+
+  const sortedTodos = useMemo(
+    () =>
+      pinnedTodoSort === "auto"
+        ? sortByStatusThenPriority(todos.items)
+        : todos.items,
+    [pinnedTodoSort, todos.items],
+  );
+
+  const todosOrder = useOrder(itemsOrderKey("todos", projectId), sortedTodos);
 
   /* Sections and items share one context, so a section dragged past a row
      would otherwise collide with it and be dropped as a type mismatch. Each

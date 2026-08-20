@@ -54,6 +54,10 @@ export default function ProjectTabs({
     "devnote_document_sort",
     "created",
   );
+  const [documentView, setDocumentView] = useLocalStorageState(
+    "devnote_document_view",
+    "grid",
+  );
   const [snippetSort, setSnippetSort] = useLocalStorageState(
     "devnote_snippet_sort",
     "created",
@@ -105,12 +109,20 @@ export default function ProjectTabs({
     </div>
   );
 
-  const documentControls = sortDropdown(
-    "document",
-    DOCUMENT_SORT_OPTIONS,
-    documentSort,
-    "created",
-    setDocumentSort,
+  const documentControls = (
+    <>
+      {sortDropdown(
+        "document",
+        DOCUMENT_SORT_OPTIONS,
+        documentSort,
+        "created",
+        setDocumentSort,
+      )}
+      {viewToggle("document-view-toggle", documentView, setDocumentView, [
+        { value: "grid", title: "Icons", icon: "ph-squares-four" },
+        { value: "list", title: "List", icon: "ph-list-bullets" },
+      ])}
+    </>
   );
 
   const snippetControls = (
@@ -175,6 +187,7 @@ export default function ProjectTabs({
               controls={documentControls}
               projectId={projectId}
               sort={documentSort}
+              view={documentView}
               scrollRef={tabContentRef}
               headerSlot={headerSlot}
               breadcrumbSlot={breadcrumbSlot}

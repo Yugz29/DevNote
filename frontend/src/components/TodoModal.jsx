@@ -20,6 +20,7 @@ export default function TodoModal({
   onPriorityChange,
   onMove,
   onTogglePin,
+  onReveal,
   onDelete,
   onClose,
 }) {
@@ -87,14 +88,16 @@ export default function TodoModal({
                 >
                   <i className="ph-light ph-pencil-simple" />
                 </button>
-                <button
-                  type="button"
-                  className="btn-card-icon-action"
-                  title="Move to…"
-                  onClick={onMove}
-                >
-                  <i className="ph-light ph-arrow-elbow-down-right" />
-                </button>
+                {onMove && (
+                  <button
+                    type="button"
+                    className="btn-card-icon-action"
+                    title="Move to…"
+                    onClick={onMove}
+                  >
+                    <i className="ph-light ph-arrow-elbow-down-right" />
+                  </button>
+                )}
                 {onTogglePin && (
                   <button
                     type="button"
@@ -105,6 +108,16 @@ export default function TodoModal({
                     <i
                       className={`ph-light ${todo.is_pinned ? "ph-push-pin-slash" : "ph-push-pin"}`}
                     />
+                  </button>
+                )}
+                {onReveal && (
+                  <button
+                    type="button"
+                    className="btn-card-icon-action"
+                    title="Go to location"
+                    onClick={onReveal}
+                  >
+                    <i className="ph-light ph-arrow-square-out" />
                   </button>
                 )}
                 <button

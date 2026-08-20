@@ -8,6 +8,7 @@ import {
 } from "react";
 import ProjectHeader from "../components/ProjectHeader.jsx";
 import ProjectModal from "../components/ProjectModal.jsx";
+import PinnedPreview from "../components/PinnedPreview.jsx";
 import ProjectTabs from "../components/ProjectTabs.jsx";
 import SearchOverlay from "../components/SearchOverlay.jsx";
 import SettingsPanel from "../components/SettingsPanel.jsx";
@@ -76,6 +77,7 @@ export default function Dashboard() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [hasProjectsError, setHasProjectsError] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
+  const [pinnedPreview, setPinnedPreview] = useState(null);
   const [currentTab, setCurrentTab] = useState("documents");
   const [view, setView] = useState("projects");
   const [settingsSection, setSettingsSection] = useState(
@@ -194,6 +196,7 @@ export default function Dashboard() {
         const project = await getProject(projectId);
         setView("projects");
         setCurrentProject(project);
+        setPinnedPreview(null);
         if (tab) setCurrentTab(tab);
         setOpenTarget(null);
         setSearchTarget(
@@ -215,6 +218,7 @@ export default function Dashboard() {
 
   const backToWelcome = useCallback(() => {
     setCurrentProject(null);
+    setPinnedPreview(null);
     setSearchTarget(null);
     setOpenTarget(null);
   }, []);
@@ -231,19 +235,41 @@ export default function Dashboard() {
     [openPinnedItem],
   );
 
+  const previewPinnedItem = useCallback((type, itemId) => {
+    setPinnedPreview({ type, id: itemId });
+    if (isMobile()) setIsSidebarVisible(false);
+  }, []);
+
   const openPinnedSnippet = useCallback(
-    (snippet) => openPinnedItem("snippets", snippet.id),
-    [openPinnedItem],
+    (snippet) => previewPinnedItem("snippet", snippet.id),
+    [previewPinnedItem],
   );
 
   const openPinnedTodo = useCallback(
-    (todo) => openPinnedItem("todos", todo.id),
-    [openPinnedItem],
+    (todo) => previewPinnedItem("todo", todo.id),
+    [previewPinnedItem],
   );
+
+  const closePinnedPreview = useCallback(() => setPinnedPreview(null), []);
+
+  const revealPinnedItem = useCallback(() => {
+    if (!pinnedPreview) return;
+
+    openPinnedItem(
+      pinnedPreview.type === "snippet" ? "snippets" : "todos",
+      pinnedPreview.id,
+    );
+    setPinnedPreview(null);
+  }, [openPinnedItem, pinnedPreview]);
 
   const { reload: reloadPinned } = pinned;
 
   const handlePinnedChanged = useCallback(() => reloadPinned(), [reloadPinned]);
+
+  const handlePreviewChanged = useCallback(async () => {
+    await reloadPinned();
+    setContentVersion((current) => current + 1);
+  }, [reloadPinned]);
 
   const handleActiveItemChange = useCallback((itemId) => {
     setActiveItemId(itemId);
@@ -501,6 +527,16 @@ export default function Dashboard() {
         onClose={closeSearch}
         onSelectResult={selectProject}
       />
+
+      {pinnedPreview && (
+        <PinnedPreview
+          key={`${pinnedPreview.type}:${pinnedPreview.id}`}
+          target={pinnedPreview}
+          onClose={closePinnedPreview}
+          onChanged={handlePreviewChanged}
+          onReveal={revealPinnedItem}
+        />
+      )}
     </>
   );
 }

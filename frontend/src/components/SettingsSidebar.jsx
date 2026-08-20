@@ -36,13 +36,6 @@ export default function SettingsSidebar({
           </button>
         ))}
       </nav>
-
-      <div className="sidebar-footer">
-        <button type="button" className="settings-back-link" onClick={onBack}>
-          <i className="ph-light ph-arrow-left" />
-          <span>Back to projects</span>
-        </button>
-      </div>
     </aside>
   );
 }
