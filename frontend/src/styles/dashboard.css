@@ -2649,6 +2649,15 @@
     gap: 0;
 }
 
+.todos-list .gallery-toolbar {
+    position: sticky;
+    top: -24px;
+    z-index: 3;
+    margin: -24px -32px 4px;
+    padding: 24px 32px 12px;
+    background: var(--dash-ground);
+}
+
 /* Todo list selector */
 .todo-list-tabs {
     display: flex;
