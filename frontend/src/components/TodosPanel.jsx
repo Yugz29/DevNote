@@ -46,13 +46,11 @@ const LIST_SECTIONS = [
   {
     key: "active",
     label: "Active",
-    badgeClass: "badge-in-progress",
     statuses: ["pending", "in_progress"],
   },
   {
     key: "done",
     label: "Done",
-    badgeClass: "badge-done",
     statuses: ["done"],
   },
 ];
@@ -244,11 +242,9 @@ export default function TodosPanel({
   };
 
   const startCreating = () => {
-    const section = view === "kanban" ? "pending" : "active";
-
-    if (collapsedGroups.has(section)) {
+    if (view !== "kanban" && collapsedGroups.has("active")) {
       const next = new Set(collapsedGroups);
-      next.delete(section);
+      next.delete("active");
       storeCollapsedGroups(next);
     }
 
@@ -468,22 +464,29 @@ export default function TodosPanel({
     />
   );
 
-  const renderGroupHeader = (section, count, className) => {
+  const renderGroupHeader = (
+    section,
+    count,
+    className,
+    isCollapsible = true,
+  ) => {
     const isCollapsed = collapsedGroups.has(section.key);
 
     return (
       <div className={className}>
-        <button
-          className="btn-toggle-group"
-          data-status={section.key}
-          title="Toggle"
-          onClick={() => toggleGroup(section.key)}
-        >
-          <i
-            className={`ph-light ph-caret-down${isCollapsed ? " rotated" : ""}`}
-          />
-        </button>
-        <span className={`badge ${section.badgeClass}`}>{section.label}</span>
+        {isCollapsible && (
+          <button
+            className="btn-toggle-group"
+            data-status={section.key}
+            title="Toggle"
+            onClick={() => toggleGroup(section.key)}
+          >
+            <i
+              className={`ph-light ph-caret-down${isCollapsed ? " rotated" : ""}`}
+            />
+          </button>
+        )}
+        <span className="status-badge">{section.label}</span>
         <span className="todo-group-count">{count}</span>
       </div>
     );
@@ -536,23 +539,18 @@ export default function TodosPanel({
         <div className="todo-kanban-view">
           {STATUSES.map((status) => {
             const groupItems = groups[status];
-            const isCollapsed = collapsedGroups.has(status);
             const isPending = status === "pending";
 
             return (
-              <div
-                key={status}
-                className={`kanban-column${isCollapsed ? " collapsed" : ""}`}
-                data-status={status}
-              >
+              <div key={status} className="kanban-column" data-status={status}>
                 {renderGroupHeader(
                   {
                     key: status,
                     label: STATUS_BADGES[status].label,
-                    badgeClass: STATUS_BADGES[status].class,
                   },
                   groupItems.length,
                   "kanban-column-header",
+                  false,
                 )}
 
                 <div

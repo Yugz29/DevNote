@@ -24,7 +24,7 @@ export default function TodoCard({
 
   return (
     <div
-      className={`todo-card ${todo.status === "done" ? "is-done" : ""}`}
+      className="todo-card"
       data-id={todo.id}
       data-priority={todo.priority}
       onClick={onOpen}

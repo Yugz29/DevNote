@@ -2845,12 +2845,24 @@
     display: none;
 }
 
+.status-badge {
+    font-family: "Inter", var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: lowercase;
+    letter-spacing: normal;
+    color: var(--dash-text-strong);
+}
+
+.status-badge::first-letter {
+    text-transform: uppercase;
+}
+
 .todo-group-count {
-    font-size: 12px;
-    color: var(--dash-text-dim);
-    background: var(--dash-glass-hover);
-    border-radius: 10px;
-    padding: 1px 7px;
+    font-family: "Inter", var(--font-sans);
+    font-size: 13px;
+    color: var(--dash-text-strong);
+    opacity: 0.7;
 }
 
 .todo-group-items {
@@ -2872,31 +2884,31 @@
 .todo-kanban-view {
     display: grid;
     grid-template-columns: repeat(3, minmax(220px, 1fr));
-    gap: 16px;
-    align-items: start;
+    align-items: stretch;
     overflow-x: auto;
-    padding-bottom: 8px;
+    padding: 16px 16px 24px;
+    margin: -16px -16px 0;
 }
 
 .kanban-column {
-    background: var(--dash-glass-subtle);
-    border: 1px solid var(--dash-glass-border-subtle);
-    border-radius: 10px;
-    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    min-height: 200px;
-    transition: min-height 0.2s ease;
     align-items: stretch;
+    gap: 10px;
+    padding: 0 16px;
+    min-height: 200px;
 }
 
-.kanban-column.collapsed {
-    min-height: 0;
+.kanban-column:first-child {
+    padding-left: 0;
 }
 
-.kanban-column.collapsed .kanban-column-items {
-    display: none;
+.kanban-column:last-child {
+    padding-right: 0;
+}
+
+.kanban-column + .kanban-column {
+    border-left: 1px solid var(--dash-border);
 }
 
 .kanban-column-header {
@@ -2914,7 +2926,6 @@
 }
 
 .kanban-column-items.kanban-column-empty {
-    justify-content: center;
     align-items: center;
     min-height: 80px;
 }
@@ -2974,7 +2985,7 @@
         0 4px 16px var(--dash-scrim-soft);
 }
 
-.todo-card:not(.is-done)[data-priority="high"]:hover {
+.todo-card[data-priority="high"]:hover {
     box-shadow:
         inset 0 1px 0 var(--dash-card-bevel-top),
         inset 0 -1px 0 var(--dash-card-bevel-bottom),
@@ -2982,7 +2993,7 @@
         0 4px 16px color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
-.todo-card:not(.is-done)[data-priority="medium"]:hover {
+.todo-card[data-priority="medium"]:hover {
     box-shadow:
         inset 0 1px 0 var(--dash-card-bevel-top),
         inset 0 -1px 0 var(--dash-card-bevel-bottom),
@@ -2990,35 +3001,12 @@
         0 4px 16px color-mix(in srgb, var(--warning) 18%, transparent);
 }
 
-.todo-card:not(.is-done)[data-priority="low"]:hover {
+.todo-card[data-priority="low"]:hover {
     box-shadow:
         inset 0 1px 0 var(--dash-card-bevel-top),
         inset 0 -1px 0 var(--dash-card-bevel-bottom),
         0 0 0 1px color-mix(in srgb, var(--success) 25%, transparent),
         0 4px 16px color-mix(in srgb, var(--success) 18%, transparent);
-}
-
-.todo-card.is-done {
-    background: var(--dash-surface-deep);
-}
-
-.todo-card.is-done .todo-title-btn {
-    color: var(--dash-text-dim);
-    text-decoration: line-through;
-    text-decoration-thickness: 1px;
-}
-
-.todo-card.is-done .todo-description {
-    color: var(--dash-text-ghost);
-}
-
-.todo-card.is-done .card-date {
-    color: var(--dash-text-disabled);
-}
-
-.todo-card.is-done .todo-card-meta .dn-select-btn {
-    background: var(--dash-glass);
-    color: var(--dash-text-faint);
 }
 
 .todo-card-header {
