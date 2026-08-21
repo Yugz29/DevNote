@@ -92,6 +92,8 @@
   --dash-card-face: #161616;
   --dash-card-bevel-top: rgba(255, 255, 255, 0.05);
   --dash-card-bevel-bottom: rgba(0, 0, 0, 0.5);
+  --dash-code-well: #0c0c0c;
+  --dash-code-well-shadow: rgba(0, 0, 0, 0.5);
   --dash-glass-hover: rgba(255, 255, 255, 0.05);
   --dash-glass-raised: rgba(255, 255, 255, 0.06);
   --dash-glass-raised-hover: rgba(255, 255, 255, 0.07);
