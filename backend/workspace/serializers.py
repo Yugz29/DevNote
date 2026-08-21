@@ -31,10 +31,37 @@ class ScopedTodoListField(serializers.PrimaryKeyRelatedField):
 class ProjectSerializer(serializers.ModelSerializer):
     """Serializer for Project model"""
 
+    open_todos_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Project
-        fields = ["id", "title", "description", "user", "created_at", "updated_at"]
-        read_only_fields = ["id", "user", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "user",
+            "created_at",
+            "updated_at",
+            "last_opened_at",
+            "open_todos_count",
+        ]
+        read_only_fields = [
+            "id",
+            "user",
+            "created_at",
+            "updated_at",
+            "last_opened_at",
+            "open_todos_count",
+        ]
+
+    def get_open_todos_count(self, obj):
+        """Todos left to do, read from the annotation when the view sets one."""
+        annotated = getattr(obj, "open_todos_count", None)
+
+        if annotated is not None:
+            return annotated
+
+        return obj.todos.filter(status__in=TODO.OPEN_STATUSES).count()
 
     def validate_title(self, value):
         """Validate and clean the project title"""

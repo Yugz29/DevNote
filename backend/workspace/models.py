@@ -42,6 +42,12 @@ class Project(models.Model):
         auto_now=True, help_text="Date of last modification"
     )
 
+    last_opened_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date the project was last opened, null if never opened",
+    )
+
     class Meta:
         db_table = "devnote_projects"
         verbose_name = "Project"
@@ -55,6 +61,7 @@ class Project(models.Model):
         ]
         indexes = [
             models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["user", "-last_opened_at"]),
         ]
 
     def __str__(self):
@@ -425,6 +432,8 @@ class TODO(models.Model):
         ("medium", "Medium"),
         ("high", "High"),
     ]
+
+    OPEN_STATUSES = ["pending", "in_progress"]
 
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     title = models.CharField(max_length=255, help_text="Title of the TODO")

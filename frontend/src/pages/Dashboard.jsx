@@ -14,6 +14,7 @@ import SearchOverlay from "../components/SearchOverlay.jsx";
 import SettingsPanel from "../components/SettingsPanel.jsx";
 import SettingsSidebar from "../components/SettingsSidebar.jsx";
 import Sidebar from "../components/Sidebar.jsx";
+import WelcomeScreen from "../components/WelcomeScreen.jsx";
 
 import { useAuth } from "../contexts/AuthContext.js";
 import { useDialog } from "../contexts/DialogContext.js";
@@ -34,13 +35,21 @@ import {
   deleteProject,
   getProject,
   getProjects,
+  getRecentProjects,
+  markProjectOpened,
 } from "../services/projectService.js";
 import { setSnippetPinned } from "../services/snippetService.js";
-import { setTodoPinned, updateTodo } from "../services/todoService.js";
+import {
+  countOpenTodos,
+  setTodoPinned,
+  updateTodo,
+} from "../services/todoService.js";
 import { shouldUnpinOnDone } from "../lib/todoPinRule.js";
 import "../styles/dashboard.css";
 
 const MOBILE_QUERY = "(max-width: 768px)";
+
+const RECENT_PROJECTS_LIMIT = 4;
 
 const isMobile = () => window.innerWidth <= 768;
 
@@ -74,6 +83,9 @@ export default function Dashboard() {
   const { showAlert, showConfirm } = useDialog();
 
   const [projects, setProjects] = useState([]);
+  const [projectCount, setProjectCount] = useState(null);
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [openTodosCount, setOpenTodosCount] = useState(null);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [hasProjectsError, setHasProjectsError] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
@@ -126,6 +138,7 @@ export default function Dashboard() {
       const data = await getProjects();
       nextProjectsUrlRef.current = data.next ?? null;
       setProjects(data.results);
+      setProjectCount(data.count ?? data.results.length);
       setHasProjectsError(false);
     } catch (error) {
       console.error("Error loading projects:", error);
@@ -151,6 +164,20 @@ export default function Dashboard() {
     }
   }, []);
 
+  const loadWelcomeData = useCallback(async () => {
+    try {
+      const [recent, openTodos] = await Promise.all([
+        getRecentProjects(RECENT_PROJECTS_LIMIT),
+        countOpenTodos(),
+      ]);
+
+      setRecentProjects(recent);
+      setOpenTodosCount(openTodos);
+    } catch (error) {
+      console.error("Error loading welcome data:", error);
+    }
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       await ensureCsrfCookie();
@@ -159,6 +186,18 @@ export default function Dashboard() {
 
     init();
   }, [loadProjects]);
+
+  const isWelcomeVisible = view !== "settings" && !currentProject;
+
+  useEffect(() => {
+    if (!isWelcomeVisible) return;
+
+    const refresh = async () => {
+      await loadWelcomeData();
+    };
+
+    refresh();
+  }, [isWelcomeVisible, loadWelcomeData]);
 
   useEffect(() => {
     const onResize = () => {
@@ -202,6 +241,12 @@ export default function Dashboard() {
         setSearchTarget(
           searchQuery ? { query: searchQuery, itemId: searchItemId } : null,
         );
+
+        try {
+          await markProjectOpened(projectId);
+        } catch (error) {
+          console.error("Error marking project as opened:", error);
+        }
       } catch (error) {
         console.error("Error loading project:", error);
         await showAlert("Failed to load project");
@@ -471,12 +516,14 @@ export default function Dashboard() {
               display: !isSettingsView && !currentProject ? "flex" : "none",
             }}
           >
-            <h1>
-              Welcome,{" "}
-              <span id="user-name">
-                {user ? `${user.first_name} ${user.last_name}` : "..."}
-              </span>
-            </h1>
+            <WelcomeScreen
+              user={user}
+              projectCount={projectCount}
+              openTodosCount={openTodosCount}
+              recentProjects={recentProjects}
+              onSelectProject={selectProject}
+              onNewProject={() => setIsProjectModalOpen(true)}
+            />
           </div>
 
           <div

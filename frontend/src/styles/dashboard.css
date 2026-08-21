@@ -964,18 +964,119 @@
     align-items: center;
     justify-content: center;
     height: 100%;
+    overflow-y: auto;
     text-align: center;
+}
+
+.welcome-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 620px;
+    padding: 32px 24px;
 }
 
 .welcome-screen h1 {
     margin: 0 0 10px 0;
-    font-size: 32px;
+    font-size: 38px;
     font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 .welcome-screen p {
     color: var(--dash-text-muted);
     font-size: 16px;
+}
+
+.welcome-stats {
+    margin: 0 0 24px 0;
+    min-height: 22px;
+    color: var(--dash-text-dim);
+    font-size: 14px;
+}
+
+.welcome-inner .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-inner .btn-primary i {
+    font-size: 15px;
+}
+
+.welcome-recent {
+    width: 100%;
+    margin-top: 48px;
+    text-align: left;
+}
+
+.welcome-section-title {
+    margin: 0 0 12px 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dash-text-subtle);
+}
+
+.recent-project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.recent-project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    background: var(--dash-card-face);
+    border: none;
+    border-radius: 10px;
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: box-shadow 0.2s, background 0.2s;
+}
+
+.recent-project-card:hover {
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom),
+        0 0 0 1px var(--dash-glass-border-stronger),
+        0 4px 16px var(--dash-scrim-soft);
+}
+
+.recent-project-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--dash-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent-project-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11.5px;
+    color: var(--dash-text-dim);
+}
+
+.recent-project-todos {
+    flex-shrink: 0;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: var(--dash-glass);
+    color: var(--dash-text-subtle);
+    font-weight: 600;
 }
 
 #user-name {

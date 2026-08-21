@@ -21,6 +21,19 @@ export const getAllTodos = async (projectId) => {
   return allResults;
 };
 
+export const countOpenTodos = async () => {
+  const responses = await Promise.all(
+    ["pending", "in_progress"].map((status) =>
+      api.get("/todos/", { params: { status } }),
+    ),
+  );
+
+  return responses.reduce(
+    (total, response) => total + (response.data.count ?? 0),
+    0,
+  );
+};
+
 export const getPinnedTodos = async (projectId) => {
   const response = await api.get(`/projects/${projectId}/todos/pinned/`);
   return response.data;

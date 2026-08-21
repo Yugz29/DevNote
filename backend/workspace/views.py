@@ -3,7 +3,8 @@ from uuid import UUID
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, F, Q
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import permissions, status, viewsets
@@ -26,6 +27,9 @@ from .serializers import (
 
 logger = logging.getLogger("workspace")
 
+RECENT_PROJECTS_LIMIT = 4
+RECENT_PROJECTS_MAX = 20
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
@@ -33,7 +37,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Returns only the projects of the logged-in user"""
-        return Project.objects.filter(user=self.request.user)
+        return (
+            Project.objects.filter(user=self.request.user)
+            .annotate(
+                open_todos_count=Count(
+                    "todos",
+                    filter=Q(todos__status__in=TODO.OPEN_STATUSES),
+                    distinct=True,
+                )
+            )
+            .order_by("-created_at")
+        )
 
     def perform_create(self, serializer):
         """Automatically associate the project with the logged-in user"""
@@ -42,6 +56,32 @@ class ProjectViewSet(viewsets.ModelViewSet):
             f"Project '{project.title}' (ID: {project.id}) "
             f"created by user {self.request.user.username}"
         )
+
+    @action(detail=True, methods=["post"])
+    def open(self, request, *args, **kwargs):
+        """
+        Stamp the project as opened now, so the welcome screen can list the
+        projects the user came back to most recently.
+        """
+        project = self.get_object()
+        project.last_opened_at = timezone.now()
+        project.save(update_fields=["last_opened_at"])
+
+        return Response(self.get_serializer(project).data)
+
+    @action(detail=False, methods=["get"])
+    def recent(self, request, *args, **kwargs):
+        """
+        Projects the user opened most recently, at most ?limit= of them.
+        A project never opened falls back on its last modification date and
+        sorts after every project carrying a real opening date.
+        """
+        limit = read_limit(request, RECENT_PROJECTS_LIMIT, RECENT_PROJECTS_MAX)
+        projects = self.get_queryset().order_by(
+            F("last_opened_at").desc(nulls_last=True), "-updated_at"
+        )[:limit]
+
+        return Response(self.get_serializer(projects, many=True).data)
 
     @action(detail=True, methods=["get"])
     def contents(self, request, *args, **kwargs):
@@ -145,6 +185,24 @@ def read_resource_type(request):
         )
 
     return value
+
+
+def read_limit(request, default, maximum):
+    """The ?limit= a listing is asked for, clamped to what the view allows."""
+    value = request.query_params.get("limit")
+
+    if value is None:
+        return default
+
+    try:
+        limit = int(value)
+    except ValueError:
+        raise ValidationError({"limit": "Must be a positive integer."})
+
+    if limit < 1:
+        raise ValidationError({"limit": "Must be a positive integer."})
+
+    return min(limit, maximum)
 
 
 def read_uuid(value, field):

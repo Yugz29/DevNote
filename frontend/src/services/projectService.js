@@ -19,6 +19,16 @@ export const getAllProjects = async () => {
   return projects;
 };
 
+export const getRecentProjects = async (limit = 4) => {
+  const response = await api.get("/projects/recent/", { params: { limit } });
+  return response.data;
+};
+
+export const markProjectOpened = async (id) => {
+  const response = await api.post(`/projects/${id}/open/`);
+  return response.data;
+};
+
 export const createProject = async (title, description) => {
   const response = await api.post("/projects/", {
     title,

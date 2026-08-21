@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from workspace.models import Project
+from workspace.models import TODO, Project
 
 User = get_user_model()
 
@@ -136,3 +136,87 @@ class ProjectViewTest(APITestCase):
 
         self.assertEqual(len(projects), 1)
         self.assertEqual(projects[0]["title"], self.project.title)
+
+
+class ProjectRecentViewTest(APITestCase):
+    """Tests for the open/ and recent/ actions of the Project API"""
+
+    def setUp(self):
+        """Helper to create a test user, a project and authenticate"""
+        self.user = User.objects.create_user(
+            username="usertest", email="user@test.com", password="TestPass123!"
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.project = Project.objects.create(title="Alpha", user=self.user)
+
+    def test_open_stamps_last_opened_at(self):
+        """Test that opening a project stamps its last opening date"""
+        self.assertIsNone(self.project.last_opened_at)
+
+        response = self.client.post(f"/api/projects/{self.project.id}/open/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNotNone(response.data["last_opened_at"])
+
+        self.project.refresh_from_db()
+        self.assertIsNotNone(self.project.last_opened_at)
+
+    def test_recent_orders_by_last_opened_then_updated(self):
+        """Test that recent projects come back opened-first, newest first"""
+        beta = Project.objects.create(title="Beta", user=self.user)
+        never_opened = Project.objects.create(title="Gamma", user=self.user)
+
+        self.client.post(f"/api/projects/{self.project.id}/open/")
+        self.client.post(f"/api/projects/{beta.id}/open/")
+
+        response = self.client.get("/api/projects/recent/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        titles = [project["title"] for project in response.data]
+        self.assertEqual(titles, ["Beta", "Alpha", "Gamma"])
+        self.assertIsNone(response.data[2]["last_opened_at"])
+        self.assertEqual(response.data[2]["title"], never_opened.title)
+
+    def test_recent_honours_limit(self):
+        """Test that ?limit= caps the number of projects returned"""
+        for title in ["Beta", "Gamma", "Delta"]:
+            Project.objects.create(title=title, user=self.user)
+
+        response = self.client.get("/api/projects/recent/?limit=2")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_recent_rejects_invalid_limit(self):
+        """Test that a non numeric ?limit= is refused"""
+        response = self.client.get("/api/projects/recent/?limit=nope")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_recent_and_open_are_isolated_per_user(self):
+        """Test that a user cannot see or stamp the projects of another user"""
+        other_user = User.objects.create_user(
+            username="otheruser", email="other@test.com", password="OtherPass123!"
+        )
+        other_project = Project.objects.create(title="Other", user=other_user)
+
+        response = self.client.post(f"/api/projects/{other_project.id}/open/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        other_project.refresh_from_db()
+        self.assertIsNone(other_project.last_opened_at)
+
+        response = self.client.get("/api/projects/recent/")
+        titles = [project["title"] for project in response.data]
+        self.assertEqual(titles, ["Alpha"])
+
+    def test_open_todos_count_ignores_done_todos(self):
+        """Test that the project counter only sums todos left to do"""
+        TODO.objects.create(title="A", project=self.project, status="pending")
+        TODO.objects.create(title="B", project=self.project, status="in_progress")
+        TODO.objects.create(title="C", project=self.project, status="done")
+
+        response = self.client.get("/api/projects/recent/")
+
+        self.assertEqual(response.data[0]["open_todos_count"], 2)
