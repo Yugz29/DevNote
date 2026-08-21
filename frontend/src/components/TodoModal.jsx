@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import CardMenu from "./CardMenu.jsx";
 import DnSelect from "./DnSelect.jsx";
 import Modal from "./Modal.jsx";
 import TodoEditor from "./TodoEditor.jsx";
@@ -62,72 +63,70 @@ export default function TodoModal({
         ) : (
           <>
             <div className="todo-modal-toolbar">
-              <div className="todo-modal-badges">
-                <DnSelect
-                  value={todo.status}
-                  options={STATUS_OPTIONS}
-                  onChange={onStatusChange}
-                  label={`Status: ${status.label}`}
-                  triggerClassName={`todo-badge-select badge ${status.class}`}
-                />
+              <div className="todo-modal-badges" data-priority={todo.priority}>
                 <DnSelect
                   value={todo.priority}
                   options={PRIORITY_OPTIONS}
                   onChange={onPriorityChange}
                   label={`Priority: ${priority.label}`}
-                  triggerClassName={`todo-badge-select badge ${priority.class}`}
+                  triggerClassName="todo-meta-priority"
+                />
+
+                <DnSelect
+                  value={todo.status}
+                  options={STATUS_OPTIONS}
+                  onChange={onStatusChange}
+                  label={`Status: ${status.label}`}
+                  triggerClassName="todo-meta-status"
                 />
               </div>
 
               <div className="todo-modal-actions">
-                <button
-                  type="button"
-                  className="btn-card-icon-action"
-                  title="Edit"
-                  onClick={onEdit}
-                >
-                  <i className="ph-light ph-pencil-simple" />
-                </button>
-                {onMove && (
-                  <button
-                    type="button"
-                    className="btn-card-icon-action"
-                    title="Move to…"
-                    onClick={onMove}
-                  >
-                    <i className="ph-light ph-arrow-elbow-down-right" />
-                  </button>
-                )}
-                {onTogglePin && (
-                  <button
-                    type="button"
-                    className={`btn-card-icon-action${todo.is_pinned ? " is-active" : ""}`}
-                    title={todo.is_pinned ? "Unpin" : "Pin"}
-                    onClick={onTogglePin}
-                  >
-                    <i
-                      className={`ph-light ${todo.is_pinned ? "ph-push-pin-slash" : "ph-push-pin"}`}
-                    />
-                  </button>
-                )}
-                {onReveal && (
-                  <button
-                    type="button"
-                    className="btn-card-icon-action"
-                    title="Go to location"
-                    onClick={onReveal}
-                  >
-                    <i className="ph-light ph-arrow-square-out" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn-card-icon-action btn-card-icon-danger"
-                  title="Delete"
-                  onClick={handleDelete}
-                >
-                  <i className="ph-light ph-trash" />
-                </button>
+                <CardMenu
+                  label={`Actions for ${todo.title}`}
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: "ph-pencil-simple",
+                      onSelect: onEdit,
+                    },
+                    ...(onMove
+                      ? [
+                          {
+                            label: "Move to…",
+                            icon: "ph-arrow-elbow-down-right",
+                            onSelect: onMove,
+                          },
+                        ]
+                      : []),
+                    ...(onTogglePin
+                      ? [
+                          {
+                            label: todo.is_pinned ? "Unpin" : "Pin",
+                            icon: todo.is_pinned
+                              ? "ph-push-pin-slash"
+                              : "ph-push-pin",
+                            onSelect: onTogglePin,
+                          },
+                        ]
+                      : []),
+                    ...(onReveal
+                      ? [
+                          {
+                            label: "Go to location",
+                            icon: "ph-arrow-square-out",
+                            onSelect: onReveal,
+                          },
+                        ]
+                      : []),
+                    {
+                      label: "Delete",
+                      icon: "ph-trash",
+                      isDanger: true,
+                      onSelect: handleDelete,
+                    },
+                  ]}
+                />
               </div>
             </div>
 

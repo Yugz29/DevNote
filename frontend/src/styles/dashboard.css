@@ -2835,36 +2835,54 @@
 
 .todo-card {
     position: relative;
-    background: var(--dash-card-surface);
-    border: 1px solid var(--dash-card-border);
-    border-radius: 8px;
+    background: var(--dash-card-face);
+    border: none;
+    border-radius: 11px;
     padding: 14px 16px 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     gap: 6px;
-    transition: border-color 0.2s, background 0.2s;
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom);
+    transition: box-shadow 0.2s, background 0.2s;
     min-width: 200px;
 }
 
 .todo-card:hover {
-    border-color: var(--dash-glass-border-stronger);
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom),
+        0 0 0 1px var(--dash-glass-border-stronger),
+        0 4px 16px var(--dash-scrim-soft);
 }
 
 .todo-card:not(.is-done)[data-priority="high"]:hover {
-    border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom),
+        0 0 0 1px color-mix(in srgb, var(--danger) 25%, transparent),
+        0 4px 16px color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
 .todo-card:not(.is-done)[data-priority="medium"]:hover {
-    border-color: color-mix(in srgb, var(--warning) 55%, transparent);
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom),
+        0 0 0 1px color-mix(in srgb, var(--warning) 25%, transparent),
+        0 4px 16px color-mix(in srgb, var(--warning) 18%, transparent);
 }
 
 .todo-card:not(.is-done)[data-priority="low"]:hover {
-    border-color: var(--dash-border-hover);
+    box-shadow:
+        inset 0 1px 0 var(--dash-card-bevel-top),
+        inset 0 -1px 0 var(--dash-card-bevel-bottom),
+        0 0 0 1px color-mix(in srgb, var(--success) 25%, transparent),
+        0 4px 16px color-mix(in srgb, var(--success) 18%, transparent);
 }
 
 .todo-card.is-done {
-    border-color: var(--dash-border-faint);
     background: var(--dash-surface-deep);
 }
 
@@ -2883,6 +2901,7 @@
 }
 
 .todo-card.is-done .todo-card-meta .dn-select-btn {
+    background: var(--dash-glass);
     color: var(--dash-text-faint);
 }
 
@@ -2937,8 +2956,6 @@
     border-top: 1px solid var(--dash-border-faint);
 }
 
-/* Priority and status read as one line of small caps above the title, the
-   priority being the only word that carries a colour. */
 .todo-card-meta {
     display: flex;
     align-items: center;
@@ -2946,52 +2963,48 @@
     margin-bottom: 2px;
 }
 
-.todo-card-meta .dn-select-btn {
+.todo-card-meta .dn-select-btn,
+.todo-modal-badges .dn-select-btn {
     gap: 3px;
-    padding: 1px 4px;
-    margin-left: -4px;
-    background: none;
+    padding: 3px 7px;
+    background: var(--dash-glass);
     border-color: transparent;
-    border-radius: 4px;
-    font-size: 9.5px;
+    border-radius: 5px;
+    font-size: 10.5px;
     font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: normal;
+    text-transform: none;
     color: var(--dash-text-subtle);
 }
 
-.todo-card-meta .dn-select-btn:hover {
-    background: var(--dash-glass);
+.todo-card-meta .dn-select-btn:hover,
+.todo-modal-badges .dn-select-btn:hover {
     border-color: transparent;
     color: var(--dash-text);
 }
 
-.todo-card-meta .dn-select-chevron {
+.todo-card-meta .dn-select-chevron,
+.todo-modal-badges .dn-select-chevron {
     font-size: 9px;
-    opacity: 0;
-    transition: opacity 0.15s;
-}
-
-.todo-card:hover .todo-card-meta .dn-select-chevron,
-.todo-card-meta .dn-select-btn[aria-expanded="true"] .dn-select-chevron {
     opacity: 1;
 }
 
-.todo-meta-sep {
-    font-size: 9.5px;
-    color: var(--dash-text-ghost);
-}
-
-.todo-card[data-priority="high"] .todo-meta-priority {
+.todo-card[data-priority="high"] .todo-meta-priority,
+.todo-modal-badges[data-priority="high"] .todo-meta-priority {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
     color: var(--danger);
 }
 
-.todo-card[data-priority="medium"] .todo-meta-priority {
+.todo-card[data-priority="medium"] .todo-meta-priority,
+.todo-modal-badges[data-priority="medium"] .todo-meta-priority {
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
     color: var(--warning);
 }
 
-.todo-card[data-priority="low"] .todo-meta-priority {
-    color: var(--dash-text-subtle);
+.todo-card[data-priority="low"] .todo-meta-priority,
+.todo-modal-badges[data-priority="low"] .todo-meta-priority {
+    background: color-mix(in srgb, var(--success) 10%, transparent);
+    color: var(--success);
 }
 
 .todo-card-meta .item-actions {
@@ -3414,7 +3427,7 @@
 .todo-modal-badges {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .todo-modal-actions {

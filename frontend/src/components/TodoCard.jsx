@@ -42,8 +42,6 @@ export default function TodoCard({
           triggerClassName="todo-meta-priority"
         />
 
-        <span className="todo-meta-sep">/</span>
-
         <DnSelect
           value={todo.status}
           options={STATUS_OPTIONS}

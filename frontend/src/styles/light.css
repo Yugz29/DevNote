@@ -17,9 +17,9 @@
   --border-default: rgba(15,23,42,0.12);
   --border-muted: rgba(15,23,42,0.07);
 
-  --accent-primary: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-emphasis: #1e40af;
+  --accent-primary: #0C47DF;
+  --accent-hover: #0A3CBD;
+  --accent-emphasis: #082E91;
 
   --success: #107636;
   --warning: #975305;
@@ -72,6 +72,9 @@
   --dash-card-surface: #ffffff;
   --dash-card-surface-hover: #ffffff;
   --dash-card-border: rgba(15, 23, 42, 0.1);
+  --dash-card-face: #eef1f6;
+  --dash-card-bevel-top: rgba(255, 255, 255, 0.7);
+  --dash-card-bevel-bottom: rgba(15, 23, 42, 0.08);
   --dash-glass: rgba(15, 23, 42, 0.05);
   --dash-glass-hover: rgba(15, 23, 42, 0.06);
   --dash-glass-raised: rgba(15, 23, 42, 0.055);
@@ -111,15 +114,15 @@
   --dash-shadow-inset: rgba(255, 255, 255, 0.8);
 
   /* Dashboard — accent & status tints */
-  --dash-accent-tint: rgba(37, 99, 235, 0.1);
-  --dash-accent-tint-strong: rgba(37, 99, 235, 0.16);
-  --dash-accent-border-soft: rgba(37, 99, 235, 0.22);
-  --dash-accent-border: rgba(37, 99, 235, 0.45);
-  --dash-accent-glow: rgba(37, 99, 235, 0.4);
-  --dash-accent-glow-soft: rgba(37, 99, 235, 0.2);
-  --dash-accent-glow-none: rgba(37, 99, 235, 0);
-  --dash-auth-glow: rgba(37, 99, 235, 0.05);
-  --dash-auth-glow-soft: rgba(37, 99, 235, 0.03);
+  --dash-accent-tint: rgba(12, 71, 223, 0.1);
+  --dash-accent-tint-strong: rgba(12, 71, 223, 0.16);
+  --dash-accent-border-soft: rgba(12, 71, 223, 0.22);
+  --dash-accent-border: rgba(12, 71, 223, 0.45);
+  --dash-accent-glow: rgba(12, 71, 223, 0.4);
+  --dash-accent-glow-soft: rgba(12, 71, 223, 0.2);
+  --dash-accent-glow-none: rgba(12, 71, 223, 0);
+  --dash-auth-glow: rgba(12, 71, 223, 0.05);
+  --dash-auth-glow-soft: rgba(12, 71, 223, 0.03);
   --dash-auth-glow-warm: rgba(220, 38, 38, 0.03);
   --dash-auth-grid: rgba(15, 23, 42, 0.04);
   --dash-danger-dim: #d19a9a;
