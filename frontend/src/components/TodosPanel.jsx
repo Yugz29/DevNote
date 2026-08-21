@@ -84,6 +84,8 @@ export default function TodosPanel({
   view,
   searchQuery,
   searchItemId,
+  sectionSearchTerm,
+  sectionSearchResults,
   openTarget,
   contentVersion,
   onPinnedChanged,
@@ -127,13 +129,22 @@ export default function TodosPanel({
   const todos = useMemo(() => sortTodos(items, sort), [items, sort]);
   const viewedTodo = todos.find((todo) => todo.id === viewingId);
 
-  const visibleTodos = useMemo(
+  const matchIds = useMemo(
     () =>
+      sectionSearchResults
+        ? new Set(sectionSearchResults.map((todo) => todo.id))
+        : null,
+    [sectionSearchResults],
+  );
+
+  const visibleTodos = useMemo(() => {
+    const scoped =
       activeListId === null
         ? todos
-        : todos.filter((todo) => todo.list === activeListId),
-    [todos, activeListId],
-  );
+        : todos.filter((todo) => todo.list === activeListId);
+
+    return matchIds ? scoped.filter((todo) => matchIds.has(todo.id)) : scoped;
+  }, [todos, activeListId, matchIds]);
 
   const counts = useMemo(() => {
     const byList = {};
@@ -451,7 +462,7 @@ export default function TodosPanel({
     <TodoCard
       key={todo.id}
       todo={todo}
-      searchQuery={searchQuery}
+      searchQuery={sectionSearchTerm ?? searchQuery}
       usePortal={view === "kanban"}
       onOpen={() => setViewingId(todo.id)}
       onStatusChange={(status) => handleFieldChange(todo, "status", status)}

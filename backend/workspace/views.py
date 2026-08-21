@@ -864,6 +864,21 @@ class SearchView(APIView):
             )
 
         user = request.user
+        project_param = request.query_params.get("project")
+        project = None
+
+        if project_param:
+            try:
+                project = Project.objects.get(id=UUID(project_param), user=user)
+            except (ValueError, Project.DoesNotExist):
+                return Response(
+                    {
+                        "error": "Project not found or access denied.",
+                        "code": "INVALID_PROJECT",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
         results = {}
 
         # Search in Projects
@@ -871,6 +886,10 @@ class SearchView(APIView):
             projects = Project.objects.filter(user=user).filter(
                 Q(title__icontains=query) | Q(description__icontains=query)
             )
+
+            if project is not None:
+                projects = projects.filter(id=project.id)
+
             from .serializers import ProjectSerializer as PS
 
             results["projects"] = PS(projects, many=True).data
@@ -882,6 +901,9 @@ class SearchView(APIView):
                 .filter(Q(title__icontains=query) | Q(content__icontains=query))
                 .select_related("project")
             )
+
+            if project is not None:
+                documents = documents.filter(project=project)
             results["documents"] = DocumentSerializer(documents, many=True).data
 
         # Search in Snippets
@@ -896,6 +918,10 @@ class SearchView(APIView):
                 )
                 .select_related("project")
             )
+
+            if project is not None:
+                snippets = snippets.filter(project=project)
+
             results["snippets"] = SnippetSerializer(snippets, many=True).data
 
         # Search in TODOs
@@ -910,6 +936,10 @@ class SearchView(APIView):
                 )
                 .select_related("project")
             )
+
+            if project is not None:
+                todos = todos.filter(project=project)
+
             results["todos"] = TODOSerializer(todos, many=True).data
 
         return Response(results, status=status.HTTP_200_OK)

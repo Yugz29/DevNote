@@ -65,6 +65,9 @@ export default function DocumentsPanel({
   breadcrumbSlot,
   searchQuery,
   searchItemId,
+  sectionSearchTerm,
+  sectionSearchResults,
+  onSectionSearchReset,
   openTarget,
   contentVersion,
   onPinnedChanged,
@@ -120,12 +123,13 @@ export default function DocumentsPanel({
     [projectId, currentFolderId],
   );
 
-  const { items, isLoading, error, reload, setItems } = useResourceList({
-    projectId,
-    fetchPage: fetchContents,
-    scrollRef,
-    resetKey: currentFolderId,
-  });
+  const { items, isLoading, error, reload, loadAll, setItems } =
+    useResourceList({
+      projectId,
+      fetchPage: fetchContents,
+      scrollRef,
+      resetKey: currentFolderId,
+    });
 
   const restoredFolderId = initialLocation.path.at(-1)?.id ?? null;
 
@@ -140,6 +144,47 @@ export default function DocumentsPanel({
   }
 
   const entries = useMemo(() => sortEntries(items, sort), [items, sort]);
+
+  const matchIds = useMemo(() => {
+    if (!sectionSearchResults) return null;
+
+    return new Set(
+      sectionSearchResults
+        .filter((document) => (document.folder ?? null) === currentFolderId)
+        .map((document) => document.id),
+    );
+  }, [sectionSearchResults, currentFolderId]);
+
+  const visibleEntries = useMemo(
+    () =>
+      matchIds
+        ? entries.filter(
+            (entry) => entry.type !== "folder" && matchIds.has(entry.id),
+          )
+        : entries,
+    [entries, matchIds],
+  );
+
+  const searchFolderRef = useRef(currentFolderId);
+
+  useEffect(() => {
+    if (searchFolderRef.current === currentFolderId) return;
+
+    searchFolderRef.current = currentFolderId;
+    if (sectionSearchTerm) onSectionSearchReset();
+  }, [currentFolderId, sectionSearchTerm, onSectionSearchReset]);
+
+  useEffect(() => {
+    if (!sectionSearchTerm) return;
+
+    const loadEverything = async () => {
+      await loadAll();
+    };
+
+    loadEverything();
+  }, [sectionSearchTerm, loadAll]);
+
+  const highlight = sectionSearchTerm ?? searchQuery;
 
   useSearchTarget(containerRef, searchItemId, !isLoading && entries.length > 0);
 
@@ -619,12 +664,12 @@ export default function DocumentsPanel({
                 />
               )}
 
-              {entries.map((entry) =>
+              {visibleEntries.map((entry) =>
                 entry.type === "folder" ? (
                   <FolderCard
                     key={`folder:${entry.id}:${entry.name}`}
                     folder={entry}
-                    searchQuery={searchQuery}
+                    searchQuery={highlight}
                     isRenaming={renamingFolderId === entry.id}
                     onOpen={openFolder}
                     onStartRename={setRenamingFolderId}
@@ -637,7 +682,7 @@ export default function DocumentsPanel({
                   <DocumentCard
                     key={`document:${entry.id}`}
                     doc={entry}
-                    searchQuery={searchQuery}
+                    searchQuery={highlight}
                     onOpen={openDocumentCard}
                     onTogglePin={handleTogglePin}
                     onDuplicate={handleDuplicateDocument}
@@ -649,8 +694,12 @@ export default function DocumentsPanel({
                 ),
               )}
 
-              {entries.length === 0 && !isCreatingFolder && (
-                <p className="empty">This folder is empty</p>
+              {visibleEntries.length === 0 && !isCreatingFolder && (
+                <p className="empty">
+                  {sectionSearchTerm
+                    ? "No document matches your search here"
+                    : "This folder is empty"}
+                </p>
               )}
             </div>
           )}

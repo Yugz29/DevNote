@@ -60,6 +60,18 @@ export function useResourceList({ projectId, fetchPage, scrollRef, resetKey }) {
     }
   }, [projectId]);
 
+  const loadAll = useCallback(async () => {
+    let previousUrl = nextPageUrlRef.current;
+
+    while (nextPageUrlRef.current) {
+      await loadMore();
+
+      if (nextPageUrlRef.current === previousUrl) return;
+
+      previousUrl = nextPageUrlRef.current;
+    }
+  }, [loadMore]);
+
   useEffect(() => {
     fetchFirstPage();
   }, [fetchFirstPage]);
@@ -87,6 +99,7 @@ export function useResourceList({ projectId, fetchPage, scrollRef, resetKey }) {
     error,
     reload,
     loadMore,
+    loadAll,
     setItems,
   };
 }

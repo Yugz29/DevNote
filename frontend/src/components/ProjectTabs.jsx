@@ -1,9 +1,10 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
 import DocumentsPanel from "./DocumentsPanel.jsx";
 import SnippetsPanel from "./SnippetsPanel.jsx";
 import TodosPanel from "./TodosPanel.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
+import { search } from "../services/searchService.js";
 
 const TABS = [
   { key: "documents", label: "Documents" },
@@ -38,15 +39,64 @@ export default function ProjectTabs({
   onActiveItemChange,
 }) {
   const tabContentRef = useRef(null);
+  const searchInputRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isSortable, setIsSortable] = useState(false);
   const [breadcrumbSlot, setBreadcrumbSlot] = useState(null);
   const [sortableTab, setSortableTab] = useState(currentTab);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [searchStatus, setSearchStatus] = useState("idle");
+  const [sectionSearch, setSectionSearch] = useState(null);
+
+  const closeSectionSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    setSearchDraft("");
+    setSearchStatus("idle");
+    setSectionSearch(null);
+  }, []);
 
   if (sortableTab !== currentTab) {
     setSortableTab(currentTab);
     setIsSortable(false);
+    setIsSearchOpen(false);
+    setSearchDraft("");
+    setSearchStatus("idle");
+    setSectionSearch(null);
   }
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 30);
+    return () => clearTimeout(timer);
+  }, [isSearchOpen]);
+
+  const activeTab = TABS.find((tab) => tab.key === currentTab);
+
+  const submitSectionSearch = async (event) => {
+    event.preventDefault();
+
+    const term = searchDraft.trim();
+
+    if (!term) {
+      setSectionSearch(null);
+      setSearchStatus("idle");
+      return;
+    }
+
+    setSearchStatus("searching");
+
+    try {
+      const data = await search(term, currentTab, projectId);
+      setSectionSearch({ term, results: data[currentTab] ?? [] });
+      setSearchStatus("done");
+    } catch (searchError) {
+      console.error("Section search error:", searchError);
+      setSectionSearch(null);
+      setSearchStatus("error");
+    }
+  };
 
   const handleSortableChange = useCallback((value) => setIsSortable(value), []);
 
@@ -159,10 +209,10 @@ export default function ProjectTabs({
 
   return (
     <>
-      <div className="tabs">
+      <div className={`tabs${isSearchOpen ? " is-searching" : ""}`}>
         <div className="tabs-breadcrumb" ref={setBreadcrumbSlot} />
 
-        <div className="tabs-inner">
+        <div className={`tabs-inner${isSearchOpen ? " is-hidden" : ""}`}>
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -173,6 +223,55 @@ export default function ProjectTabs({
               {tab.label}
             </button>
           ))}
+        </div>
+
+        {isSearchOpen && (
+          <form className="tabs-search" onSubmit={submitSectionSearch}>
+            <i className="ph-light ph-magnifying-glass tabs-search-icon" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="tabs-search-input"
+              placeholder={`Search in ${activeTab?.label ?? ""}…`}
+              autoComplete="off"
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") closeSectionSearch();
+              }}
+            />
+            <span className="tabs-search-status">
+              {searchStatus === "searching" && "Searching…"}
+              {searchStatus === "error" && "Search failed"}
+              {searchStatus === "done" &&
+                `${sectionSearch?.results.length ?? 0} in project`}
+              {searchStatus === "idle" && "Enter"}
+            </span>
+          </form>
+        )}
+
+        <div className="tabs-actions">
+          <button
+            type="button"
+            className="btn-icon-sm tabs-search-toggle"
+            title={
+              isSearchOpen
+                ? "Close search"
+                : `Search in ${activeTab?.label ?? ""}`
+            }
+            aria-label={
+              isSearchOpen
+                ? "Close search"
+                : `Search in ${activeTab?.label ?? ""}`
+            }
+            onClick={() =>
+              isSearchOpen ? closeSectionSearch() : setIsSearchOpen(true)
+            }
+          >
+            <i
+              className={`ph-light ${isSearchOpen ? "ph-x" : "ph-magnifying-glass"}`}
+            />
+          </button>
         </div>
       </div>
 
@@ -193,6 +292,9 @@ export default function ProjectTabs({
               breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              sectionSearchTerm={sectionSearch?.term ?? null}
+              sectionSearchResults={sectionSearch?.results ?? null}
+              onSectionSearchReset={closeSectionSearch}
               openTarget={openTarget?.tab === "documents" ? openTarget : null}
               contentVersion={contentVersion}
               onPinnedChanged={onPinnedChanged}
@@ -217,6 +319,9 @@ export default function ProjectTabs({
               breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              sectionSearchTerm={sectionSearch?.term ?? null}
+              sectionSearchResults={sectionSearch?.results ?? null}
+              onSectionSearchReset={closeSectionSearch}
               openTarget={openTarget?.tab === "snippets" ? openTarget : null}
               contentVersion={contentVersion}
               onPinnedChanged={onPinnedChanged}
@@ -239,6 +344,9 @@ export default function ProjectTabs({
               view={todoView}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              sectionSearchTerm={sectionSearch?.term ?? null}
+              sectionSearchResults={sectionSearch?.results ?? null}
+              onSectionSearchReset={closeSectionSearch}
               openTarget={openTarget?.tab === "todos" ? openTarget : null}
               contentVersion={contentVersion}
               onPinnedChanged={onPinnedChanged}

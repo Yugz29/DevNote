@@ -71,6 +71,9 @@ export default function SnippetsPanel({
   breadcrumbSlot,
   searchQuery,
   searchItemId,
+  sectionSearchTerm,
+  sectionSearchResults,
+  onSectionSearchReset,
   openTarget,
   contentVersion,
   onPinnedChanged,
@@ -108,12 +111,13 @@ export default function SnippetsPanel({
     [projectId, currentFolderId],
   );
 
-  const { items, isLoading, error, reload, setItems } = useResourceList({
-    projectId,
-    fetchPage: fetchContents,
-    scrollRef,
-    resetKey: currentFolderId,
-  });
+  const { items, isLoading, error, reload, loadAll, setItems } =
+    useResourceList({
+      projectId,
+      fetchPage: fetchContents,
+      scrollRef,
+      resetKey: currentFolderId,
+    });
 
   const restoredFolderId = initialLocation.path.at(-1)?.id ?? null;
 
@@ -144,7 +148,49 @@ export default function SnippetsPanel({
     [items, sort],
   );
 
-  const groups = useMemo(() => groupByLanguage(snippets), [snippets]);
+  const matchIds = useMemo(
+    () =>
+      sectionSearchResults
+        ? new Set(sectionSearchResults.map((snippet) => snippet.id))
+        : null,
+    [sectionSearchResults],
+  );
+
+  const visibleSnippets = useMemo(
+    () =>
+      matchIds
+        ? snippets.filter((snippet) => matchIds.has(snippet.id))
+        : snippets,
+    [snippets, matchIds],
+  );
+
+  const visibleFolders = matchIds ? [] : folders;
+
+  const groups = useMemo(
+    () => groupByLanguage(visibleSnippets),
+    [visibleSnippets],
+  );
+
+  const searchFolderRef = useRef(currentFolderId);
+
+  useEffect(() => {
+    if (searchFolderRef.current === currentFolderId) return;
+
+    searchFolderRef.current = currentFolderId;
+    if (sectionSearchTerm) onSectionSearchReset();
+  }, [currentFolderId, sectionSearchTerm, onSectionSearchReset]);
+
+  useEffect(() => {
+    if (!sectionSearchTerm) return;
+
+    const loadEverything = async () => {
+      await loadAll();
+    };
+
+    loadEverything();
+  }, [sectionSearchTerm, loadAll]);
+
+  const highlight = sectionSearchTerm ?? searchQuery;
 
   const viewedSnippet =
     snippets.find((snippet) => snippet.id === viewingId) ??
@@ -473,7 +519,7 @@ export default function SnippetsPanel({
     <SnippetCard
       key={snippet.id}
       snippet={snippet}
-      searchQuery={searchQuery}
+      searchQuery={highlight}
       onOpen={() => setViewingId(snippet.id)}
       onDuplicate={() => handleDuplicate(snippet.id)}
       onTogglePin={() => handleTogglePin(snippet)}
@@ -483,7 +529,7 @@ export default function SnippetsPanel({
     />
   );
 
-  const isEmpty = folders.length === 0 && snippets.length === 0;
+  const isEmpty = visibleFolders.length === 0 && visibleSnippets.length === 0;
 
   return (
     <div id="snippets-list" className="snippets-list" ref={containerRef}>
@@ -520,7 +566,7 @@ export default function SnippetsPanel({
 
       {!isLoading && !error && (
         <>
-          {(isCreatingFolder || folders.length > 0) && (
+          {(isCreatingFolder || visibleFolders.length > 0) && (
             <div className="gallery-grid">
               {isCreatingFolder && (
                 <FolderCard
@@ -536,11 +582,11 @@ export default function SnippetsPanel({
                 />
               )}
 
-              {folders.map((folder) => (
+              {visibleFolders.map((folder) => (
                 <FolderCard
                   key={`folder:${folder.id}:${folder.name}`}
                   folder={folder}
-                  searchQuery={searchQuery}
+                  searchQuery={highlight}
                   isRenaming={renamingFolderId === folder.id}
                   onOpen={openFolder}
                   onStartRename={setRenamingFolderId}
@@ -567,11 +613,15 @@ export default function SnippetsPanel({
 
           {isEmpty && !isCreating && !isCreatingFolder && (
             <p className="empty">
-              {currentFolderId ? "This folder is empty" : "No snippets yet"}
+              {sectionSearchTerm
+                ? "No snippet matches your search here"
+                : currentFolderId
+                  ? "This folder is empty"
+                  : "No snippets yet"}
             </p>
           )}
 
-          {snippets.length > 0 && view === "grouped" && (
+          {visibleSnippets.length > 0 && view === "grouped" && (
             <div className="snippet-grouped-view">
               {groups.map(([language, groupItems]) => {
                 const isCollapsed = collapsedGroups.has(language);
@@ -609,9 +659,9 @@ export default function SnippetsPanel({
             </div>
           )}
 
-          {snippets.length > 0 &&
+          {visibleSnippets.length > 0 &&
             view !== "grouped" &&
-            snippets.map(renderSnippet)}
+            visibleSnippets.map(renderSnippet)}
         </>
       )}
 

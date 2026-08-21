@@ -152,3 +152,35 @@ class SearchView(APITestCase):
         self.assertEqual(len(response.data["documents"]), 0)
         self.assertEqual(len(response.data["snippets"]), 0)
         self.assertEqual(len(response.data["todos"]), 0)
+
+    def test_search_scoped_to_project(self):
+        """Test : ?project= narrows the results to that project"""
+        other_project = Project.objects.create(user=self.user, title="Other Project")
+        Document.objects.create(
+            project=other_project,
+            title="Auth elsewhere",
+            content="Another authentication note",
+        )
+
+        response = self.client.get(
+            self.url, {"q": "auth", "type": "documents", "project": self.project.id}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        titles = [document["title"] for document in response.data["documents"]]
+        self.assertEqual(titles, ["Authentication Bug"])
+
+    def test_search_unknown_project_is_rejected(self):
+        """Test : a project of another user, or a bad id, is a 404"""
+        foreign_project = Project.objects.create(
+            user=self.other_user, title="Foreign Project"
+        )
+
+        response = self.client.get(
+            self.url, {"q": "auth", "project": foreign_project.id}
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        response = self.client.get(self.url, {"q": "auth", "project": "not-a-uuid"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -1228,6 +1228,68 @@
     gap: 2px;
 }
 
+.tabs-actions {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+}
+
+.tabs-search-toggle i {
+    font-size: 18px;
+}
+
+.tabs-inner.is-hidden {
+    visibility: hidden;
+}
+
+.tabs-search {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--dash-scrim-soft);
+    border: 1px solid var(--dash-glass-border);
+    border-radius: 10px;
+    padding: 4px 12px;
+}
+
+.tabs-search:focus-within {
+    border-color: var(--dash-accent-border);
+}
+
+.tabs-search-icon {
+    flex-shrink: 0;
+    color: var(--dash-text-muted);
+    font-size: 16px;
+}
+
+.tabs-search-input {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--dash-text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 7px 0;
+}
+
+.tabs-search-input::placeholder {
+    color: var(--dash-text-dim);
+}
+
+.tabs-search-status {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--dash-text-dim);
+    white-space: nowrap;
+}
+
 #todo-view-toggle {
     display: flex;
 }
@@ -1240,7 +1302,7 @@
     font-size: 13px;
     border-radius: 7px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: color 0.2s, background 0.2s, box-shadow 0.2s;
     white-space: nowrap;
 }
 
