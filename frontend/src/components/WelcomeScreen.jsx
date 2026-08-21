@@ -47,7 +47,12 @@ export default function WelcomeScreen({
                 className="recent-project-card"
                 onClick={() => onSelectProject(project.id)}
               >
-                <span className="recent-project-title">{project.title}</span>
+                <span className="recent-project-head">
+                  <span className="recent-project-icon">
+                    <i className="ph-light ph-folder" />
+                  </span>
+                  <span className="recent-project-title">{project.title}</span>
+                </span>
 
                 <span className="recent-project-meta">
                   <span>
