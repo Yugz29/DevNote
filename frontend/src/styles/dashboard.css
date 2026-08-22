@@ -1072,6 +1072,33 @@
     white-space: nowrap;
 }
 
+.welcome-tabs {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 336px) 1fr;
+    grid-template-rows: 1fr;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: 21px;
+    padding: 12px 32px 16px;
+}
+
+.welcome-tabs .tabs-search {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+}
+
+.welcome-body.is-searching {
+    justify-content: flex-start;
+}
+
+.welcome-search-results {
+    width: 100%;
+    max-width: 620px;
+    padding: 8px 12px 32px;
+    text-align: left;
+}
+
 @media (max-width: 768px) {
     .welcome-header {
         padding: var(--app-header-pad-y) 16px;

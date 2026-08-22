@@ -65,14 +65,16 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar-header-right">
-          <button
-            id="search-btn"
-            className="btn-icon-sm"
-            title="Search (⌘K)"
-            onClick={onOpenSearch}
-          >
-            <i className="ph-light ph-magnifying-glass" />
-          </button>
+          {isProjectContext && (
+            <button
+              id="search-btn"
+              className="btn-icon-sm"
+              title="Search (⌘K)"
+              onClick={onOpenSearch}
+            >
+              <i className="ph-light ph-magnifying-glass" />
+            </button>
+          )}
 
           {!isProjectContext && (
             <button

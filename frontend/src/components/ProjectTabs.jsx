@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ContentSortDropdown from "./ContentSortDropdown.jsx";
 import DocumentsPanel from "./DocumentsPanel.jsx";
+import SearchField from "./SearchField.jsx";
 import SnippetsPanel from "./SnippetsPanel.jsx";
 import TodosPanel from "./TodosPanel.jsx";
 import { useLocalStorageState } from "../hooks/useLocalStorageState.js";
@@ -226,28 +227,25 @@ export default function ProjectTabs({
         </div>
 
         {isSearchOpen && (
-          <form className="tabs-search" onSubmit={submitSectionSearch}>
-            <i className="ph-light ph-magnifying-glass tabs-search-icon" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              className="tabs-search-input"
-              placeholder={`Search in ${activeTab?.label ?? ""}…`}
-              autoComplete="off"
-              value={searchDraft}
-              onChange={(event) => setSearchDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") closeSectionSearch();
-              }}
-            />
-            <span className="tabs-search-status">
-              {searchStatus === "searching" && "Searching…"}
-              {searchStatus === "error" && "Search failed"}
-              {searchStatus === "done" &&
-                `${sectionSearch?.results.length ?? 0} in project`}
-              {searchStatus === "idle" && "Enter"}
-            </span>
-          </form>
+          <SearchField
+            inputRef={searchInputRef}
+            placeholder={`Search in ${activeTab?.label ?? ""}…`}
+            value={searchDraft}
+            status={
+              <>
+                {searchStatus === "searching" && "Searching…"}
+                {searchStatus === "error" && "Search failed"}
+                {searchStatus === "done" &&
+                  `${sectionSearch?.results.length ?? 0} in project`}
+                {searchStatus === "idle" && "Enter"}
+              </>
+            }
+            onChange={(event) => setSearchDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") closeSectionSearch();
+            }}
+            onSubmit={submitSectionSearch}
+          />
         )}
 
         <div className="tabs-actions">
