@@ -595,7 +595,6 @@ export default function Dashboard() {
             onArchiveProject={handleArchiveProject}
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
-            onNewProject={() => setIsProjectModalOpen(true)}
             onBackToWelcome={backToWelcome}
             onOpenPinnedDocument={openPinnedDocument}
             onOpenPinnedSnippet={openPinnedSnippet}

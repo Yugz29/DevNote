@@ -204,6 +204,19 @@
     gap: 8px;
 }
 
+.sidebar-header:not(.is-context) {
+    padding-top: 18px;
+    padding-bottom: 18px;
+}
+
+.sidebar-header:not(.is-context) h2 {
+    font-size: 17.5px;
+}
+
+.sidebar-header:not(.is-context) .sidebar-header-right {
+    gap: 4px;
+}
+
 .sidebar-header-left {
     display: flex;
     align-items: center;

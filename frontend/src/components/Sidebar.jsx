@@ -24,7 +24,6 @@ export default function Sidebar({
   onUnarchiveProject,
   onDeleteProject,
   onLoadMore,
-  onNewProject,
   onBackToWelcome,
   onOpenPinnedDocument,
   onOpenPinnedSnippet,
@@ -97,17 +96,6 @@ export default function Sidebar({
               orderKey={orderKey}
               onSortChange={onSortChange}
             />
-          )}
-
-          {!isProjectContext && (
-            <button
-              id="newProjectBtn"
-              className="btn-icon-sm"
-              title="New project"
-              onClick={onNewProject}
-            >
-              <i className="ph-light ph-plus" />
-            </button>
           )}
         </div>
       </div>
