@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useClickOutside } from "../hooks/useClickOutside.js";
 import { useOrder } from "../hooks/useOrder.js";
-import { PROJECTS_ORDER_KEY } from "../lib/pinnedSections.js";
 
 const SORT_OPTIONS = [
   { value: "created_desc", label: "Newest first" },
@@ -21,7 +20,7 @@ const SORT_ICONS = {
 
 const EMPTY_LIST = [];
 
-export default function ProjectSortDropdown({ sort, onSortChange }) {
+export default function ProjectSortDropdown({ sort, orderKey, onSortChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapRef = useRef(null);
 
@@ -30,7 +29,7 @@ export default function ProjectSortDropdown({ sort, onSortChange }) {
 
   /* Reads the same key the list writes to, so the entry appears as soon as
      something has been dragged and disappears once the order is cleared. */
-  const { isCustom, reset } = useOrder(PROJECTS_ORDER_KEY, EMPTY_LIST);
+  const { isCustom, reset } = useOrder(orderKey, EMPTY_LIST);
 
   return (
     <div className="project-sort-wrap" ref={wrapRef}>

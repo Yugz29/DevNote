@@ -14,6 +14,7 @@ export default function TodoEditor({
   const [status, setStatus] = useState(todo?.status || "pending");
   const [priority, setPriority] = useState(todo?.priority || "medium");
   const [dueDate, setDueDate] = useState(todo?.due_date ?? "");
+  const [dueTime, setDueTime] = useState(todo?.due_time?.slice(0, 5) ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -22,7 +23,14 @@ export default function TodoEditor({
     setIsSaving(true);
 
     try {
-      await onSave({ title, description, status, priority, due_date: dueDate });
+      await onSave({
+        title,
+        description,
+        status,
+        priority,
+        due_date: dueDate,
+        due_time: dueDate ? dueTime : "",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -103,6 +111,16 @@ export default function TodoEditor({
           value={dueDate ?? ""}
           onChange={(event) => setDueDate(event.target.value)}
         />
+
+        {dueDate && (
+          <input
+            className="todo-editor-due-time"
+            type="time"
+            aria-label="Due time"
+            value={dueTime}
+            onChange={(event) => setDueTime(event.target.value)}
+          />
+        )}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import CardMenu from "./CardMenu.jsx";
 import DnSelect from "./DnSelect.jsx";
 import Modal from "./Modal.jsx";
 import TodoEditor from "./TodoEditor.jsx";
+import { formatDueDate } from "../lib/dueDate.js";
 import {
   PRIORITY_BADGES,
   PRIORITY_OPTIONS,
@@ -138,7 +139,7 @@ export default function TodoModal({
 
             <div className="todo-modal-meta">
               {todo.due_date && (
-                <span>Due {new Date(todo.due_date).toLocaleDateString()}</span>
+                <span>Due {formatDueDate(todo.due_date, todo.due_time)}</span>
               )}
               <span>
                 Created {new Date(todo.created_at).toLocaleDateString()}

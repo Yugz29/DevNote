@@ -1,6 +1,7 @@
 import CardMenu from "./CardMenu.jsx";
 import DnSelect from "./DnSelect.jsx";
 import HighlightText from "./HighlightText.jsx";
+import { formatDueDate } from "../lib/dueDate.js";
 import {
   PRIORITY_BADGES,
   PRIORITY_OPTIONS,
@@ -86,14 +87,16 @@ export default function TodoCard({
         </p>
       )}
 
-      <div className="todo-card-footer">
-        <span className="card-date">
-          {todo.is_pinned && (
-            <i className="ph-light ph-push-pin gallery-card-pin" />
-          )}
-          {new Date(todo.created_at).toLocaleDateString()}
-        </span>
-      </div>
+      {(todo.is_pinned || todo.due_date) && (
+        <div className="todo-card-footer">
+          <span className="card-date">
+            {todo.is_pinned && (
+              <i className="ph-light ph-push-pin gallery-card-pin" />
+            )}
+            {todo.due_date && formatDueDate(todo.due_date, todo.due_time)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

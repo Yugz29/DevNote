@@ -488,6 +488,11 @@ class TODO(models.Model):
         blank=True,
         help_text="Optional deadline of the TODO",
     )
+    due_time = models.TimeField(
+        null=True,
+        blank=True,
+        help_text="Optional time of day the TODO is due, alongside its due date",
+    )
     is_pinned = models.BooleanField(
         default=False, help_text="Whether the TODO is pinned for quick access"
     )

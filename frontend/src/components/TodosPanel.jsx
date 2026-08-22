@@ -306,6 +306,7 @@ export default function TodosPanel({
           values.status,
           values.priority,
           values.due_date ?? null,
+          values.due_time ?? null,
         );
 
         const saved = items.find((item) => item.id === todoId);
@@ -322,6 +323,7 @@ export default function TodosPanel({
           values.priority,
           activeListId,
           values.due_date ?? null,
+          values.due_time ?? null,
         );
       }
 

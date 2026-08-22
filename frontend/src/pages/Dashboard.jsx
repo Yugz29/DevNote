@@ -28,6 +28,10 @@ import {
 } from "../lib/sidebarWidth.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePinnedItems } from "../hooks/usePinnedItems.js";
+import {
+  ARCHIVED_PROJECTS_ORDER_KEY,
+  PROJECTS_ORDER_KEY,
+} from "../lib/pinnedSections.js";
 import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
 import { ensureCsrfCookie } from "../services/authService.js";
 import { setDocumentPinned } from "../services/documentService.js";
@@ -87,6 +91,7 @@ export default function Dashboard() {
 
   const [projects, setProjects] = useState([]);
   const [archivedProjects, setArchivedProjects] = useState([]);
+  const [isArchivedMode, setIsArchivedMode] = useState(false);
   const [projectCount, setProjectCount] = useState(null);
   const [recentProjects, setRecentProjects] = useState([]);
   const [openTodosCount, setOpenTodosCount] = useState(null);
@@ -135,7 +140,9 @@ export default function Dashboard() {
   }, [theme]);
 
   const nextProjectsUrlRef = useRef(null);
+  const nextArchivedUrlRef = useRef(null);
   const isLoadingMoreRef = useRef(false);
+  const isLoadingMoreArchivedRef = useRef(false);
 
   const loadProjects = useCallback(async () => {
     try {
@@ -155,10 +162,27 @@ export default function Dashboard() {
   const loadArchivedProjects = useCallback(async () => {
     try {
       const data = await getArchivedProjects();
+      nextArchivedUrlRef.current = data.next ?? null;
       setArchivedProjects(data.results ?? data);
     } catch (error) {
       console.error("Error loading archived projects:", error);
       setArchivedProjects([]);
+    }
+  }, []);
+
+  const loadMoreArchivedProjects = useCallback(async () => {
+    if (!nextArchivedUrlRef.current || isLoadingMoreArchivedRef.current) return;
+
+    isLoadingMoreArchivedRef.current = true;
+
+    try {
+      const data = await getArchivedProjects(nextArchivedUrlRef.current);
+      nextArchivedUrlRef.current = data.next ?? null;
+      setArchivedProjects((current) => [...current, ...data.results]);
+    } catch (error) {
+      console.error("Error loading more archived projects:", error);
+    } finally {
+      isLoadingMoreArchivedRef.current = false;
     }
   }, []);
 
@@ -238,9 +262,11 @@ export default function Dashboard() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const listedProjects = isArchivedMode ? archivedProjects : projects;
+
   const sortedProjects = useMemo(
-    () => sortProjects(projects, projectSort),
-    [projects, projectSort],
+    () => sortProjects(listedProjects, projectSort),
+    [listedProjects, projectSort],
   );
 
   const selectProject = useCallback(
@@ -524,14 +550,20 @@ export default function Dashboard() {
             pinned={pinned}
             activeItemId={activeItemId}
             projects={sortedProjects}
-            archivedProjects={archivedProjects}
+            isArchivedMode={isArchivedMode}
+            orderKey={
+              isArchivedMode ? ARCHIVED_PROJECTS_ORDER_KEY : PROJECTS_ORDER_KEY
+            }
             isLoading={isLoadingProjects}
             hasError={hasProjectsError}
             activeProjectId={currentProject?.id ?? null}
             sort={projectSort}
             onSortChange={setProjectSort}
             onSelectProject={selectProject}
-            onLoadMore={loadMoreProjects}
+            onLoadMore={
+              isArchivedMode ? loadMoreArchivedProjects : loadMoreProjects
+            }
+            onToggleArchived={() => setIsArchivedMode((current) => !current)}
             onArchiveProject={handleArchiveProject}
             onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
@@ -620,6 +652,7 @@ export default function Dashboard() {
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
         onCreated={async (project) => {
+          setIsArchivedMode(false);
           await loadProjects();
           await selectProject(project.id);
         }}

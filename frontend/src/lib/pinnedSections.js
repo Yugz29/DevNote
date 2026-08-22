@@ -18,6 +18,8 @@ export const PINNED_SECTIONS = [
 
 export const PROJECTS_ORDER_KEY = "devnote_projects_order";
 
+export const ARCHIVED_PROJECTS_ORDER_KEY = "devnote_archived_projects_order";
+
 export const SECTIONS_ORDER_KEY = "devnote_pinned_sections_order";
 
 export const itemsOrderKey = (sectionId, projectId) =>

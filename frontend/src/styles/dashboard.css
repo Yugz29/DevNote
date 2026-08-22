@@ -336,32 +336,6 @@
     line-height: 1.6;
 }
 
-.projects-archived {
-    margin-top: 8px;
-    border-top: 1px solid var(--dash-border);
-    padding-top: 8px;
-}
-
-.projects-archived-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: var(--dash-text-dim);
-}
-
-.projects-archived-header i {
-    font-size: 13px;
-    transition: transform 0.15s;
-}
-
-.projects-archived-count {
-    margin-left: auto;
-    color: var(--dash-text-faint);
-}
-
 .project-item {
     position: relative;
     display: flex;
@@ -927,8 +901,13 @@
     background: var(--dash-glass-raised-hover);
 }
 
-#project-sort-btn.sorted {
+#project-sort-btn.sorted,
+#archived-projects-btn.active {
     color: var(--dash-text);
+}
+
+#archived-projects-btn.active {
+    background: var(--dash-glass-raised);
 }
 
 /* Footer */
@@ -1188,21 +1167,75 @@
 }
 
 .project-due-date {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     margin-top: 6px;
     font-size: 12px;
+}
+
+.project-due-date-input {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.project-due-date-add,
+.project-due-date-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 7px;
+    margin-left: -7px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: var(--dash-text-faint);
+    transition: color 0.15s, background 0.15s;
+}
+
+.project-due-date-add i {
+    font-size: 12px;
+}
+
+.project-due-date-value {
     color: var(--dash-text-dim);
 }
 
-.project-due-date input {
-    font-size: 12px;
-    color: inherit;
-    background: transparent;
-    border: 1px solid var(--dash-border);
+.project-due-date-add:hover,
+.project-due-date-value:hover {
+    color: var(--dash-text);
+    background: var(--dash-lift);
+}
+
+.project-due-date-clear {
+    display: flex;
+    align-items: center;
+    padding: 3px;
     border-radius: 5px;
-    padding: 2px 6px;
+    color: var(--dash-text-faint);
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.project-due-date-clear i {
+    font-size: 12px;
+}
+
+.project-due-date:hover .project-due-date-clear,
+.project-due-date-clear:focus-visible {
+    opacity: 1;
+}
+
+.project-due-date-clear:hover {
+    color: var(--dash-text);
+    background: var(--dash-lift);
 }
 
 /* Inline editing — title & description */
@@ -3284,7 +3317,8 @@
     margin-top: 4px;
 }
 
-.todo-editor-due-date {
+.todo-editor-due-date,
+.todo-editor-due-time {
     font-size: 12px;
     color: var(--dash-text-dim);
     background: transparent;

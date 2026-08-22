@@ -352,6 +352,7 @@ class TODOPinnedViewTest(APITestCase):
                 "project_id",
                 "list",
                 "due_date",
+                "due_time",
                 "is_pinned",
                 "created_at",
                 "updated_at",

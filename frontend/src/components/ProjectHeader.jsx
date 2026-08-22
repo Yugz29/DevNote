@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { formatDueDate } from "../lib/dueDate.js";
 import { updateProject } from "../services/projectService.js";
 
 export default function ProjectHeader({
@@ -8,6 +9,7 @@ export default function ProjectHeader({
 }) {
   const titleRef = useRef(null);
   const descriptionRef = useRef(null);
+  const dueDateRef = useRef(null);
 
   const hasDescription = Boolean(project.description?.trim());
 
@@ -96,6 +98,19 @@ export default function ProjectHeader({
     }
   };
 
+  const openDuePicker = () => {
+    const input = dueDateRef.current;
+
+    if (!input) return;
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+  };
+
   return (
     <header className="project-header">
       <div className="project-header-left">
@@ -134,15 +149,50 @@ export default function ProjectHeader({
             {project.description || ""}
           </p>
 
-          <label className="project-due-date" htmlFor="project-due-date">
-            <span>Due date</span>
+          <div className="project-due-date">
             <input
               id="project-due-date"
+              className="project-due-date-input"
+              ref={dueDateRef}
               type="date"
+              tabIndex={-1}
+              aria-hidden="true"
               value={project.due_date ?? ""}
               onChange={(event) => changeDueDate(event.target.value)}
             />
-          </label>
+
+            {project.due_date ? (
+              <>
+                <button
+                  type="button"
+                  className="project-due-date-value"
+                  title="Change due date"
+                  onClick={openDuePicker}
+                >
+                  Due {formatDueDate(project.due_date)}
+                </button>
+
+                <button
+                  type="button"
+                  className="project-due-date-clear"
+                  aria-label="Clear due date"
+                  title="Clear due date"
+                  onClick={() => changeDueDate(null)}
+                >
+                  <i className="ph-light ph-x" />
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="project-due-date-add"
+                onClick={openDuePicker}
+              >
+                <i className="ph-light ph-plus" />
+                <span>Add due date</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

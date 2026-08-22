@@ -9,12 +9,14 @@ export default function Sidebar({
   pinned,
   activeItemId,
   projects,
-  archivedProjects,
+  isArchivedMode,
+  orderKey,
   isLoading,
   hasError,
   activeProjectId,
   sort,
   onSortChange,
+  onToggleArchived,
   onSelectProject,
   onArchiveProject,
   onUnarchiveProject,
@@ -71,8 +73,28 @@ export default function Sidebar({
             <i className="ph-light ph-magnifying-glass" />
           </button>
 
+          {!isProjectContext && (
+            <button
+              id="archived-projects-btn"
+              className={`btn-icon-sm${isArchivedMode ? " active" : ""}`}
+              title={
+                isArchivedMode
+                  ? "Show active projects"
+                  : "Show archived projects"
+              }
+              aria-pressed={isArchivedMode}
+              onClick={onToggleArchived}
+            >
+              <i className="ph-light ph-archive" />
+            </button>
+          )}
+
           {!isProjectContext && canSort && (
-            <ProjectSortDropdown sort={sort} onSortChange={onSortChange} />
+            <ProjectSortDropdown
+              sort={sort}
+              orderKey={orderKey}
+              onSortChange={onSortChange}
+            />
           )}
 
           {!isProjectContext && (
@@ -107,7 +129,8 @@ export default function Sidebar({
       ) : (
         <SidebarProjects
           projects={projects}
-          archivedProjects={archivedProjects}
+          isArchivedMode={isArchivedMode}
+          orderKey={orderKey}
           isLoading={isLoading}
           hasError={hasError}
           activeProjectId={activeProjectId}
