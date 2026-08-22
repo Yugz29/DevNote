@@ -26,6 +26,13 @@ export const getArchivedProjects = async (url = null) => {
   return response.data;
 };
 
+export const setProjectFavorite = async (id, isFavorite) => {
+  const response = await api.patch(`/projects/${id}/`, {
+    is_favorite: isFavorite,
+  });
+  return response.data;
+};
+
 export const archiveProject = async (id) => {
   const response = await api.post(`/projects/${id}/archive/`);
   return response.data;

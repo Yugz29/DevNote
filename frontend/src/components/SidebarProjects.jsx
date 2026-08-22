@@ -15,6 +15,7 @@ import {
 } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
+import { useMemo } from "react";
 import CardMenu from "./CardMenu.jsx";
 import { useOrder } from "../hooks/useOrder.js";
 
@@ -23,6 +24,7 @@ function SortableProject({
   isActive,
   isArchivedMode,
   onSelectProject,
+  onToggleFavorite,
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
@@ -48,6 +50,25 @@ function SortableProject({
         <i className="ph-light ph-folder" />
       </span>
       <span className="project-name">{project.title}</span>
+
+      {!isArchivedMode && (
+        <button
+          type="button"
+          className={`project-favorite-toggle${project.is_favorite ? " is-active" : ""}`}
+          aria-pressed={project.is_favorite}
+          title={
+            project.is_favorite ? "Remove from favorites" : "Add to favorites"
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorite(project);
+          }}
+        >
+          <i
+            className={`ph-light ${project.is_favorite ? "ph-star-fill" : "ph-star"}`}
+          />
+        </button>
+      )}
 
       <div
         className="project-item-actions"
@@ -94,16 +115,36 @@ export default function SidebarProjects({
   projects,
   isArchivedMode,
   orderKey,
+  favoritesOrderKey,
   isLoading,
   hasError,
   activeProjectId,
   onSelectProject,
+  onToggleFavorite,
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
   onLoadMore,
 }) {
-  const { ordered, store } = useOrder(orderKey, projects);
+  const favorites = useMemo(
+    () =>
+      isArchivedMode ? [] : projects.filter((project) => project.is_favorite),
+    [isArchivedMode, projects],
+  );
+
+  const others = useMemo(
+    () =>
+      isArchivedMode
+        ? projects
+        : projects.filter((project) => !project.is_favorite),
+    [isArchivedMode, projects],
+  );
+
+  const { ordered: orderedFavorites, store: storeFavorites } = useOrder(
+    favoritesOrderKey,
+    favorites,
+  );
+  const { ordered, store } = useOrder(orderKey, others);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -123,13 +164,37 @@ export default function SidebarProjects({
   const handleDragEnd = ({ active, over }) => {
     if (!over || active.id === over.id) return;
 
-    const oldIndex = ordered.findIndex((entry) => entry.id === active.id);
-    const newIndex = ordered.findIndex((entry) => entry.id === over.id);
+    const sections = [
+      { items: orderedFavorites, store: storeFavorites },
+      { items: ordered, store },
+    ];
 
-    if (oldIndex === -1 || newIndex === -1) return;
+    for (const section of sections) {
+      const oldIndex = section.items.findIndex(
+        (entry) => entry.id === active.id,
+      );
+      const newIndex = section.items.findIndex((entry) => entry.id === over.id);
 
-    store(arrayMove(ordered, oldIndex, newIndex));
+      if (oldIndex === -1 || newIndex === -1) continue;
+
+      section.store(arrayMove(section.items, oldIndex, newIndex));
+      return;
+    }
   };
+
+  const renderProject = (project) => (
+    <SortableProject
+      key={project.id}
+      project={project}
+      isActive={project.id === activeProjectId}
+      isArchivedMode={isArchivedMode}
+      onSelectProject={onSelectProject}
+      onToggleFavorite={onToggleFavorite}
+      onArchiveProject={onArchiveProject}
+      onUnarchiveProject={onUnarchiveProject}
+      onDeleteProject={onDeleteProject}
+    />
+  );
 
   return (
     <DndContext
@@ -165,23 +230,27 @@ export default function SidebarProjects({
           </div>
         )}
 
+        {!isLoading && !hasError && orderedFavorites.length > 0 && (
+          <section className="projects-favorites">
+            <div className="projects-section-header">
+              <span>Favorites</span>
+            </div>
+
+            <SortableContext
+              items={orderedFavorites.map((project) => project.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {orderedFavorites.map(renderProject)}
+            </SortableContext>
+          </section>
+        )}
+
         {!isLoading && !hasError && (
           <SortableContext
             items={ordered.map((project) => project.id)}
             strategy={verticalListSortingStrategy}
           >
-            {ordered.map((project) => (
-              <SortableProject
-                key={project.id}
-                project={project}
-                isActive={project.id === activeProjectId}
-                isArchivedMode={isArchivedMode}
-                onSelectProject={onSelectProject}
-                onArchiveProject={onArchiveProject}
-                onUnarchiveProject={onUnarchiveProject}
-                onDeleteProject={onDeleteProject}
-              />
-            ))}
+            {ordered.map(renderProject)}
           </SortableContext>
         )}
       </div>

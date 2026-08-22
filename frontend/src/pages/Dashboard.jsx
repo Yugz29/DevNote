@@ -30,6 +30,7 @@ import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { usePinnedItems } from "../hooks/usePinnedItems.js";
 import {
   ARCHIVED_PROJECTS_ORDER_KEY,
+  FAVORITE_PROJECTS_ORDER_KEY,
   PROJECTS_ORDER_KEY,
 } from "../lib/pinnedSections.js";
 import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
@@ -43,6 +44,7 @@ import {
   getProjects,
   getRecentProjects,
   markProjectOpened,
+  setProjectFavorite,
   unarchiveProject,
 } from "../services/projectService.js";
 import { setSnippetPinned } from "../services/snippetService.js";
@@ -431,6 +433,30 @@ export default function Dashboard() {
     setArchivedProjects(replace);
   }, []);
 
+  const handleToggleFavorite = useCallback(
+    async (project) => {
+      try {
+        const updated = await setProjectFavorite(
+          project.id,
+          !project.is_favorite,
+        );
+
+        const replace = (current) =>
+          current.map((entry) => (entry.id === updated.id ? updated : entry));
+
+        setProjects(replace);
+        setArchivedProjects(replace);
+        setCurrentProject((current) =>
+          current?.id === updated.id ? updated : current,
+        );
+      } catch (error) {
+        console.error("Error updating project favorite:", error);
+        await showAlert("Failed to update the favorite");
+      }
+    },
+    [showAlert],
+  );
+
   const handleArchiveProject = useCallback(
     async (project) => {
       try {
@@ -554,12 +580,14 @@ export default function Dashboard() {
             orderKey={
               isArchivedMode ? ARCHIVED_PROJECTS_ORDER_KEY : PROJECTS_ORDER_KEY
             }
+            favoritesOrderKey={FAVORITE_PROJECTS_ORDER_KEY}
             isLoading={isLoadingProjects}
             hasError={hasProjectsError}
             activeProjectId={currentProject?.id ?? null}
             sort={projectSort}
             onSortChange={setProjectSort}
             onSelectProject={selectProject}
+            onToggleFavorite={handleToggleFavorite}
             onLoadMore={
               isArchivedMode ? loadMoreArchivedProjects : loadMoreProjects
             }

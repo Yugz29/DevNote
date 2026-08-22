@@ -54,6 +54,10 @@ class Project(models.Model):
         help_text="Optional deadline of the project",
     )
 
+    is_favorite = models.BooleanField(
+        default=False, help_text="Whether the project is marked as a favorite"
+    )
+
     is_archived = models.BooleanField(
         default=False, help_text="Whether the project is archived"
     )

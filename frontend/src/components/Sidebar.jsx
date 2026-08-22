@@ -11,6 +11,7 @@ export default function Sidebar({
   projects,
   isArchivedMode,
   orderKey,
+  favoritesOrderKey,
   isLoading,
   hasError,
   activeProjectId,
@@ -18,6 +19,7 @@ export default function Sidebar({
   onSortChange,
   onToggleArchived,
   onSelectProject,
+  onToggleFavorite,
   onArchiveProject,
   onUnarchiveProject,
   onDeleteProject,
@@ -131,10 +133,12 @@ export default function Sidebar({
           projects={projects}
           isArchivedMode={isArchivedMode}
           orderKey={orderKey}
+          favoritesOrderKey={favoritesOrderKey}
           isLoading={isLoading}
           hasError={hasError}
           activeProjectId={activeProjectId}
           onSelectProject={onSelectProject}
+          onToggleFavorite={onToggleFavorite}
           onArchiveProject={onArchiveProject}
           onUnarchiveProject={onUnarchiveProject}
           onDeleteProject={onDeleteProject}

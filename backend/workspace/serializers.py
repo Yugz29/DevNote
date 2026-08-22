@@ -44,6 +44,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "updated_at",
             "last_opened_at",
             "due_date",
+            "is_favorite",
             "is_archived",
             "archived_at",
             "open_todos_count",
