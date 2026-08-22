@@ -36,8 +36,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Returns only the projects of the logged-in user"""
-        return (
+        """
+        Returns only the projects of the logged-in user. The plain listing shows
+        one shelf at a time: the active projects, or the archived ones under
+        ?archived=true. Every other route reaches a project whatever its shelf.
+        """
+        queryset = (
             Project.objects.filter(user=self.request.user)
             .annotate(
                 open_todos_count=Count(
@@ -48,6 +52,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
             .order_by("-created_at")
         )
+
+        if self.action == "list":
+            queryset = queryset.filter(is_archived=read_archived(self.request))
+
+        return queryset
 
     def perform_create(self, serializer):
         """Automatically associate the project with the logged-in user"""
@@ -66,6 +75,26 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         project.last_opened_at = timezone.now()
         project.save(update_fields=["last_opened_at"])
+
+        return Response(self.get_serializer(project).data)
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, *args, **kwargs):
+        """Move the project to the archived shelf."""
+        project = self.get_object()
+        project.is_archived = True
+        project.archived_at = timezone.now()
+        project.save(update_fields=["is_archived", "archived_at"])
+
+        return Response(self.get_serializer(project).data)
+
+    @action(detail=True, methods=["post"])
+    def unarchive(self, request, *args, **kwargs):
+        """Bring the project back among the active ones."""
+        project = self.get_object()
+        project.is_archived = False
+        project.archived_at = None
+        project.save(update_fields=["is_archived", "archived_at"])
 
         return Response(self.get_serializer(project).data)
 
@@ -185,6 +214,19 @@ def read_resource_type(request):
         )
 
     return value
+
+
+def read_archived(request):
+    """The shelf a project listing is asked for, the active one by default."""
+    value = request.query_params.get("archived")
+
+    if value is None:
+        return False
+
+    if value not in ("true", "false"):
+        raise ValidationError({"archived": "Must be true or false."})
+
+    return value == "true"
 
 
 def read_limit(request, default, maximum):
@@ -758,6 +800,8 @@ class TODOViewSet(ProjectScopedViewSet):
         # Filter by project (nested routes)
         if project_pk:
             queryset = queryset.filter(project__id=project_pk)
+        elif self.action == "list":
+            queryset = queryset.exclude(project__is_archived=True)
 
         # Filter by status (query_param)
         status_param = self.request.query_params.get("status")

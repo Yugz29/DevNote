@@ -19,6 +19,23 @@ export const getAllProjects = async () => {
   return projects;
 };
 
+export const getArchivedProjects = async (url = null) => {
+  const response = url
+    ? await api.get(url)
+    : await api.get("/projects/", { params: { archived: "true" } });
+  return response.data;
+};
+
+export const archiveProject = async (id) => {
+  const response = await api.post(`/projects/${id}/archive/`);
+  return response.data;
+};
+
+export const unarchiveProject = async (id) => {
+  const response = await api.post(`/projects/${id}/unarchive/`);
+  return response.data;
+};
+
 export const getRecentProjects = async (limit = 4) => {
   const response = await api.get("/projects/recent/", { params: { limit } });
   return response.data;
@@ -42,11 +59,8 @@ export const getProject = async (id) => {
   return response.data;
 };
 
-export const updateProject = async (id, title, description) => {
-  const response = await api.patch(`/projects/${id}/`, {
-    title,
-    description,
-  });
+export const updateProject = async (id, fields) => {
+  const response = await api.patch(`/projects/${id}/`, fields);
   return response.data;
 };
 

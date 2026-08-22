@@ -43,6 +43,9 @@ class ProjectSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "last_opened_at",
+            "due_date",
+            "is_archived",
+            "archived_at",
             "open_todos_count",
         ]
         read_only_fields = [
@@ -51,6 +54,8 @@ class ProjectSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "last_opened_at",
+            "is_archived",
+            "archived_at",
             "open_todos_count",
         ]
 
@@ -407,6 +412,7 @@ class TODOSerializer(serializers.ModelSerializer):
             "priority",
             "project_id",
             "list",
+            "due_date",
             "is_pinned",
             "created_at",
             "updated_at",

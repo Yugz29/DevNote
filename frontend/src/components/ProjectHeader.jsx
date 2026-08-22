@@ -51,11 +51,10 @@ export default function ProjectHeader({
         field === "description" ? newValue : project.description || "";
 
       try {
-        const updated = await updateProject(
-          project.id,
-          updatedTitle,
-          updatedDescription,
-        );
+        const updated = await updateProject(project.id, {
+          title: updatedTitle,
+          description: updatedDescription,
+        });
         onProjectUpdated(updated);
       } catch (error) {
         console.error("Failed to update project:", error);
@@ -84,6 +83,17 @@ export default function ProjectHeader({
 
     element.addEventListener("blur", save, { once: true });
     element.addEventListener("keydown", onKeyDown);
+  };
+
+  const changeDueDate = async (value) => {
+    try {
+      const updated = await updateProject(project.id, {
+        due_date: value || null,
+      });
+      onProjectUpdated(updated);
+    } catch (error) {
+      console.error("Failed to update project due date:", error);
+    }
   };
 
   return (
@@ -123,6 +133,16 @@ export default function ProjectHeader({
           >
             {project.description || ""}
           </p>
+
+          <label className="project-due-date" htmlFor="project-due-date">
+            <span>Due date</span>
+            <input
+              id="project-due-date"
+              type="date"
+              value={project.due_date ?? ""}
+              onChange={(event) => changeDueDate(event.target.value)}
+            />
+          </label>
         </div>
       </div>
 

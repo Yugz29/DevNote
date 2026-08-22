@@ -48,6 +48,22 @@ class Project(models.Model):
         help_text="Date the project was last opened, null if never opened",
     )
 
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Optional deadline of the project",
+    )
+
+    is_archived = models.BooleanField(
+        default=False, help_text="Whether the project is archived"
+    )
+
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date the project was archived, null while it is active",
+    )
+
     class Meta:
         db_table = "devnote_projects"
         verbose_name = "Project"
@@ -62,6 +78,7 @@ class Project(models.Model):
         indexes = [
             models.Index(fields=["user", "-created_at"]),
             models.Index(fields=["user", "-last_opened_at"]),
+            models.Index(fields=["user", "is_archived"]),
         ]
 
     def __str__(self):
@@ -465,6 +482,11 @@ class TODO(models.Model):
         blank=True,
         related_name="todos",
         help_text="List holding the TODO, null for an unclassified TODO",
+    )
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Optional deadline of the TODO",
     )
     is_pinned = models.BooleanField(
         default=False, help_text="Whether the TODO is pinned for quick access"

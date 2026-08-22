@@ -9,12 +9,15 @@ export default function Sidebar({
   pinned,
   activeItemId,
   projects,
+  archivedProjects,
   isLoading,
   hasError,
   activeProjectId,
   sort,
   onSortChange,
   onSelectProject,
+  onArchiveProject,
+  onUnarchiveProject,
   onDeleteProject,
   onLoadMore,
   onNewProject,
@@ -104,10 +107,13 @@ export default function Sidebar({
       ) : (
         <SidebarProjects
           projects={projects}
+          archivedProjects={archivedProjects}
           isLoading={isLoading}
           hasError={hasError}
           activeProjectId={activeProjectId}
           onSelectProject={onSelectProject}
+          onArchiveProject={onArchiveProject}
+          onUnarchiveProject={onUnarchiveProject}
           onDeleteProject={onDeleteProject}
           onLoadMore={onLoadMore}
         />

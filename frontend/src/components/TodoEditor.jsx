@@ -13,6 +13,7 @@ export default function TodoEditor({
   const [description, setDescription] = useState(todo?.description ?? "");
   const [status, setStatus] = useState(todo?.status || "pending");
   const [priority, setPriority] = useState(todo?.priority || "medium");
+  const [dueDate, setDueDate] = useState(todo?.due_date ?? "");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -21,7 +22,7 @@ export default function TodoEditor({
     setIsSaving(true);
 
     try {
-      await onSave({ title, description, status, priority });
+      await onSave({ title, description, status, priority, due_date: dueDate });
     } finally {
       setIsSaving(false);
     }
@@ -43,7 +44,15 @@ export default function TodoEditor({
             <button
               className="btn-expand-todo btn-card-icon-action"
               title="Expand"
-              onClick={() => onExpand({ title, description, status, priority })}
+              onClick={() =>
+                onExpand({
+                  title,
+                  description,
+                  status,
+                  priority,
+                  due_date: dueDate,
+                })
+              }
             >
               <i className="ph-light ph-arrows-out" />
             </button>
@@ -86,6 +95,13 @@ export default function TodoEditor({
           options={PRIORITY_OPTIONS}
           onChange={setPriority}
           usePortal={usePortal}
+        />
+        <input
+          className="todo-editor-due-date"
+          type="date"
+          aria-label="Due date"
+          value={dueDate ?? ""}
+          onChange={(event) => setDueDate(event.target.value)}
         />
       </div>
     </div>

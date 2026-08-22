@@ -137,6 +137,9 @@ export default function TodoModal({
             )}
 
             <div className="todo-modal-meta">
+              {todo.due_date && (
+                <span>Due {new Date(todo.due_date).toLocaleDateString()}</span>
+              )}
               <span>
                 Created {new Date(todo.created_at).toLocaleDateString()}
               </span>

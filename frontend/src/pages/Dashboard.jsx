@@ -32,11 +32,14 @@ import { DEFAULT_SETTINGS_SECTION } from "../lib/settingsSections.js";
 import { ensureCsrfCookie } from "../services/authService.js";
 import { setDocumentPinned } from "../services/documentService.js";
 import {
+  archiveProject,
   deleteProject,
+  getArchivedProjects,
   getProject,
   getProjects,
   getRecentProjects,
   markProjectOpened,
+  unarchiveProject,
 } from "../services/projectService.js";
 import { setSnippetPinned } from "../services/snippetService.js";
 import {
@@ -83,6 +86,7 @@ export default function Dashboard() {
   const { showAlert, showConfirm } = useDialog();
 
   const [projects, setProjects] = useState([]);
+  const [archivedProjects, setArchivedProjects] = useState([]);
   const [projectCount, setProjectCount] = useState(null);
   const [recentProjects, setRecentProjects] = useState([]);
   const [openTodosCount, setOpenTodosCount] = useState(null);
@@ -148,6 +152,16 @@ export default function Dashboard() {
     }
   }, []);
 
+  const loadArchivedProjects = useCallback(async () => {
+    try {
+      const data = await getArchivedProjects();
+      setArchivedProjects(data.results ?? data);
+    } catch (error) {
+      console.error("Error loading archived projects:", error);
+      setArchivedProjects([]);
+    }
+  }, []);
+
   const loadMoreProjects = useCallback(async () => {
     if (!nextProjectsUrlRef.current || isLoadingMoreRef.current) return;
 
@@ -181,11 +195,11 @@ export default function Dashboard() {
   useEffect(() => {
     const init = async () => {
       await ensureCsrfCookie();
-      await loadProjects();
+      await Promise.all([loadProjects(), loadArchivedProjects()]);
     };
 
     init();
-  }, [loadProjects]);
+  }, [loadProjects, loadArchivedProjects]);
 
   const isWelcomeVisible = view !== "settings" && !currentProject;
 
@@ -383,11 +397,50 @@ export default function Dashboard() {
   const closeSettings = useCallback(() => setView("projects"), []);
 
   const handleProjectUpdated = useCallback((updated) => {
+    const replace = (current) =>
+      current.map((project) => (project.id === updated.id ? updated : project));
+
     setCurrentProject(updated);
-    setProjects((current) =>
-      current.map((project) => (project.id === updated.id ? updated : project)),
-    );
+    setProjects(replace);
+    setArchivedProjects(replace);
   }, []);
+
+  const handleArchiveProject = useCallback(
+    async (project) => {
+      try {
+        await archiveProject(project.id);
+        setCurrentProject((current) =>
+          current?.id === project.id ? null : current,
+        );
+        await Promise.all([
+          loadProjects(),
+          loadArchivedProjects(),
+          loadWelcomeData(),
+        ]);
+      } catch (error) {
+        console.error("Error archiving project:", error);
+        await showAlert("Failed to archive project");
+      }
+    },
+    [loadArchivedProjects, loadProjects, loadWelcomeData, showAlert],
+  );
+
+  const handleUnarchiveProject = useCallback(
+    async (project) => {
+      try {
+        await unarchiveProject(project.id);
+        await Promise.all([
+          loadProjects(),
+          loadArchivedProjects(),
+          loadWelcomeData(),
+        ]);
+      } catch (error) {
+        console.error("Error unarchiving project:", error);
+        await showAlert("Failed to unarchive project");
+      }
+    },
+    [loadArchivedProjects, loadProjects, loadWelcomeData, showAlert],
+  );
 
   const handleDeleteProject = useCallback(
     async (project) => {
@@ -401,13 +454,13 @@ export default function Dashboard() {
         setCurrentProject((current) =>
           current?.id === project.id ? null : current,
         );
-        await loadProjects();
+        await Promise.all([loadProjects(), loadArchivedProjects()]);
       } catch (error) {
         console.error("Error deleting project:", error);
         await showAlert("Failed to delete project");
       }
     },
-    [loadProjects, showAlert, showConfirm],
+    [loadArchivedProjects, loadProjects, showAlert, showConfirm],
   );
 
   const closeSidebar = () => {
@@ -471,6 +524,7 @@ export default function Dashboard() {
             pinned={pinned}
             activeItemId={activeItemId}
             projects={sortedProjects}
+            archivedProjects={archivedProjects}
             isLoading={isLoadingProjects}
             hasError={hasProjectsError}
             activeProjectId={currentProject?.id ?? null}
@@ -478,6 +532,8 @@ export default function Dashboard() {
             onSortChange={setProjectSort}
             onSelectProject={selectProject}
             onLoadMore={loadMoreProjects}
+            onArchiveProject={handleArchiveProject}
+            onUnarchiveProject={handleUnarchiveProject}
             onDeleteProject={handleDeleteProject}
             onNewProject={() => setIsProjectModalOpen(true)}
             onBackToWelcome={backToWelcome}

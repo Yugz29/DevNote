@@ -46,6 +46,7 @@ export const createTodo = async (
   status,
   priority,
   list = null,
+  dueDate = null,
 ) => {
   const response = await api.post(`/projects/${projectId}/todos/`, {
     title,
@@ -53,6 +54,7 @@ export const createTodo = async (
     status,
     priority,
     list,
+    due_date: dueDate || null,
   });
   return response.data;
 };
@@ -68,12 +70,14 @@ export const updateTodo = async (
   description,
   status,
   priority,
+  dueDate,
 ) => {
   const payload = {};
   if (title !== undefined) payload.title = title;
   if (description !== undefined) payload.description = description;
   if (status !== undefined) payload.status = status;
   if (priority !== undefined) payload.priority = priority;
+  if (dueDate !== undefined) payload.due_date = dueDate || null;
 
   const response = await api.patch(`/todos/${todoId}/`, payload);
   return response.data;

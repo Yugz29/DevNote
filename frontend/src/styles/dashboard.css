@@ -336,6 +336,32 @@
     line-height: 1.6;
 }
 
+.projects-archived {
+    margin-top: 8px;
+    border-top: 1px solid var(--dash-border);
+    padding-top: 8px;
+}
+
+.projects-archived-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--dash-text-dim);
+}
+
+.projects-archived-header i {
+    font-size: 13px;
+    transition: transform 0.15s;
+}
+
+.projects-archived-count {
+    margin-left: auto;
+    color: var(--dash-text-faint);
+}
+
 .project-item {
     position: relative;
     display: flex;
@@ -1159,6 +1185,24 @@
 
 .project-description.collapsed {
     display: none;
+}
+
+.project-due-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--dash-text-dim);
+}
+
+.project-due-date input {
+    font-size: 12px;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--dash-border);
+    border-radius: 5px;
+    padding: 2px 6px;
 }
 
 /* Inline editing — title & description */
@@ -3238,6 +3282,15 @@
     display: flex;
     gap: 8px;
     margin-top: 4px;
+}
+
+.todo-editor-due-date {
+    font-size: 12px;
+    color: var(--dash-text-dim);
+    background: transparent;
+    border: 1px solid var(--dash-border);
+    border-radius: 5px;
+    padding: 2px 6px;
 }
 
 /* Custom inline select (snippet/todo editors) */
