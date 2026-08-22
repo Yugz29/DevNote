@@ -943,12 +943,14 @@ class SearchView(APIView):
             documents = (
                 Document.objects.filter(project__user=user)
                 .filter(Q(title__icontains=query) | Q(content__icontains=query))
-                .select_related("project")
+                .select_related("project", "folder")
             )
 
             if project is not None:
                 documents = documents.filter(project=project)
-            results["documents"] = DocumentSerializer(documents, many=True).data
+            results["documents"] = DocumentSerializer(
+                documents, many=True, context={"include_folder_path": True}
+            ).data
 
         # Search in Snippets
         if not search_type or search_type == "snippets":
@@ -960,13 +962,15 @@ class SearchView(APIView):
                     | Q(language__icontains=query)
                     | Q(description__icontains=query)
                 )
-                .select_related("project")
+                .select_related("project", "folder")
             )
 
             if project is not None:
                 snippets = snippets.filter(project=project)
 
-            results["snippets"] = SnippetSerializer(snippets, many=True).data
+            results["snippets"] = SnippetSerializer(
+                snippets, many=True, context={"include_folder_path": True}
+            ).data
 
         # Search in TODOs
         if not search_type or search_type == "todos":

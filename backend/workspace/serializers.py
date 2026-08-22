@@ -202,6 +202,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     project_id = serializers.UUIDField(read_only=True, source="project.id")
     folder = ScopedFolderField(allow_null=True, required=False)
+    folder_path = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
@@ -211,11 +212,28 @@ class DocumentSerializer(serializers.ModelSerializer):
             "content",
             "project_id",
             "folder",
+            "folder_path",
             "is_pinned",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "project_id", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "project_id",
+            "folder_path",
+            "created_at",
+            "updated_at",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.context.get("include_folder_path"):
+            self.fields.pop("folder_path", None)
+
+    def get_folder_path(self, obj):
+        """Folders to walk through to reach the document, root first."""
+        return [] if obj.folder is None else obj.folder.path()
 
     def validate_title(self, value):
         value = value.strip()
@@ -280,6 +298,7 @@ class SnippetSerializer(serializers.ModelSerializer):
 
     project_id = serializers.UUIDField(read_only=True, source="project.id")
     folder = ScopedFolderField(allow_null=True, required=False)
+    folder_path = serializers.SerializerMethodField()
 
     class Meta:
         model = Snippet
@@ -291,11 +310,28 @@ class SnippetSerializer(serializers.ModelSerializer):
             "description",
             "project_id",
             "folder",
+            "folder_path",
             "is_pinned",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "project_id", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "project_id",
+            "folder_path",
+            "created_at",
+            "updated_at",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if not self.context.get("include_folder_path"):
+            self.fields.pop("folder_path", None)
+
+    def get_folder_path(self, obj):
+        """Folders to walk through to reach the snippet, root first."""
+        return [] if obj.folder is None else obj.folder.path()
 
     def validate_title(self, value):
         """Title cannot be empty or whitespace only"""

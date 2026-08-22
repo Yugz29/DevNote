@@ -180,6 +180,22 @@ class Folder(models.Model):
 
         return ids
 
+    def path(self):
+        """The folder chain from the project root down to this folder."""
+        ancestor_ids = self.ancestor_ids()
+        names = dict(
+            Folder.objects.filter(id__in=ancestor_ids).values_list("id", "name")
+        )
+
+        chain = [
+            {"id": str(folder_id), "name": names[folder_id]}
+            for folder_id in reversed(ancestor_ids)
+            if folder_id in names
+        ]
+        chain.append({"id": str(self.id), "name": self.name})
+
+        return chain
+
     def descendant_ids(self):
         """Ids of every nested folder below this one."""
         ids = []
