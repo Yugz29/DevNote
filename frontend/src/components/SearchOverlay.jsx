@@ -31,17 +31,6 @@ export default function SearchOverlay({ isOpen, onClose, onSelectResult }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, close]);
 
-  const handleSelect = (sectionKey, item) => {
-    close();
-
-    if (sectionKey === "projects") {
-      onSelectResult(item.id);
-      return;
-    }
-
-    onSelectResult(item.project_id, sectionKey, searchedQuery, item.id);
-  };
-
   return (
     <div
       id="search-overlay"
@@ -76,7 +65,8 @@ export default function SearchOverlay({ isOpen, onClose, onSelectResult }) {
           searchedQuery={searchedQuery}
           total={total}
           hint="Search projects, documents, snippets and todos..."
-          onSelect={handleSelect}
+          onDismiss={close}
+          onNavigate={onSelectResult}
         />
       </div>
     </div>

@@ -8,8 +8,26 @@ export default function SearchResults({
   searchedQuery,
   total,
   hint,
-  onSelect,
+  onDismiss,
+  onNavigate,
 }) {
+  const handleSelect = (sectionKey, item) => {
+    onDismiss?.();
+
+    if (sectionKey === "projects") {
+      onNavigate(item.id);
+      return;
+    }
+
+    onNavigate(
+      item.project_id,
+      sectionKey,
+      searchedQuery,
+      item.id,
+      item.folder_path ?? [],
+    );
+  };
+
   return (
     <div id={id} className={className}>
       {status === "hint" && hint && <p className="search-hint">{hint}</p>}
@@ -51,7 +69,7 @@ export default function SearchResults({
                     data-type={key}
                     data-id={item.id}
                     data-project={projectId}
-                    onClick={() => onSelect(key, item)}
+                    onClick={() => handleSelect(key, item)}
                   >
                     <span className="search-result-icon">
                       <i className={SEARCH_ICONS[key]} />

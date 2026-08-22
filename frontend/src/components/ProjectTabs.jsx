@@ -34,6 +34,7 @@ export default function ProjectTabs({
   headerSlot,
   searchQuery,
   searchItemId,
+  searchTarget,
   openTarget,
   contentVersion,
   onPinnedChanged,
@@ -290,6 +291,7 @@ export default function ProjectTabs({
               breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              searchTarget={searchTarget}
               sectionSearchTerm={sectionSearch?.term ?? null}
               sectionSearchResults={sectionSearch?.results ?? null}
               onSectionSearchReset={closeSectionSearch}
@@ -317,6 +319,7 @@ export default function ProjectTabs({
               breadcrumbSlot={breadcrumbSlot}
               searchQuery={searchQuery}
               searchItemId={searchItemId}
+              searchTarget={searchTarget}
               sectionSearchTerm={sectionSearch?.term ?? null}
               sectionSearchResults={sectionSearch?.results ?? null}
               onSectionSearchReset={closeSectionSearch}

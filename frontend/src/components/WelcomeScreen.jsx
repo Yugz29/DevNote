@@ -18,17 +18,6 @@ export default function WelcomeScreen({
   const { query, status, results, searchedQuery, total, changeQuery, reset } =
     useGlobalSearch();
 
-  const handleSelect = (sectionKey, item) => {
-    reset();
-
-    if (sectionKey === "projects") {
-      onSelectProject(item.id);
-      return;
-    }
-
-    onSelectProject(item.project_id, sectionKey, searchedQuery, item.id);
-  };
-
   const isShowingResults = query.trim() !== "";
 
   return (
@@ -68,7 +57,8 @@ export default function WelcomeScreen({
             results={results}
             searchedQuery={searchedQuery}
             total={total}
-            onSelect={handleSelect}
+            onDismiss={reset}
+            onNavigate={onSelectProject}
           />
         ) : (
           <div className="welcome-inner">

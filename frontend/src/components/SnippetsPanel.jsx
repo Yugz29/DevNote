@@ -71,6 +71,7 @@ export default function SnippetsPanel({
   breadcrumbSlot,
   searchQuery,
   searchItemId,
+  searchTarget,
   sectionSearchTerm,
   sectionSearchResults,
   onSectionSearchReset,
@@ -86,9 +87,18 @@ export default function SnippetsPanel({
   const versionRef = useRef(contentVersion);
 
   const [initialLocation] = useState(() =>
-    searchItemId ? EMPTY_LOCATION : readLocation("snippets", projectId),
+    searchItemId
+      ? {
+          ...EMPTY_LOCATION,
+          path: searchTarget?.folderPath ?? [],
+          itemId: searchItemId,
+        }
+      : readLocation("snippets", projectId),
   );
   const [path, setPath] = useState(initialLocation.path);
+  const [pendingSnippetId, setPendingSnippetId] = useState(
+    initialLocation.itemId,
+  );
   const [unreachableFolderId, setUnreachableFolderId] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -101,6 +111,17 @@ export default function SnippetsPanel({
     readCollapsedGroups(projectId),
   );
   const [externalSnippet, setExternalSnippet] = useState(null);
+
+  const [searchRequest, setSearchRequest] = useState(searchTarget);
+
+  if (searchTarget !== searchRequest) {
+    setSearchRequest(searchTarget);
+
+    if (searchTarget?.itemId) {
+      setPath(searchTarget.folderPath ?? []);
+      setPendingSnippetId(searchTarget.itemId);
+    }
+  }
 
   const currentFolder = path.length ? path[path.length - 1] : null;
   const currentFolderId = currentFolder?.id ?? null;
@@ -206,6 +227,28 @@ export default function SnippetsPanel({
       setExternalSnippet(null);
     }
   };
+
+  useEffect(() => {
+    if (!pendingSnippetId) return;
+
+    let isStale = false;
+
+    getSnippet(pendingSnippetId)
+      .then((snippet) => {
+        if (isStale) return;
+        setExternalSnippet(snippet);
+        setViewingId(snippet.id);
+        setPendingSnippetId(null);
+      })
+      .catch((openError) => {
+        console.error("Error opening snippet:", openError);
+        if (!isStale) setPendingSnippetId(null);
+      });
+
+    return () => {
+      isStale = true;
+    };
+  }, [pendingSnippetId]);
 
   useEffect(() => {
     if (!openTarget) return;

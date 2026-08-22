@@ -65,6 +65,7 @@ export default function DocumentsPanel({
   breadcrumbSlot,
   searchQuery,
   searchItemId,
+  searchTarget,
   sectionSearchTerm,
   sectionSearchResults,
   onSectionSearchReset,
@@ -84,7 +85,13 @@ export default function DocumentsPanel({
   const versionRef = useRef(contentVersion);
 
   const [initialLocation] = useState(() =>
-    searchItemId ? EMPTY_LOCATION : readLocation("documents", projectId),
+    searchItemId
+      ? {
+          ...EMPTY_LOCATION,
+          path: searchTarget?.folderPath ?? [],
+          itemId: searchItemId,
+        }
+      : readLocation("documents", projectId),
   );
   const scrollTopRef = useRef(initialLocation.scrollTop);
   const restoreScrollRef = useRef(
@@ -101,6 +108,18 @@ export default function DocumentsPanel({
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [movingEntry, setMovingEntry] = useState(null);
   const [printTarget, setPrintTarget] = useState(null);
+
+  const [searchRequest, setSearchRequest] = useState(searchTarget);
+
+  if (searchTarget !== searchRequest) {
+    setSearchRequest(searchTarget);
+
+    if (searchTarget?.itemId) {
+      setIsCreatingDocument(false);
+      setPath(searchTarget.folderPath ?? []);
+      setPendingDocumentId(searchTarget.itemId);
+    }
+  }
 
   const [openRequest, setOpenRequest] = useState(null);
 

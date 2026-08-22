@@ -272,7 +272,13 @@ export default function Dashboard() {
   );
 
   const selectProject = useCallback(
-    async (projectId, tab = null, searchQuery = null, searchItemId = null) => {
+    async (
+      projectId,
+      tab = null,
+      searchQuery = null,
+      searchItemId = null,
+      searchFolderPath = [],
+    ) => {
       try {
         const project = await getProject(projectId);
         setView("projects");
@@ -281,7 +287,13 @@ export default function Dashboard() {
         if (tab) setCurrentTab(tab);
         setOpenTarget(null);
         setSearchTarget(
-          searchQuery ? { query: searchQuery, itemId: searchItemId } : null,
+          searchQuery
+            ? {
+                query: searchQuery,
+                itemId: searchItemId,
+                folderPath: searchFolderPath ?? [],
+              }
+            : null,
         );
 
         try {
@@ -664,6 +676,7 @@ export default function Dashboard() {
                   headerSlot={headerSlot}
                   searchQuery={searchTarget?.query ?? null}
                   searchItemId={searchTarget?.itemId ?? null}
+                  searchTarget={searchTarget}
                   openTarget={openTarget}
                   contentVersion={contentVersion}
                   onPinnedChanged={handlePinnedChanged}
