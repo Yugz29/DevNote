@@ -611,7 +611,9 @@ export default function Dashboard() {
           />
         )}
 
-        <main className="main-content">
+        <main
+          className={`main-content${isWelcomeVisible ? " is-welcome" : ""}`}
+        >
           <button
             id="sidebar-toggle"
             className="btn-sidebar-toggle"
