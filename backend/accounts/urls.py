@@ -1,6 +1,8 @@
 from django.urls import path
 
 from .views import (
+    ApiTokenDestroyView,
+    ApiTokenListCreateView,
     ChangePasswordView,
     CSRFTokenView,
     DeleteAccountView,
@@ -20,4 +22,6 @@ urlpatterns = [
     path("refresh/", RefreshView.as_view(), name="refresh"),
     path("password/", ChangePasswordView.as_view(), name="change-password"),
     path("account/delete/", DeleteAccountView.as_view(), name="delete-account"),
+    path("tokens/", ApiTokenListCreateView.as_view(), name="api-token-list"),
+    path("tokens/<uuid:pk>/", ApiTokenDestroyView.as_view(), name="api-token-detail"),
 ]

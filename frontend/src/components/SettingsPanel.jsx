@@ -1,4 +1,5 @@
 import AccountSettings from "./AccountSettings.jsx";
+import ApiTokenSettings from "./ApiTokenSettings.jsx";
 import AppearanceSettings from "./AppearanceSettings.jsx";
 import DangerSettings from "./DangerSettings.jsx";
 import DefaultsSettings from "./DefaultsSettings.jsx";
@@ -8,6 +9,7 @@ const SECTION_COMPONENTS = {
   appearance: AppearanceSettings,
   account: AccountSettings,
   defaults: DefaultsSettings,
+  "api-tokens": ApiTokenSettings,
   danger: DangerSettings,
 };
 

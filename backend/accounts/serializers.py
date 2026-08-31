@@ -1,8 +1,14 @@
+from datetime import timedelta
+
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+
+from .models import ApiToken
+from .tokens import DEFAULT_EXPIRY_DAYS, MAX_EXPIRY_DAYS
 
 User = get_user_model()
 
@@ -258,3 +264,68 @@ class DeleteAccountSerializer(serializers.Serializer):
         if not self.context["request"].user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect.")
         return value
+
+
+class ApiTokenSerializer(serializers.ModelSerializer):
+    """
+    An API token as its owner sees it afterwards: everything but the secret,
+    which the database does not hold and nothing can bring back.
+    """
+
+    is_expired = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ApiToken
+        fields = [
+            "id",
+            "name",
+            "prefix",
+            "created_at",
+            "last_used_at",
+            "expires_at",
+            "is_expired",
+        ]
+        read_only_fields = fields
+
+    def get_is_expired(self, obj):
+        return obj.is_expired()
+
+
+class ApiTokenCreateSerializer(serializers.Serializer):
+    """
+    Request to mint a token.
+
+    An absent lifetime means the default one; an explicit null means a token
+    that never expires, for a client nobody will be around to re-authorise.
+    """
+
+    name = serializers.CharField(max_length=100)
+
+    expires_in_days = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        default=DEFAULT_EXPIRY_DAYS,
+        min_value=1,
+        max_value=MAX_EXPIRY_DAYS,
+        write_only=True,
+    )
+
+    def validate_name(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError("Token name cannot be empty.")
+
+        user = self.context["request"].user
+
+        if ApiToken.objects.filter(user=user, name=value).exists():
+            raise serializers.ValidationError(
+                f"A token named '{value}' already exists."
+            )
+
+        return value
+
+    def expires_at(self):
+        days = self.validated_data["expires_in_days"]
+
+        return None if days is None else timezone.now() + timedelta(days=days)

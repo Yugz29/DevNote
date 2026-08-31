@@ -2,6 +2,10 @@
 import uuid
 
 from django.contrib.auth.models import BaseUserManager
+from django.db import models
+from django.utils import timezone
+
+from .tokens import generate_token, hash_token
 
 
 class UserManager(BaseUserManager):
@@ -56,3 +60,36 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True")
 
         return self.create_user(email, password, **extra_fields)
+
+
+class ApiTokenManager(models.Manager):
+    """Manager for ApiToken, holding the mint and lookup paths."""
+
+    def create_token(self, user, name, expires_at=None):
+        """
+        Mint a token for a user. Returns the row and the raw secret, which is
+        the only moment the secret exists outside the caller's hands.
+        """
+        raw_token, prefix = generate_token()
+
+        token = self.create(
+            user=user,
+            name=name,
+            prefix=prefix,
+            token_hash=hash_token(raw_token),
+            expires_at=expires_at,
+        )
+
+        return token, raw_token
+
+    def resolve(self, raw_token):
+        """The token matching a raw secret, or None when nothing matches."""
+        return (
+            self.select_related("user").filter(token_hash=hash_token(raw_token)).first()
+        )
+
+    def active(self):
+        """Tokens that still authenticate, expired ones left out."""
+        return self.filter(
+            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=timezone.now())
+        )

@@ -15,9 +15,12 @@ from rest_framework_simplejwt.token_blacklist.models import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .authentication import CookieJWTAuthentication
 from .cookie_utils import delete_auth_cookies, set_auth_cookies
-from .models import User
+from .models import ApiToken, User
 from .serializers import (
+    ApiTokenCreateSerializer,
+    ApiTokenSerializer,
     ChangePasswordSerializer,
     DeleteAccountSerializer,
     LoginSerializer,
@@ -349,3 +352,74 @@ class DeleteAccountView(APIView):
         delete_auth_cookies(response)
 
         return response
+
+
+# ============================================
+# ENDPOINT : API tokens
+# ============================================
+@method_decorator(ratelimit(key="user_or_ip", rate="10/m", method="POST"), name="post")
+class ApiTokenListCreateView(generics.ListCreateAPIView):
+    """
+    GET  /api/auth/tokens/  lists the tokens of the logged-in user
+    POST /api/auth/tokens/  mints one and returns its secret, once
+
+    Only a browser session reaches this endpoint. A token cannot mint another
+    token, so a leaked one stays as narrow as the day it was issued and
+    revoking it really does cut the client off.
+    """
+
+    serializer_class = ApiTokenSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+    pagination_class = None
+
+    def get_queryset(self):
+        return ApiToken.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        if getattr(request, "limited", False):
+            return Response(
+                {"error": "Too many token requests. Please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        serializer = ApiTokenCreateSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        token, raw_token = ApiToken.objects.create_token(
+            user=request.user,
+            name=serializer.validated_data["name"],
+            expires_at=serializer.expires_at(),
+        )
+
+        logger.info(
+            f"API token '{token.name}' issued to user '{request.user.username}'"
+        )
+
+        return Response(
+            {**ApiTokenSerializer(token).data, "token": raw_token},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ApiTokenDestroyView(generics.DestroyAPIView):
+    """
+    DELETE /api/auth/tokens/{id}/
+    Revokes a token by dropping it; every client holding it stops at its
+    next request
+    """
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def get_queryset(self):
+        return ApiToken.objects.filter(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        logger.info(
+            f"API token '{instance.name}' revoked by user "
+            f"'{self.request.user.username}'"
+        )
+        instance.delete()

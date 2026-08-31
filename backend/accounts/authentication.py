@@ -1,6 +1,9 @@
 """
-Custom JWT Authentication for DevNote
-Supports both cookie-based and header-based authentication
+Authentication backends for DevNote
+
+CookieJWTAuthentication serves browsers, reading the JWT pair from HttpOnly
+cookies. ApiTokenAuthentication serves programmatic clients, reading a
+long-lived personal token from the Authorization header.
 """
 
 import logging
@@ -8,8 +11,12 @@ import logging
 from django.conf import settings
 from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework import exceptions
+from rest_framework.authentication import BaseAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
+
+from .models import ApiToken
+from .tokens import looks_like_api_token
 
 logger = logging.getLogger("accounts")
 
@@ -100,3 +107,63 @@ class CookieJWTAuthentication(JWTAuthentication):
             raise exceptions.PermissionDenied(
                 "CSRF Failed: CSRF token missing or incorrect."
             )
+
+
+class ApiTokenAuthentication(BaseAuthentication):
+    """
+    Authenticate a programmatic client with a personal API token.
+
+    The token travels on the Authorization header, under either scheme:
+
+        Authorization: Bearer dnt_<secret>
+        Authorization: Token dnt_<secret>
+
+    Anything not carrying the DevNote token prefix is left alone, so the
+    JWT authenticator keeps serving browsers on the very same header.
+
+    Unlike a cookie, a header credential is never attached by the browser on
+    its own, so a token request needs no CSRF token.
+    """
+
+    SCHEMES = ("bearer", "token")
+
+    def authenticate(self, request):
+        raw_token = self.get_raw_token(request)
+
+        if raw_token is None:
+            return None
+
+        token = ApiToken.objects.resolve(raw_token)
+
+        if token is None:
+            logger.warning("Rejected an unknown API token")
+            raise exceptions.AuthenticationFailed("Invalid API token.")
+
+        if token.is_expired():
+            logger.warning(f"Rejected expired API token '{token.name}'")
+            raise exceptions.AuthenticationFailed("API token has expired.")
+
+        if not token.user.is_active:
+            raise exceptions.AuthenticationFailed("User account is inactive.")
+
+        token.touch()
+        logger.debug(f"Authenticated {token.user.email} with API token '{token.name}'")
+
+        return (token.user, token)
+
+    def get_raw_token(self, request):
+        """The DevNote token on the Authorization header, None if there is none."""
+        header = request.META.get("HTTP_AUTHORIZATION", "")
+
+        if isinstance(header, bytes):
+            header = header.decode("iso-8859-1")
+
+        parts = header.split()
+
+        if len(parts) != 2 or parts[0].lower() not in self.SCHEMES:
+            return None
+
+        return parts[1] if looks_like_api_token(parts[1]) else None
+
+    def authenticate_header(self, request):
+        return 'Bearer realm="api"'

@@ -18,6 +18,12 @@ export const SETTINGS_SECTIONS = [
     hint: "What DevNote picks for you when you create something.",
   },
   {
+    key: "api-tokens",
+    label: "API tokens",
+    icon: "ph-key",
+    hint: "Long-lived tokens letting your own tools read and write DevNote.",
+  },
+  {
     key: "danger",
     label: "Danger zone",
     icon: "ph-warning-octagon",

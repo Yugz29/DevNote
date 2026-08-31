@@ -4897,3 +4897,123 @@ mark.search-highlight {
         max-width: none;
     }
 }
+
+.settings-field-label {
+    font-size: 13px;
+    color: var(--dash-text-muted);
+}
+
+.api-token-secret {
+    border-color: var(--dash-border-emphasis);
+}
+
+.api-token-secret-value {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--dash-surface-sunken);
+    border: 1px solid var(--dash-border);
+    border-radius: 8px;
+}
+
+.api-token-secret-value code {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--dash-text);
+    overflow-wrap: anywhere;
+}
+
+.api-token-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.api-token {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 12px 14px;
+    background: var(--dash-glass);
+    border: 1px solid var(--dash-glass-border-subtle);
+    border-radius: 8px;
+}
+
+.api-token-text h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+.api-token-tag {
+    padding: 1px 7px;
+    background: var(--dash-danger-tint-hover);
+    border: 1px solid var(--dash-danger-border);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--danger);
+}
+
+.api-token-text p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: var(--dash-text-muted);
+}
+
+.api-token-text code {
+    font-family: var(--font-mono);
+    color: var(--dash-text-subtle);
+}
+
+.api-token-revoke {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: none;
+    border: 1px solid var(--dash-glass-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--dash-text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.api-token-revoke i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.api-token-revoke:hover {
+    color: var(--danger);
+    background: var(--dash-danger-tint);
+    border-color: var(--dash-danger-border);
+}
+
+.api-token-empty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--dash-text-muted);
+}
+
+@media (max-width: 768px) {
+    .api-token {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
