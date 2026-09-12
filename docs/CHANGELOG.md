@@ -158,3 +158,39 @@ The following were planned in Stage 3 and implemented as specified:
 - Production deployment configuration (PostgreSQL, HTTPS, hosting)
 - Landing page (Stage 5)
 - Final code cleanup and documentation polish
+
+---
+
+## 9. Post-V1 Development (March 2026 → present)
+
+None of this was planned in Stage 3 — it grew out of using V1 day to day. Grouped by theme rather than by date.
+
+### Platform
+
+- **Django upgraded 4.2 → 5.2 LTS**, with an accompanying migration and added auth-throttling test coverage.
+- **`Note` renamed to `Document`** across backend, frontend and API — the entity had outgrown the name once it started holding block content rather than plain notes.
+
+### Organization
+
+- **Folders**, first for documents, then extended to snippets — nested hierarchy, breadcrumb navigation, and a *Move to…* dialog that also covers TODOs between lists and folders between parents.
+- **Pinning** generalized across documents, snippets and TODOs, replacing the earlier "Top priorities" permanent TODO list (which was removed).
+- **Project favorites**, **project archiving** (`is_archived` / `archived_at`, a separate shelf from active projects), and optional **deadlines** on both projects and TODOs (TODOs also get an optional due *time*, not just a date).
+- Sort and view (grid/list/kanban/grouped) preferences, with sticky toolbars and contextual per-section search inside project tabs.
+
+### Home screen
+
+- Reworked into a proper **welcome screen**: workspace stats, a list of recently opened projects (`last_opened_at`, stamped via `/projects/{id}/open/`), and an inline global search bar — on top of the existing full-screen search overlay.
+
+### Search
+
+- Results now carry each item's **folder path** and open it where it actually lives (inside its folder, its snippet group, or its TODO list) instead of only the flat resource view.
+
+### Personal API tokens
+
+- A new authentication path for scripts and automated clients: long-lived **personal API tokens** (`Bearer dnt_…`), managed from Settings or `manage.py api_token create|list|revoke`. Hashed at rest, shown in full once, and unable to mint or revoke other tokens — only a browser session can do that.
+- A **Python client** (`clients/python/`), standard-library-only, built against this token auth.
+
+### UI polish
+
+- Sidebar: resizable, drag-and-drop section reordering, collapse state persisted, active-item tracking across panels.
+- Cards for TODOs and snippets restyled ("keycap" look), theme toggle refactor, settings navigation and header spacing passes.

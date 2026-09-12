@@ -16,6 +16,18 @@ Everything lives inside a **project**, and every project has three tabs — Docu
 
 ## ✨ Features
 
+### 🏠 Home
+
+- **Welcome screen** with workspace stats and the projects you opened most recently
+- **Inline global search bar** right on the home screen
+- **Favorite** projects for quick access, **archive** the ones you're done with, and drag to reorder
+
+### 📁 Projects
+
+- Optional **deadline** per project, shown alongside its open TODO count
+- **Archive** / **unarchive**, kept on a separate shelf from active projects
+- The app remembers when a project was **last opened**, powering the "recent" list
+
 ### 📝 Documents
 
 - **Block editor** built on BlockNote — headings, lists, tables, quotes, checklists, inline links and formatting
@@ -31,30 +43,32 @@ Everything lives inside a **project**, and every project has three tabs — Docu
 - **Shiki syntax highlighting** across 13 pre-compiled languages, with GitHub Dark / GitHub Light themes
 - **Language suggestion** — the content is analysed with `flourite` and a language is proposed automatically
 - **Full-screen modal** with line numbers, copy button and one-click export to a file carrying the right extension
+- **Folders** with nested hierarchy and a *Move to…* dialog, same as documents
 - **Pin** and **duplicate** snippets
 - Two views: **grid** or **grouped by language**
 
 ### ✅ TODOs
 
-- **Multiple lists per project**, navigable through tabs
-- A permanent **"Top priorities"** list, created with every project and protected from deletion
+- **Multiple lists per project**, navigable through tabs, plus a cross-list view of every TODO at once
+- **Pin** individual TODOs for quick access, and a *Move to…* dialog between lists
 - Two views: **list** or **kanban**
 - **Status** (`pending` / `in progress` / `done`) and **priority** (`low` / `medium` / `high`) picked directly from the card
-- Cross-list view to see every TODO of a project at once, and a *Move to…* dialog between lists
+- Optional **deadline**, with a due date and an optional due time
 
 ### 🔍 Search
 
-Global overlay searching **projects, documents, snippets and TODOs** at once, with optional filtering by type and highlighted matches.
+Global overlay searching **projects, documents, snippets and TODOs** at once, with optional filtering by type, highlighted matches, and each result's folder path. Results open the item where it actually lives — inside its folder, its snippet group, or its TODO list.
 
 ### ⚙️ Settings
 
-A dedicated screen with four sections:
+A dedicated screen with five sections:
 
 | Section | What it holds |
 |---|---|
 | **Appearance** | Dark / light colour theme |
 | **Account** | Email, password change |
 | **Defaults** | Default snippets view (grid / by language), default TODOs view (list / kanban) |
+| **API tokens** | Long-lived personal tokens for scripts and other tools — see [clients/python](clients/python) |
 | **Danger zone** | Permanent account deletion |
 
 ---
@@ -63,11 +77,12 @@ A dedicated screen with four sections:
 
 ### Backend
 
-- **Django 4.2** + **Django REST Framework** — REST API, ORM, authentication
+- **Django 5.2** (LTS) + **Django REST Framework** — REST API, ORM, authentication
 - **SimpleJWT** — JWT authentication via HttpOnly cookies (15 min access, 7 day refresh, rotation + blacklist)
+- **Personal API tokens** — a second auth path for scripts, managed from Settings or `manage.py api_token`
 - **drf-nested-routers** — nested project resources
 - **SQLite** — local development database
-- **django-ratelimit** — rate limiting on auth and search endpoints
+- **django-ratelimit** — rate limiting on auth, tokens and search endpoints
 
 ### Frontend
 
@@ -86,13 +101,13 @@ A dedicated screen with four sections:
 ```
 DevNote/
 ├── backend/                  # Django project
-│   ├── accounts/             # Custom user model, JWT auth, password change, account deletion
+│   ├── accounts/             # Custom user model, JWT auth, personal API tokens, password change, account deletion
 │   ├── workspace/            # Projects, Folders, Documents, Snippets, TodoLists, TODOs, Search
 │   │   ├── models.py
 │   │   ├── serializers.py
 │   │   ├── views.py
-│   │   ├── signals.py        # Creates the permanent "Top priorities" list with each project
-│   │   └── tests/            # 381 unit & integration tests
+│   │   ├── preview.py        # Plain-text preview extraction for search results
+│   │   └── tests/            # 500+ unit & integration tests
 │   ├── devnote/              # Django settings, root URLs
 │   └── manage.py
 │
@@ -104,6 +119,9 @@ DevNote/
 │       ├── lib/              # blocknote, highlight, detectLanguage, outline, download…
 │       ├── services/         # API calls (authService, documentService, folderService…)
 │       └── pages/            # Login, Register, Dashboard
+│
+├── clients/
+│   └── python/                # Standard-library-only Python client for the API, using a personal token
 │
 └── docs/                     # Project documentation + GitHub Pages landing page
 ```
@@ -175,7 +193,7 @@ npm run format:check   # Prettier, check only
 
 Base URL: `http://localhost:8000/api/`
 
-Authentication uses **HttpOnly cookies** (`access_token`, `refresh_token`), set automatically on login and register. Unsafe methods also require the `X-CSRFToken` header.
+Authentication uses **HttpOnly cookies** (`access_token`, `refresh_token`), set automatically on login and register — or a **personal API token** (`Authorization: Bearer dnt_…`) for scripts, which skips CSRF. Unsafe cookie-based requests also require the `X-CSRFToken` header.
 
 ### Auth
 
@@ -189,29 +207,39 @@ Authentication uses **HttpOnly cookies** (`access_token`, `refresh_token`), set 
 | `/auth/me/` | GET | Current user info |
 | `/auth/password/` | POST | Change password |
 | `/auth/account/delete/` | POST | Delete account permanently |
+| `/auth/tokens/` | GET, POST | List / create personal API tokens (session auth only) |
+| `/auth/tokens/{id}/` | DELETE | Revoke a personal API token |
 
 ### Workspace
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/projects/` | GET, POST | List / create projects |
+| `/projects/` | GET, POST | List / create projects (`?archived=true` for the archived shelf) |
 | `/projects/{id}/` | GET, PATCH, DELETE | Project detail |
-| `/projects/{id}/contents/` | GET | Folders and documents at a project's root |
+| `/projects/{id}/open/` | POST | Stamp the project as just opened |
+| `/projects/{id}/archive/` · `/unarchive/` | POST | Move to / out of the archived shelf |
+| `/projects/recent/` | GET | Most recently opened projects |
+| `/projects/{id}/contents/` | GET | Folders and documents (or snippets, via `?resource_type=`) at a project's root |
 | `/projects/{id}/pinned/` | GET | Pinned items of a project |
-| `/folders/` · `/projects/{id}/folders/` | GET, POST | List / create folders |
+| `/folders/` · `/projects/{id}/folders/` | GET, POST | List / create folders (documents or snippets, via `resource_type`) |
 | `/folders/{id}/` | GET, PATCH, DELETE | Folder detail |
-| `/folders/{id}/contents/` | GET | Sub-folders and documents of a folder |
+| `/folders/{id}/contents/` | GET | Sub-folders and items of a folder |
+| `/folders/{id}/move/` | POST | Move a folder to another parent |
 | `/documents/` · `/projects/{id}/documents/` | GET, POST | List / create documents |
 | `/documents/{id}/` | GET, PATCH, DELETE | Document detail |
 | `/documents/{id}/duplicate/` | POST | Duplicate a document |
+| `/documents/{id}/move/` | POST | Move a document to another folder |
 | `/snippets/` · `/projects/{id}/snippets/` | GET, POST | List / create snippets |
 | `/snippets/{id}/` | GET, PATCH, DELETE | Snippet detail |
 | `/snippets/pinned/` | GET | Pinned snippets |
 | `/snippets/{id}/duplicate/` | POST | Duplicate a snippet |
+| `/snippets/{id}/move/` | POST | Move a snippet to another folder |
 | `/todo-lists/` · `/projects/{id}/todo-lists/` | GET, POST | List / create TODO lists |
-| `/todo-lists/{id}/` | GET, PATCH, DELETE | TODO list detail (permanent list refuses deletion) |
+| `/todo-lists/{id}/` | GET, PATCH, DELETE | TODO list detail |
 | `/todos/` · `/projects/{id}/todos/` | GET, POST | List / create TODOs |
 | `/todos/{id}/` | GET, PATCH, DELETE | TODO detail |
+| `/todos/pinned/` | GET | Pinned TODOs |
+| `/todos/{id}/move/` | POST | Move a TODO to another list |
 | `/search/?q=...` | GET | Global search, optional `type` filter |
 
 ---
@@ -230,7 +258,7 @@ cd backend
 python manage.py test
 ```
 
-381 tests covering models, serializers, views, authentication and search.
+500+ tests covering models, serializers, views, authentication and search.
 
 ---
 
@@ -239,7 +267,8 @@ python manage.py test
 - JWT tokens stored in **HttpOnly cookies**, never in `localStorage`
 - **CSRF protection** on cookie-based auth — unsafe requests must carry `X-CSRFToken`
 - Refresh token **rotation** with **blacklisting** on logout and on rotation
-- Rate limiting: 3/min on register, 5/min on login, 5/min on password change and account deletion, 30/min on search
+- **Personal API tokens** are hashed at rest, shown in full only once at creation, and can only be minted or revoked from an authenticated browser session — never from another token
+- Rate limiting: 3/min on register, 5/min on login, 5/min on password change and account deletion, 10/min on API token creation, 30/min on search
 - XSS protection through React's escaping and BlockNote's structured content model
 - **Subresource Integrity** (SRI) on CDN stylesheets
 - `SECURE_CONTENT_TYPE_NOSNIFF`, `SECURE_BROWSER_XSS_FILTER`, `strict-origin-when-cross-origin` referrer policy
